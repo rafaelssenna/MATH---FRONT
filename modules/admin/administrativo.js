@@ -2864,36 +2864,33 @@ async function generateAndOpenOSPDF() {
         return
       }
       try {
-        // Criar imagem temporária para obter dimensões reais
-        const img = new Image()
-        img.src = imageData
+        // IMPORTANTE: Adiciona a imagem do canvas COMPLETO sem cortar
+        // O canvas do cliente agora é 800x300 pixels
+        // Vamos usar toda a largura disponível no PDF
 
-        // Calcular aspect ratio para não distorcer
-        const imgWidth = img.width || maxW
-        const imgHeight = img.height || maxH
-        const imgRatio = imgWidth / imgHeight
+        // Aspect ratio fixo baseado no canvas (800x300 = 8:3)
+        const canvasRatio = 8 / 3
 
+        // Usa toda a largura disponível
         let finalWidth = maxW
-        let finalHeight = maxH
+        let finalHeight = maxW / canvasRatio
 
-        // Ajusta para caber no campo sem distorcer
-        if (imgRatio > (maxW / maxH)) {
-          // Imagem é mais larga, limita pela largura
-          finalWidth = maxW
-          finalHeight = maxW / imgRatio
-        } else {
-          // Imagem é mais alta, limita pela altura
+        // Se a altura calculada for maior que o espaço, limita pela altura
+        if (finalHeight > maxH) {
           finalHeight = maxH
-          finalWidth = maxH * imgRatio
+          finalWidth = maxH * canvasRatio
         }
 
-        // Centraliza a imagem no campo
+        // Centraliza apenas se necessário
         const offsetX = (maxW - finalWidth) / 2
         const offsetY = (maxH - finalHeight) / 2
 
-        console.log(`[PDF] Adicionando imagem em x=${xPos + 2 + offsetX}, y=${y + 2 + offsetY}, w=${finalWidth}, h=${finalHeight}`)
+        console.log(`[PDF] Canvas completo ${label}: w=${finalWidth}, h=${finalHeight}`)
+        console.log(`[PDF] Adicionando em x=${xPos + 2 + offsetX}, y=${y + 2 + offsetY}`)
+
+        // Adiciona a imagem COMPLETA do canvas
         doc.addImage(imageData, "PNG", xPos + 2 + offsetX, y + 2 + offsetY, finalWidth, finalHeight, undefined, 'FAST')
-        console.log(`[PDF] ✅ Imagem ${label} adicionada com sucesso`)
+        console.log(`[PDF] ✅ Assinatura ${label} adicionada com canvas COMPLETO`)
       } catch (err) {
         console.error(`[PDF] ❌ Erro ao adicionar assinatura ${label}:`, err)
       }
