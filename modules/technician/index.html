@@ -527,7 +527,7 @@
             <!-- Assinatura do cliente -->
             <div class="form-group">
               <h3>Assinatura do Cliente</h3>
-              <canvas id="clientSignatureCanvas" width="400" height="150" style="border:1px solid var(--border-color); background: var(--bg-input); border-radius:6px;"></canvas>
+              <canvas id="clientSignatureCanvas" width="800" height="300" style="border:1px solid var(--border-color); background: var(--bg-input); border-radius:6px; width: 100%; max-width: 800px; aspect-ratio: 8/3; touch-action: none;"></canvas>
               <button type="button" id="clearClientSignatureBtn" class="btn-secondary" style="margin-top:0.5rem">Limpar Assinatura</button>
             </div>
 
@@ -552,7 +552,7 @@
             Vire o celular na horizontal para área maior
           </p>
           <!-- Mensagem dinâmica será inserida aqui pelo JavaScript -->
-          <canvas id="signatureCanvas" class="signature-canvas" width="600" height="300" style="border:1px solid var(--border-color); background: var(--bg-input); border-radius:6px; margin-top: 1rem; width: 100%; max-width: 600px; aspect-ratio: 2/1; max-height: 300px; touch-action: none;"></canvas>
+          <canvas id="signatureCanvas" class="signature-canvas" width="800" height="300" style="border:1px solid var(--border-color); background: var(--bg-input); border-radius:6px; margin-top: 1rem; width: 100%; max-width: 800px; aspect-ratio: 8/3; touch-action: none;"></canvas>
           <div style="margin-top:0.5rem; display:flex; gap:0.5rem;">
             <button type="button" id="clearSignatureBtn" class="btn-secondary">Limpar</button>
             <button type="button" id="saveSignatureBtn" class="btn-primary">Salvar</button>
