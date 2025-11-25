@@ -6486,6 +6486,7 @@ function renderBillingOSList(osList, tab) {
           <th style="padding: 0.75rem; text-align: left;">Cliente</th>
           <th style="padding: 0.75rem; text-align: left;">Técnico</th>
           <th style="padding: 0.75rem; text-align: left;">Data Conclusão</th>
+          ${tab === 'billed' ? '<th style="padding: 0.75rem; text-align: left;">Nota Fiscal</th>' : ''}
           <th style="padding: 0.75rem; text-align: right;">Valor Total</th>
           <th style="padding: 0.75rem; text-align: center;">Ações</th>
         </tr>
@@ -6497,9 +6498,26 @@ function renderBillingOSList(osList, tab) {
             <td style="padding: 0.75rem;">${os.client_name || os.company_name || 'N/A'}</td>
             <td style="padding: 0.75rem;">${os.technician_username || 'N/A'}</td>
             <td style="padding: 0.75rem;">${os.finished_at ? new Date(os.finished_at).toLocaleDateString('pt-BR') : 'N/A'}</td>
+            ${tab === 'billed' ? `<td style="padding: 0.75rem; font-weight: 600; color: var(--primary);">NF: ${os.invoice_number || 'N/A'}</td>` : ''}
             <td style="padding: 0.75rem; text-align: right; font-weight: 600;">${formatter.format(os.grand_total || 0)}</td>
             <td style="padding: 0.75rem; text-align: center;">
-              <button class="btn-secondary btn-sm" onclick="viewOSDetails(${os.id})" title="Ver detalhes" style="margin-right: 0.5rem;">
+              <button onclick="viewOSDetails(${os.id})" title="Ver detalhes" style="
+                padding: 0.5rem 0.75rem;
+                background: #3498db;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 0.875rem;
+                font-weight: 500;
+                display: inline-flex;
+                align-items: center;
+                gap: 0.35rem;
+                margin-right: 0.5rem;
+                min-width: 90px;
+                justify-content: center;
+                transition: all 0.2s;
+              " onmouseover="this.style.background='#2980b9'" onmouseout="this.style.background='#3498db'">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                   <circle cx="12" cy="12" r="3"/>
@@ -6507,14 +6525,45 @@ function renderBillingOSList(osList, tab) {
                 Ver
               </button>
               ${tab === 'pending' ? `
-                <button class="btn-secondary btn-sm" onclick="returnOSToReview(${os.id}, ${os.order_number})" title="Voltar para revisão" style="margin-right: 0.5rem;">
+                <button onclick="returnOSToReview(${os.id}, ${os.order_number})" title="Voltar para revisão" style="
+                  padding: 0.5rem 0.75rem;
+                  background: #f39c12;
+                  color: white;
+                  border: none;
+                  border-radius: 6px;
+                  cursor: pointer;
+                  font-size: 0.875rem;
+                  font-weight: 500;
+                  display: inline-flex;
+                  align-items: center;
+                  gap: 0.35rem;
+                  margin-right: 0.5rem;
+                  min-width: 100px;
+                  justify-content: center;
+                  transition: all 0.2s;
+                " onmouseover="this.style.background='#e67e22'" onmouseout="this.style.background='#f39c12'">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M3 7v6h6"/>
                     <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>
                   </svg>
                   Restaurar
                 </button>
-                <button class="btn-primary btn-sm" onclick="markOSAsBilled(${os.id}, ${os.order_number})" title="Marcar como faturada">
+                <button onclick="markOSAsBilled(${os.id}, ${os.order_number})" title="Marcar como faturada" style="
+                  padding: 0.5rem 0.75rem;
+                  background: #27ae60;
+                  color: white;
+                  border: none;
+                  border-radius: 6px;
+                  cursor: pointer;
+                  font-size: 0.875rem;
+                  font-weight: 500;
+                  display: inline-flex;
+                  align-items: center;
+                  gap: 0.35rem;
+                  min-width: 95px;
+                  justify-content: center;
+                  transition: all 0.2s;
+                " onmouseover="this.style.background='#229954'" onmouseout="this.style.background='#27ae60'">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="20 6 9 17 4 12"/>
                   </svg>
@@ -6540,14 +6589,107 @@ function renderBillingOSList(osList, tab) {
  * Marca OS como faturada
  */
 async function markOSAsBilled(osId, osNumber) {
-  if (!confirm(`Confirma que a O.S ${osNumber} foi faturada?`)) {
+  // Mostra modal para pedir número da nota fiscal
+  showInvoiceNumberModal(osId, osNumber)
+}
+
+/**
+ * Mostra modal para inserir número da nota fiscal
+ */
+function showInvoiceNumberModal(osId, osNumber) {
+  const modalHtml = `
+    <div id="invoiceModal" style="
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      padding: 1rem;
+    ">
+      <div style="
+        background: var(--bg-primary);
+        border-radius: 12px;
+        padding: 2rem;
+        max-width: 500px;
+        width: 100%;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      ">
+        <h2 style="margin: 0 0 1rem 0; color: var(--text-primary);">Faturar O.S ${osNumber}</h2>
+        <p style="margin: 0 0 1.5rem 0; color: var(--text-secondary);">
+          Digite o número da nota fiscal para esta ordem de serviço:
+        </p>
+        <input
+          type="text"
+          id="invoiceNumberInput"
+          placeholder="Ex: 12345"
+          style="
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+          "
+        />
+        <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+          <button onclick="closeInvoiceModal()" class="btn-secondary">
+            Cancelar
+          </button>
+          <button onclick="confirmMarkAsBilled(${osId}, ${osNumber})" class="btn-primary">
+            Confirmar Faturamento
+          </button>
+        </div>
+      </div>
+    </div>
+  `
+
+  document.body.insertAdjacentHTML('beforeend', modalHtml)
+
+  // Foca no input
+  setTimeout(() => {
+    document.getElementById('invoiceNumberInput')?.focus()
+  }, 100)
+
+  // Permite confirmar com Enter
+  document.getElementById('invoiceNumberInput')?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      confirmMarkAsBilled(osId, osNumber)
+    }
+  })
+}
+
+/**
+ * Fecha modal de nota fiscal
+ */
+function closeInvoiceModal() {
+  document.getElementById('invoiceModal')?.remove()
+}
+
+/**
+ * Confirma e envia o faturamento com número da nota
+ */
+async function confirmMarkAsBilled(osId, osNumber) {
+  const invoiceInput = document.getElementById('invoiceNumberInput')
+  const invoiceNumber = invoiceInput?.value?.trim()
+
+  if (!invoiceNumber) {
+    showToast('Por favor, digite o número da nota fiscal', 'error')
+    invoiceInput?.focus()
     return
   }
 
   try {
     const response = await fetch(`${API_URL}/api/billing/os/${osId}/mark-billed`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ invoice_number: invoiceNumber })
     })
 
     if (!response.ok) {
@@ -6555,7 +6697,8 @@ async function markOSAsBilled(osId, osNumber) {
       throw new Error(error.message || 'Erro ao marcar OS como faturada')
     }
 
-    showToast(`O.S ${osNumber} marcada como faturada!`, 'success')
+    closeInvoiceModal()
+    showToast(`O.S ${osNumber} marcada como faturada! NF: ${invoiceNumber}`, 'success')
     loadBillingData() // Recarrega a lista
   } catch (error) {
     console.error('Erro ao marcar OS como faturada:', error)
