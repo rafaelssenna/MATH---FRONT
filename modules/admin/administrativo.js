@@ -6894,8 +6894,11 @@ function showSection(sectionId) {
     if (sectionId === 'scheduleSection') {
       loadSchedule()
     } else if (sectionId === 'billingSection') {
+      // Garante que os elementos DOM estejam prontos antes de carregar
       initBillingYears()
-      switchBillingTab('pending') // Ativa a aba "Pendente" e carrega os dados
+      setTimeout(() => {
+        switchBillingTab('pending') // Ativa a aba "Pendente" e carrega os dados
+      }, 100)
     } else if (sectionId === 'reviewSection') {
       loadReviewData()
     } else if (sectionId === 'vehiclesSection') {

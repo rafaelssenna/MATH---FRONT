@@ -9,25 +9,39 @@ let conferenceWorklogs = []
 let conferenceDisplacements = []
 let conferenceAdditionalServices = []
 let conferenceVehicles = []
+let allCompaniesForReview = []
+let allMachinesForReview = []
 
 /**
  * Carrega dados de conferência (chamado ao abrir a seção)
  */
 async function loadReviewData() {
   try {
-    // Busca estatísticas
-    const statsResponse = await fetch(`${API_URL}/api/review/stats/summary`)
+    // Busca estatísticas, OS pendentes, empresas e máquinas em paralelo
+    const [statsResponse, pendingResponse, companiesResponse, machinesResponse] = await Promise.all([
+      fetch(`${API_URL}/api/review/stats/summary`),
+      fetch(`${API_URL}/api/review/pending`),
+      fetch(`${API_URL}/api/companies`),
+      fetch(`${API_URL}/api/machines`)
+    ])
+
     if (!statsResponse.ok) {
       throw new Error(`Erro ao buscar estatísticas: ${statsResponse.status}`)
     }
-    const stats = await statsResponse.json()
-
-    // Busca OS pendentes de conferência
-    const pendingResponse = await fetch(`${API_URL}/api/review/pending`)
     if (!pendingResponse.ok) {
       throw new Error(`Erro ao buscar OS pendentes: ${pendingResponse.status}`)
     }
+
+    const stats = await statsResponse.json()
     const osList = await pendingResponse.json()
+
+    // Carrega empresas e máquinas para os selects
+    if (companiesResponse.ok) {
+      allCompaniesForReview = await companiesResponse.json()
+    }
+    if (machinesResponse.ok) {
+      allMachinesForReview = await machinesResponse.json()
+    }
 
     // Renderiza estatísticas e lista
     renderConferenceStats(stats)
@@ -193,16 +207,20 @@ function renderConferenceModal() {
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
           <div>
-            <label style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">Cliente</label>
-            <div style="font-weight: 600;">${escapeHtml(os.company_name || 'N/A')}</div>
+            <label style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">Cliente / Empresa *</label>
+            <select id="conferenceCompanySelect" onchange="onConferenceCompanyChange()" style="width: 100%; padding: 0.5rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-weight: 600;">
+              ${renderCompanyOptions(os.company_id)}
+            </select>
           </div>
           <div>
             <label style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">Técnico</label>
             <div style="font-weight: 600;">${escapeHtml(os.technician_username || 'N/A')}</div>
           </div>
           <div>
-            <label style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">Máquina</label>
-            <div style="font-weight: 600;">${escapeHtml(os.machine_model || 'N/A')} ${os.machine_serial ? '#' + os.machine_serial : ''}</div>
+            <label style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">Máquina *</label>
+            <select id="conferenceMachineSelect" style="width: 100%; padding: 0.5rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-weight: 600;">
+              ${renderMachineOptions(os.company_id, os.machine_id)}
+            </select>
           </div>
           <div>
             <label style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">Data Finalização</label>
@@ -863,10 +881,16 @@ async function approveConferenceOS() {
     const totalServiceCost = hoursCost + displacementCost
     const grandTotal = hoursCost + displacementCost + totalMaterials + totalAdditionalServices
 
+    // Pega valores dos selects de empresa e máquina
+    const selectedCompanyId = parseInt(document.getElementById('conferenceCompanySelect')?.value)
+    const selectedMachineId = parseInt(document.getElementById('conferenceMachineSelect')?.value)
+
     const response = await fetch(`${API_URL}/api/review/${currentConferenceOS.id}/approve`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        company_id: selectedCompanyId, // Empresa selecionada
+        machine_id: selectedMachineId, // Máquina selecionada
         service_description: document.getElementById('conferenceServiceDesc').value,
         is_new_client: isNewClient, // Envia o tipo de cliente atualizado
         value_service: totalAdditionalServices, // Soma dos serviços adicionais
@@ -967,6 +991,65 @@ function createConferenceModal() {
   `
 
   document.body.insertAdjacentHTML('beforeend', modalHTML)
+}
+
+/**
+ * Renderiza options do select de empresas
+ */
+function renderCompanyOptions(selectedCompanyId) {
+  if (!allCompaniesForReview || allCompaniesForReview.length === 0) {
+    return '<option value="">Nenhuma empresa disponível</option>'
+  }
+
+  return allCompaniesForReview
+    .map(company => `
+      <option value="${company.id}" ${company.id === selectedCompanyId ? 'selected' : ''}>
+        ${escapeHtml(company.name)} ${company.cnpj ? '- CNPJ: ' + company.cnpj : ''}
+      </option>
+    `)
+    .join('')
+}
+
+/**
+ * Renderiza options do select de máquinas (filtradas por empresa)
+ */
+function renderMachineOptions(companyId, selectedMachineId) {
+  if (!allMachinesForReview || allMachinesForReview.length === 0) {
+    return '<option value="">Nenhuma máquina disponível</option>'
+  }
+
+  // Filtra máquinas pela empresa selecionada
+  const filteredMachines = allMachinesForReview.filter(m => m.company_id === companyId)
+
+  if (filteredMachines.length === 0) {
+    return '<option value="">Nenhuma máquina para esta empresa</option>'
+  }
+
+  return filteredMachines
+    .map(machine => `
+      <option value="${machine.id}" ${machine.id === selectedMachineId ? 'selected' : ''}>
+        ${escapeHtml(machine.model || 'Sem modelo')} - Série: ${escapeHtml(machine.serial_number || 'N/A')}
+      </option>
+    `)
+    .join('')
+}
+
+/**
+ * Atualiza o select de máquinas quando troca a empresa
+ */
+function onConferenceCompanyChange() {
+  const companySelect = document.getElementById('conferenceCompanySelect')
+  const machineSelect = document.getElementById('conferenceMachineSelect')
+
+  if (!companySelect || !machineSelect) return
+
+  const selectedCompanyId = parseInt(companySelect.value)
+
+  // Atualiza o select de máquinas com as máquinas da empresa selecionada
+  machineSelect.innerHTML = renderMachineOptions(selectedCompanyId, null)
+
+  // Mostra mensagem informativa
+  showToast('Máquinas atualizadas para a empresa selecionada', 'info')
 }
 
 // Compatibilidade com código antigo (apenas aliases)
