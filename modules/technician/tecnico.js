@@ -3105,27 +3105,43 @@ async function handleFinishSubmit(e) {
   if (additionalNote) payload.additional_service_note = additionalNote
 
   try {
+    console.log('📤 [FINISH] Enviando finalização para API:', {
+      url: `${API_URL}/api/os/${osId}/finish`,
+      osId,
+      payload
+    })
+
     const res = await fetch(`${API_URL}/api/os/${osId}/finish`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     })
+
+    console.log('📡 [FINISH] Resposta recebida:', {
+      status: res.status,
+      statusText: res.statusText,
+      ok: res.ok
+    })
+
     const data = await res.json()
+    console.log('📦 [FINISH] Dados da resposta:', data)
 
     if (!res.ok) {
+      console.error('❌ [FINISH] Erro na finalização:', data)
       showToast(data.message || "Erro ao finalizar OS.", "error")
       isSubmittingFinish = false
       hideLoadingOverlay()
       return
     }
 
+    console.log('✅ [FINISH] OS finalizada com sucesso!')
     hideLoadingOverlay()
     showToast("OS finalizada com sucesso!", "success")
     isSubmittingFinish = false
     closeFinishModal()
     loadOSList()
   } catch (err) {
-    console.error(err)
+    console.error('❌ [FINISH] Erro de rede:', err)
     hideLoadingOverlay()
     showToast("Erro de rede ao finalizar OS.", "error")
     isSubmittingFinish = false
