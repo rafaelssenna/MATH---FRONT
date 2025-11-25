@@ -3111,11 +3111,18 @@ async function handleFinishSubmit(e) {
       payload
     })
 
+    // Timeout de 60 segundos
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 60000)
+
     const res = await fetch(`${API_URL}/api/os/${osId}/finish`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
+      signal: controller.signal
     })
+
+    clearTimeout(timeoutId)
 
     console.log('📡 [FINISH] Resposta recebida:', {
       status: res.status,
@@ -3123,27 +3130,36 @@ async function handleFinishSubmit(e) {
       ok: res.ok
     })
 
-    const data = await res.json()
-    console.log('📦 [FINISH] Dados da resposta:', data)
+    let data
+    try {
+      data = await res.json()
+      console.log('📦 [FINISH] Dados da resposta:', data)
+    } catch (jsonErr) {
+      console.error('❌ [FINISH] Erro ao parsear JSON:', jsonErr)
+      throw new Error('Resposta inválida do servidor')
+    }
 
     if (!res.ok) {
       console.error('❌ [FINISH] Erro na finalização:', data)
       showToast(data.message || "Erro ao finalizar OS.", "error")
-      isSubmittingFinish = false
-      hideLoadingOverlay()
       return
     }
 
     console.log('✅ [FINISH] OS finalizada com sucesso!')
-    hideLoadingOverlay()
     showToast("OS finalizada com sucesso!", "success")
-    isSubmittingFinish = false
     closeFinishModal()
     loadOSList()
   } catch (err) {
-    console.error('❌ [FINISH] Erro de rede:', err)
+    console.error('❌ [FINISH] Erro capturado:', err)
+    if (err.name === 'AbortError') {
+      showToast("Tempo limite excedido. Tente novamente.", "error")
+    } else {
+      showToast(err.message || "Erro ao finalizar OS.", "error")
+    }
+  } finally {
+    // GARANTE que o loading SEMPRE será escondido
+    console.log('🔄 [FINISH] Limpando estado...')
     hideLoadingOverlay()
-    showToast("Erro de rede ao finalizar OS.", "error")
     isSubmittingFinish = false
   }
 }
