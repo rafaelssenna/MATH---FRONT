@@ -1,0 +1,21 @@
+{
+  "name": "Helsen Service - Administrador",
+  "short_name": "HS Admin",
+  "description": "Sistema de gestão administrativa Helsen Service",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#3b82f6",
+  "icons": [
+    {
+      "src": "logohelsen.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "helsenservicelogo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

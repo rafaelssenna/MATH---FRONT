@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover"/>
+
+  <!-- PREVINE CACHE - FORÇA SEMPRE VERSÃO MAIS RECENTE -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+
+  <title>MATH - Assistente Técnico</title>
+  <link rel="stylesheet" href="styles.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/jpeg" href="mate-icon.jpg" />
+  <meta name="theme-color" content="#0b5ed7" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="MATH" />
+  <link rel="apple-touch-icon" href="mate-icon.jpg" />
+  <link rel="apple-touch-startup-image" href="mate-icon.jpg" />
+</head>
+<body>
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Updated header with logo, theme toggle, and logout button -->
+  <header class="header">
+    <div class="header-content">
+      <div class="logo">
+        <img src="helsenservicelogo.png" alt="Helsen Service" class="logo-image" />
+      </div>
+      <div class="header-actions">
+        <span id="technicianNameDisplay" class="technician-name"></span>
+        <button id="themeToggle" class="theme-toggle" title="Alternar tema">
+          <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+          <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
+        <button id="logoutBtn" class="logout-btn" style="display:none;" title="Sair da conta">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          <span>Sair</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <!-- Login -->
+    <section id="login-section" class="container">
+      <div class="card login-card">
+        <div class="card-header">
+          <h2>Login do Técnico</h2>
+          <p>Entre com suas credenciais para acessar o sistema</p>
+        </div>
+        <form id="technicianLoginForm" class="client-form" onsubmit="return handleTechnicianLogin(event)">
+          <div class="form-group">
+            <label for="technicianLoginName">Usuário</label>
+            <input type="text" id="technicianLoginName" required/>
+          </div>
+          <div class="form-group">
+            <label for="technicianLoginPassword">Senha</label>
+            <input type="password" id="technicianLoginPassword" required/>
+          </div>
+          <button type="submit" class="btn-primary">Entrar</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Painel do técnico -->
+    <section id="technician-section" style="display:none">
+      <div class="container">
+        <div class="page-header">
+          <h1>Painel do Técnico</h1>
+          <p>Gerencie e finalize suas ordens de serviço</p>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tech-tabs">
+          <button class="tech-tab active" data-tab="myos">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+            Minhas OS
+          </button>
+          <button class="tech-tab" data-tab="companies">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            Empresas
+          </button>
+          <button class="tech-tab" data-tab="machines">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+            </svg>
+            Máquinas
+          </button>
+          <button class="tech-tab" data-tab="allos">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+            Todas as OS
+          </button>
+        </div>
+
+        <!-- Tab Content: My OS -->
+        <div id="myosTab" class="tech-tab-content active">
+          <div class="signature-actions" style="margin-bottom:1rem; display: flex; gap: 0.75rem;">
+            <button id="openSignatureModal" class="btn-secondary">Minha Assinatura</button>
+            <button id="createOwnOSBtn" class="btn-primary" onclick="openCreateOwnOSModal()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Criar OS
+            </button>
+          </div>
+          <div id="osList" class="os-list"></div>
+        </div>
+
+        <!-- Tab Content: Companies -->
+        <div id="companiesTab" class="tech-tab-content" style="display:none">
+          <div id="companiesViewContainer">
+            <!-- View: Buscar Empresa -->
+            <div id="companiesSearchView">
+              <div class="card" style="margin-bottom: 1.5rem;">
+                <div class="card-header">
+                  <h3>Buscar Empresa</h3>
+                </div>
+                <div style="padding: 1rem;">
+                  <div class="form-group">
+                    <label for="companySearchInput">Nome da Empresa</label>
+                    <input type="text" id="companySearchInput" placeholder="Digite o nome da empresa..." onkeyup="if(event.key === 'Enter') searchCompanies()">
+                  </div>
+                  <button onclick="searchCompanies()" class="btn-primary">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="11" cy="11" r="8"/>
+                      <path d="m21 21-4.35-4.35"/>
+                    </svg>
+                    Buscar
+                  </button>
+                </div>
+              </div>
+              <div id="companiesSearchResults"></div>
+            </div>
+
+            <!-- View: Máquinas da Empresa -->
+            <div id="companyMachinesView" style="display:none">
+              <button onclick="backToCompanySearch()" class="btn-secondary" style="margin-bottom: 1rem;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="19" y1="12" x2="5" y2="12"/>
+                  <polyline points="12 19 5 12 12 5"/>
+                </svg>
+                Voltar para Empresas
+              </button>
+              <div class="card" style="margin-bottom: 1.5rem;">
+                <div class="card-header">
+                  <h3 id="companyMachinesTitle">Máquinas da Empresa</h3>
+                </div>
+              </div>
+              <div id="companyMachinesList"></div>
+            </div>
+
+            <!-- View: Histórico de OS da Máquina -->
+            <div id="machineHistoryView" style="display:none">
+              <button onclick="backToCompanyMachines()" class="btn-secondary" style="margin-bottom: 1rem;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="19" y1="12" x2="5" y2="12"/>
+                  <polyline points="12 19 5 12 12 5"/>
+                </svg>
+                Voltar para Máquinas
+              </button>
+              <div class="card" style="margin-bottom: 1.5rem;">
+                <div class="card-header">
+                  <h3 id="machineHistoryTitle">Histórico de OS da Máquina</h3>
+                </div>
+              </div>
+              <div id="machineOsHistory"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab Content: Machines -->
+        <div id="machinesTab" class="tech-tab-content" style="display:none">
+          <div class="card" style="margin-bottom: 1.5rem;">
+            <div class="card-header">
+              <h3>Buscar Máquinas</h3>
+            </div>
+            <div style="padding: 1rem;">
+              <div class="form-group">
+                <label for="machineSearchInput">Modelo ou Número de Série</label>
+                <input type="text" id="machineSearchInput" placeholder="Digite para buscar...">
+              </div>
+              <button onclick="searchMachinesTech()" class="btn-primary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"/>
+                  <path d="m21 21-4.35-4.35"/>
+                </svg>
+                Buscar
+              </button>
+            </div>
+          </div>
+          <div id="machineResults"></div>
+        </div>
+
+        <!-- Tab Content: All OS -->
+        <div id="allosTab" class="tech-tab-content" style="display:none">
+          <div class="card" style="margin-bottom: 1.5rem;">
+            <div class="card-header">
+              <h3>Filtrar OS</h3>
+            </div>
+            <div style="padding: 1rem;">
+              <div class="form-group">
+                <label for="osFilterInput">Cliente ou Número da OS</label>
+                <input type="text" id="osFilterInput" placeholder="Digite para filtrar...">
+              </div>
+              <div class="form-group">
+                <label for="osStatusFilter">Status</label>
+                <select id="osStatusFilter">
+                  <option value="">Todos</option>
+                  <option value="pending">Pendente</option>
+                  <option value="assigned">Atribuída</option>
+                  <option value="accepted">Aceita</option>
+                  <option value="finished">Finalizada</option>
+                  <option value="approved">Aprovada</option>
+                </select>
+              </div>
+              <button onclick="filterAllOS()" class="btn-primary">Filtrar</button>
+            </div>
+          </div>
+          <div id="allOsList"></div>
+        </div>
+      </div>
+
+      <!-- Modal Preview OS -->
+      <div id="previewOsModal" class="modal" style="display:none">
+        <div class="modal-content" style="max-width: 600px;">
+          <span class="close" onclick="closePreviewOsModal()">&times;</span>
+          <h2>Informações da OS</h2>
+          
+          <div style="margin-bottom: 1.5rem;">
+            <h3 id="previewOsNumber" style="color: var(--primary-blue); margin-bottom: 0.5rem;">OS #</h3>
+            <p><strong>Cliente:</strong> <span id="previewClientName">-</span></p>
+            <p><strong>Status:</strong> <span id="previewStatus">-</span></p>
+          </div>
+          
+          <!-- Informações da Empresa -->
+          <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+            <h3 style="margin: 0 0 0.75rem 0; color: var(--text-primary); font-size: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+              Informações da Empresa
+            </h3>
+            <div style="display: grid; gap: 0.75rem; font-size: 0.9rem;">
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; color: var(--text-secondary);">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                  <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+                <div style="flex: 1;">
+                  <strong style="color: var(--text-secondary);">Empresa:</strong>
+                  <p id="previewCompanyName" style="margin: 0.25rem 0 0 0; color: var(--text-primary);">Carregando...</p>
+                </div>
+              </div>
+              <div style="display: flex; align-items: start; gap: 0.5rem;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; margin-top: 2px; color: var(--text-secondary);">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                  <circle cx="12" cy="10" r="3"/>
+                </svg>
+                <div style="flex: 1;">
+                  <strong style="color: var(--text-secondary);">Endereço:</strong>
+                  <p id="previewAddress" style="margin: 0.25rem 0 0 0; color: var(--text-primary);">Carregando...</p>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; color: var(--text-secondary);">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                </svg>
+                <div style="flex: 1;">
+                  <strong style="color: var(--text-secondary);">Telefone:</strong>
+                  <p id="previewPhone" style="margin: 0.25rem 0 0 0; color: var(--text-primary);">Carregando...</p>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; color: var(--text-secondary);">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+                <div style="flex: 1;">
+                  <strong style="color: var(--text-secondary);">Solicitante:</strong>
+                  <p id="previewRequester" style="margin: 0.25rem 0 0 0; color: var(--text-primary);">Carregando...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Informações sobre o Chamado -->
+          <div id="previewCallInfoSection" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; display: none;">
+            <h3 style="margin: 0 0 0.75rem 0; color: var(--text-primary); font-size: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              Informações sobre o Chamado
+            </h3>
+
+            <!-- Motivo do Chamado -->
+            <div style="margin-bottom: 1rem;">
+              <div style="display: flex; align-items: start; gap: 0.5rem;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; margin-top: 2px; color: var(--text-secondary);">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="16" x2="12" y2="12"/>
+                  <line x1="12" y1="8" x2="12.01" y2="8"/>
+                </svg>
+                <div style="flex: 1;">
+                  <strong style="color: var(--text-secondary);">Motivo do Chamado:</strong>
+                  <p id="previewCallReason" style="margin: 0.25rem 0 0 0; color: var(--text-primary);">-</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Fotos do Problema -->
+            <div id="previewProblemPhotosContainer" style="display: none;">
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; color: var(--text-secondary);">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+                <strong style="color: var(--text-secondary);">Fotos do Problema:</strong>
+              </div>
+              <div id="previewProblemPhotos" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0.5rem; margin-top: 0.5rem;">
+                <!-- Fotos serão inseridas aqui -->
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+            <button class="btn-secondary" onclick="closePreviewOsModal()">Fechar</button>
+            <button id="acceptFromPreview" class="btn-accept" style="display:none">Aceitar OS</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Finalizar OS -->
+      <div id="finishModal" class="modal" style="display:none">
+        <div class="modal-content">
+          <span id="closeModal" class="close">&times;</span>
+          <h2>Finalizar Ordem de Serviço</h2>
+          
+          <!-- Informações da Empresa/Cliente -->
+          <div id="companyInfoSection" class="company-info-box" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+            <h3 style="margin: 0 0 0.75rem 0; color: var(--text-primary); font-size: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+              Informações da Empresa
+            </h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; font-size: 0.9rem;">
+              <div>
+                <strong style="color: var(--text-secondary);">Empresa:</strong>
+                <p id="companyNameInfo" style="margin: 0.25rem 0 0 0; color: var(--text-primary);">-</p>
+              </div>
+              <div>
+                <strong style="color: var(--text-secondary);">Endereço:</strong>
+                <p id="companyAddressInfo" style="margin: 0.25rem 0 0 0; color: var(--text-primary);">-</p>
+              </div>
+              <div>
+                <strong style="color: var(--text-secondary);">Telefone:</strong>
+                <p id="companyPhoneInfo" style="margin: 0.25rem 0 0 0; color: var(--text-primary);">-</p>
+              </div>
+              <div>
+                <strong style="color: var(--text-secondary);">Solicitante:</strong>
+                <p id="requesterInfo" style="margin: 0.25rem 0 0 0; color: var(--text-primary);">-</p>
+              </div>
+            </div>
+          </div>
+          
+          <form id="finishForm" class="os-form">
+            <input type="hidden" id="finishOsId"/>
+
+            <!-- Seleção de máquina -->
+            <div class="form-group">
+              <label for="finishMachineSelect">Equipamento da Empresa</label>
+              <select id="finishMachineSelect" required>
+                <option value="">Carregando...</option>
+              </select>
+              <small id="finishMachineHint" class="hint">Selecione pelo modelo e número de série.</small>
+            </div>
+
+            <!-- Motivo do chamado (preenchido automaticamente) - OCULTO VISUALMENTE mas mantido para o backend -->
+            <div class="form-group" style="display: none;">
+              <label for="finishCallReason">Motivo do Chamado</label>
+              <input type="text" id="finishCallReason" readonly style="background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.6rem; width: 100%; color: var(--text-primary);" />
+            </div>
+
+            <!-- Fotos do Problema (do cliente) - Suporte para múltiplas imagens -->
+            <div class="form-group" id="problemPhotoContainer" style="display:none">
+              <label>Fotos do Problema (Enviadas pelo Cliente)</label>
+              <div id="problemPhotosGallery" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-top: 0.5rem;">
+                <!-- Imagens serão inseridas aqui dinamicamente -->
+              </div>
+            </div>
+
+            <!-- Períodos de trabalho: permite adicionar múltiplos intervalos de início/fim -->
+            <div class="form-group">
+              <h3>Períodos de Trabalho</h3>
+              <div id="timeEntriesContainer"></div>
+              <button type="button" id="addTimeEntryBtn" class="btn-secondary" style="margin-top:0.5rem">+ Período</button>
+            </div>
+            <div class="form-group">
+              <label for="finishDescription">Descrição do Serviço</label>
+              <textarea id="finishDescription" rows="3" required></textarea>
+            </div>
+
+            <!-- Botão de gravação de áudio para preencher a descrição do serviço -->
+            <div class="form-group">
+              <button type="button" id="recordAudioBtn" class="btn-secondary" style="width:100%; margin-top:0.5rem; display:none">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                  <line x1="12" y1="19" x2="12" y2="23"/>
+                  <line x1="8" y1="23" x2="16" y2="23"/>
+                </svg>
+                Gravar Áudio
+              </button>
+              <small class="hint">Use a gravação para preencher a descrição de serviço.</small>
+            </div>
+
+
+            <!-- Seleção manual do tipo de manutenção -->
+            <div class="form-group">
+              <label for="maintenanceTypeSelect">Tipo de Manutenção</label>
+              <select id="maintenanceTypeSelect" required style="background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.6rem; width: 100%; color: var(--text-primary);">
+                <option value="">Selecione</option>
+                <option value="Manutenção Corretiva Eletroeletrônica">Manutenção Corretiva Eletroeletrônica</option>
+                <option value="Manutenção Corretiva Mecânica">Manutenção Corretiva Mecânica</option>
+                <option value="Manutenção Preventiva Eletroeletrônica">Manutenção Preventiva Eletroeletrônica</option>
+                <option value="Manutenção Preventiva Mecânica">Manutenção Preventiva Mecânica</option>
+                <option value="Entrega Técnica">Entrega Técnica</option>
+              </select>
+            </div>
+
+            <!-- Seção de deslocamentos: permite adicionar múltiplos deslocamentos e selecionar veículo -->
+            <div class="form-group">
+              <h3>Deslocamentos</h3>
+              <div id="displacementContainer"></div>
+              <button type="button" id="addDisplacementBtn" class="btn-secondary" style="margin-top:0.5rem">+ Deslocamento</button>
+            </div>
+
+            <!-- Pergunta obrigatória sobre materiais -->
+            <div class="form-group">
+              <label style="font-weight: 600; font-size: 1rem; margin-bottom: 0.75rem; display: block;">
+                Houve uso de materiais?
+              </label>
+              <div style="display: flex; gap: 1rem; margin-bottom: 0.75rem;">
+<div style="display: flex; gap: 1rem; margin-bottom: 0.75rem;">                <label class="radio-box" style="position: relative; display: flex; align-items: center; justify-content: center; gap: 0.5rem; cursor: pointer; padding: 0.75rem 1.5rem; border: 2px solid var(--border-color); border-radius: 8px; background: var(--bg-card); transition: all 0.2s;">                  <input type="radio" name="hasMaterials" value="yes" style="display: none;" />                  <span class="radio-check" style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 2px solid var(--border-color); border-radius: 4px; transition: all 0.2s;">                    <span class="radio-x" style="display: none; font-size: 18px; font-weight: bold; color: white;">✓</span>                  </span>                  <span style="font-weight: 500;">Sim</span>                </label>                <label class="radio-box" style="position: relative; display: flex; align-items: center; justify-content: center; gap: 0.5rem; cursor: pointer; padding: 0.75rem 1.5rem; border: 2px solid var(--border-color); border-radius: 8px; background: var(--bg-card); transition: all 0.2s;">                  <input type="radio" name="hasMaterials" value="no" style="display: none;" />                  <span class="radio-check" style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 2px solid var(--border-color); border-radius: 4px; transition: all 0.2s;">                    <span class="radio-x" style="display: none; font-size: 18px; font-weight: bold; color: white;">✓</span>                  </span>                  <span style="font-weight: 500;">Não</span>                </label>              </div>
+              </div>
+              <!-- Container de materiais (inicialmente oculto) -->
+              <div id="materialsSection" style="display: none; margin-top: 1rem; padding: 1rem; background: var(--bg-input); border-radius: 8px; border: 1px solid var(--border-color);">
+                <h4 style="margin-bottom: 0.75rem;">Materiais Utilizados</h4>
+                <div id="materialsContainer"></div>
+                <button type="button" id="addMaterialBtn" class="btn-secondary" style="margin-top:0.5rem">+ Adicionar Material</button>
+              </div>
+            </div>
+
+            <!-- Pergunta obrigatória sobre serviço adicional -->
+            <div class="form-group">
+              <label style="font-weight: 600; font-size: 1rem; margin-bottom: 0.75rem; display: block;">
+                Houve serviço adicional?
+              </label>
+              <div style="display: flex; gap: 1rem; margin-bottom: 0.75rem;">
+                <label class="radio-box" style="position: relative; display: flex; align-items: center; justify-content: center; gap: 0.5rem; cursor: pointer; padding: 0.75rem 1.5rem; border: 2px solid var(--border-color); border-radius: 8px; background: var(--bg-card); transition: all 0.2s;">
+                  <input type="radio" name="hasAdditionalService" value="yes" style="display: none;" />
+                  <span class="radio-check" style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 2px solid var(--border-color); border-radius: 4px; transition: all 0.2s;">
+                    <span class="radio-x" style="display: none; font-size: 18px; font-weight: bold; color: white;">✓</span>
+                  </span>
+                  <span style="font-weight: 500;">Sim</span>
+                </label>
+                <label class="radio-box" style="position: relative; display: flex; align-items: center; justify-content: center; gap: 0.5rem; cursor: pointer; padding: 0.75rem 1.5rem; border: 2px solid var(--border-color); border-radius: 8px; background: var(--bg-card); transition: all 0.2s;">
+                  <input type="radio" name="hasAdditionalService" value="no" style="display: none;" />
+                  <span class="radio-check" style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 2px solid var(--border-color); border-radius: 4px; transition: all 0.2s;">
+                    <span class="radio-x" style="display: none; font-size: 18px; font-weight: bold; color: white;">✓</span>
+                  </span>
+                  <span style="font-weight: 500;">Não</span>
+                </label>
+              </div>
+              <!-- Container de serviço adicional (inicialmente oculto) -->
+              <div id="additionalServiceSection" style="display: none; margin-top: 1rem; padding: 1rem; background: var(--bg-input); border-radius: 8px; border: 1px solid var(--border-color);">
+                <div style="margin-bottom: 1rem;">
+                  <label for="finishAdditionalServiceValue" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Valor do Serviço Adicional</label>
+                  <input type="number" id="finishAdditionalServiceValue" step="0.01" min="0" placeholder="0,00" style="width:100%; padding: 0.6rem; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-card); color: var(--text-primary);" />
+                </div>
+                <div>
+                  <label for="finishAdditionalServiceNote" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Observação do Serviço Adicional</label>
+                  <textarea id="finishAdditionalServiceNote" rows="2" placeholder="Descreva o serviço adicional" style="width:100%; padding: 0.6rem; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-card); color: var(--text-primary);"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- Assinatura do cliente -->
+            <div class="form-group">
+              <h3>Assinatura do Cliente</h3>
+              <canvas id="clientSignatureCanvas" width="400" height="150" style="border:1px solid var(--border-color); background: var(--bg-input); border-radius:6px;"></canvas>
+              <button type="button" id="clearClientSignatureBtn" class="btn-secondary" style="margin-top:0.5rem">Limpar Assinatura</button>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn-primary">Finalizar OS</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Modal Assinatura Técnico -->
+      <div id="signatureModal" class="modal" style="display:none">
+        <div class="modal-content signature-modal-content">
+          <span id="closeSignatureModal" class="close">&times;</span>
+          <h2>Minha Assinatura</h2>
+          <p style="font-size: 0.875rem; opacity: 0.7; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 16v-4"/>
+              <path d="M12 8h.01"/>
+            </svg>
+            Vire o celular na horizontal para área maior
+          </p>
+          <!-- Mensagem dinâmica será inserida aqui pelo JavaScript -->
+          <canvas id="signatureCanvas" class="signature-canvas" width="600" height="300" style="border:1px solid var(--border-color); background: var(--bg-input); border-radius:6px; margin-top: 1rem; width: 100%; max-width: 600px; aspect-ratio: 2/1; max-height: 300px; touch-action: none;"></canvas>
+          <div style="margin-top:0.5rem; display:flex; gap:0.5rem;">
+            <button type="button" id="clearSignatureBtn" class="btn-secondary">Limpar</button>
+            <button type="button" id="saveSignatureBtn" class="btn-primary">Salvar</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Espaço para o chatbot do técnico -->
+  <div id="chatWidget" class="chat-widget" style="display:none">
+    <div id="chatHeader" class="chat-header">
+      <img src="mate-icon.jpg" alt="MATH" style="width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;" />
+      <span style="flex: 1; font-weight: 600;">Chat do MATH</span>
+      <span id="chatCloseBtn" class="chat-close">&times;</span>
+    </div>
+    <div id="chatMessages" class="chat-messages"></div>
+    <!-- Preview de imagem anexada -->
+    <div id="chatPreviewContainer" class="chat-preview-container" style="display:none;"></div>
+    <div class="chat-input-container">
+      <!-- Botão para gravar áudio no chat -->
+      <button id="chatRecordBtn" type="button" class="chat-record-btn" title="Gravar áudio">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="23"/>
+          <line x1="8" y1="23" x2="16" y2="23"/>
+        </svg>
+      </button>
+      <!-- Botão para enviar imagem no chat -->
+      <button id="chatImageBtn" type="button" class="chat-image-btn" title="Enviar imagem">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+          <circle cx="8.5" cy="8.5" r="1.5"/>
+          <polyline points="21 15 16 10 5 21"/>
+        </svg>
+      </button>
+      <!-- Campo de seleção de imagem oculto -->
+      <input id="chatImageInput" type="file" accept="image/*" style="display:none" />
+      <input id="chatInput" type="text" class="chat-input" placeholder="Digite sua mensagem..." />
+      <button id="chatSendBtn" class="chat-send-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal: Criar Minha OS -->
+  <div id="createOwnOSModal" class="modal" style="display:none">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h2>Criar Nova OS</h2>
+        <button class="close-btn" onclick="closeCreateOwnOSModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="createOwnOSForm" onsubmit="submitCreateOwnOS(event)">
+          <div class="form-group">
+            <label for="newOS_companyInput">Empresa *</label>
+            <input
+              type="text"
+              id="newOS_companyInput"
+              list="newOS_companyList"
+              placeholder="Digite para buscar empresa..."
+              required
+              autocomplete="off"
+            >
+            <datalist id="newOS_companyList"></datalist>
+            <input type="hidden" id="newOS_companyId">
+          </div>
+
+          <div class="form-group">
+            <label for="newOS_machineSelect">Máquina</label>
+            <select id="newOS_machineSelect">
+              <option value="">-- selecione a empresa primeiro --</option>
+            </select>
+            <small class="hint">Pode deixar vazio se a máquina ainda não estiver cadastrada</small>
+          </div>
+
+          <div class="form-group">
+            <label for="newOS_callReason">Motivo do Chamado *</label>
+            <textarea id="newOS_callReason" rows="3" placeholder="Descreva o motivo do chamado..." required></textarea>
+          </div>
+
+          <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem;">
+            <button type="button" class="btn-secondary" onclick="closeCreateOwnOSModal()">Cancelar</button>
+            <button type="submit" class="btn-primary">Criar OS</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botão flutuante para abrir/fechar o chat -->
+  <button id="chatToggleBtn" class="chat-toggle-btn" title="Abrir Chat">
+    <img src="mate-icon.jpg" alt="Chat" class="chat-toggle-icon" />
+  </button>
+
+  <!-- Gerenciador de Estado -->
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+  <!-- FORÇA RELOAD DOS SCRIPTS COM TIMESTAMP DINÂMICO -->
+  <script>
+    // Gera timestamp único a cada carregamento
+    const cacheBuster = Date.now();
+
+    // Carrega scripts com timestamp para SEMPRE pegar versão mais recente
+    const scripts = [
+      'state-manager.js',
+      'company-info.js',
+      'tecnico.js'
+    ];
+
+    scripts.forEach(src => {
+      const script = document.createElement('script');
+      script.src = `${src}?v=${cacheBuster}`;
+      document.body.appendChild(script);
+    });
+
+    // Força reload a cada 6 horas para garantir versão mais recente
+    const lastReload = localStorage.getItem('lastForceReload');
+    const now = Date.now();
+    const sixHours = 6 * 60 * 60 * 1000;
+
+    if (!lastReload || (now - parseInt(lastReload)) > sixHours) {
+      localStorage.setItem('lastForceReload', now.toString());
+      // Só recarrega se não for a primeira vez (evita loop)
+      if (lastReload && !window.location.hash.includes('reloaded')) {
+        console.log('🔄 Forçando reload para garantir versão mais recente...');
+        window.location.hash = 'reloaded';
+        window.location.reload(true);
+      }
+    }
+  </script>
+</body>
+</html>

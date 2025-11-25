@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MATH - Sistema Unificado Helsen Service</title>
+    <link rel="icon" type="image/png" href="assets/helsenservicelogo.png">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Tela de Seleção de Perfil -->
+    <div id="role-selection" class="container">
+        <!-- Logo da empresa -->
+        <div class="logo-container">
+            <img src="assets/helsenservicelogo.png" alt="Helsen Service" class="company-logo">
+        </div>
+
+        <div class="welcome-header">
+            <h1 class="system-title">
+                <span class="math-logo">MATH</span>
+                <span class="subtitle">Manutenção Assistida por Tecnologia Helsen</span>
+            </h1>
+            <p class="system-description">Selecione seu perfil para acessar o sistema</p>
+        </div>
+
+        <div class="role-cards">
+            <!-- Card Técnico -->
+            <div class="role-card technician-card" onclick="selectRole('technician')">
+                <div class="card-glow technician-glow"></div>
+                <div class="card-content">
+                    <div class="role-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+                        </svg>
+                    </div>
+                    <h2>Técnico</h2>
+                    <p>Gestão de ordens de serviço, finalizações e acompanhamento em tempo real</p>
+                    <button class="role-btn technician-btn">
+                        <span>Acessar como Técnico</span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Card Cliente -->
+            <div class="role-card client-card" onclick="selectRole('client')">
+                <div class="card-glow client-glow"></div>
+                <div class="card-content">
+                    <div class="role-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 21h18M3 10h18M3 7l9-4 9 4M6 10v11M18 10v11M12 10v11"/>
+                        </svg>
+                    </div>
+                    <h2>Cliente</h2>
+                    <p>Solicite manutenções e acompanhe o status das suas solicitações</p>
+                    <button class="role-btn client-btn">
+                        <span>Acessar como Cliente</span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Card Administrador -->
+            <div class="role-card admin-card" onclick="selectRole('admin')">
+                <div class="card-glow admin-glow"></div>
+                <div class="card-content">
+                    <div class="role-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24"/>
+                        </svg>
+                    </div>
+                    <h2>Administrador</h2>
+                    <p>Gerenciamento completo do sistema, relatórios e controle total</p>
+                    <button class="role-btn admin-btn">
+                        <span>Acessar como Admin</span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-info">
+            <p>© 2024 Helsen Service - Todos os direitos reservados</p>
+            <p class="version">MATH v1.0.0</p>
+        </div>
+    </div>
+
+    <!-- Toast de Notificações -->
+    <div class="toast" id="toast"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
