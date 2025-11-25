@@ -652,41 +652,13 @@
     <img src="mate-icon.jpg" alt="Chat" class="chat-toggle-icon" />
   </button>
 
-  <!-- Gerenciador de Estado -->
+  <!-- Socket.io para notificações em tempo real -->
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
-  <!-- FORÇA RELOAD DOS SCRIPTS COM TIMESTAMP DINÂMICO -->
-  <script>
-    // Gera timestamp único a cada carregamento
-    const cacheBuster = Date.now();
-
-    // Carrega scripts com timestamp para SEMPRE pegar versão mais recente
-    const scripts = [
-      'state-manager.js',
-      'company-info.js',
-      'tecnico.js'
-    ];
-
-    scripts.forEach(src => {
-      const script = document.createElement('script');
-      script.src = `${src}?v=${cacheBuster}`;
-      document.body.appendChild(script);
-    });
-
-    // Força reload a cada 6 horas para garantir versão mais recente
-    const lastReload = localStorage.getItem('lastForceReload');
-    const now = Date.now();
-    const sixHours = 6 * 60 * 60 * 1000;
-
-    if (!lastReload || (now - parseInt(lastReload)) > sixHours) {
-      localStorage.setItem('lastForceReload', now.toString());
-      // Só recarrega se não for a primeira vez (evita loop)
-      if (lastReload && !window.location.hash.includes('reloaded')) {
-        console.log('🔄 Forçando reload para garantir versão mais recente...');
-        window.location.hash = 'reloaded';
-        window.location.reload(true);
-      }
-    }
-  </script>
+  <!-- Scripts do sistema (defer garante execução na ordem e após DOM carregar) -->
+  <script src="state-manager.js" defer></script>
+  <script src="company-info.js" defer></script>
+  <script src="utils.js" defer></script>
+  <script src="tecnico.js" defer></script>
 </body>
 </html>

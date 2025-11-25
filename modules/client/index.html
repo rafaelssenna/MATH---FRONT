@@ -199,10 +199,11 @@
         </section>
     </main>
 
-    <!-- Gerenciador de Estado -->
+    <!-- Socket.io para notificações em tempo real -->
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script src="state-manager.js"></script>
-    <!-- Lógica específica do portal do cliente -->
-    <script src="cliente.js"></script>
+
+    <!-- Scripts do sistema (defer garante execução após DOM carregar) -->
+    <script src="state-manager.js" defer></script>
+    <script src="cliente.js" defer></script>
 </body>
 </html>
