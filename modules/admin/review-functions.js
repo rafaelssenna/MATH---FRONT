@@ -241,13 +241,12 @@ function renderConferenceModal() {
           <div>
             <label style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">Tipo de Manutenção</label>
             <select id="conferenceMaintenanceType" style="width: 100%; padding: 0.5rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-weight: 600;">
-              <option value="">Não especificado</option>
-              <option value="Preventiva" ${os.maintenance_type === 'Preventiva' ? 'selected' : ''}>Preventiva</option>
-              <option value="Corretiva" ${os.maintenance_type === 'Corretiva' ? 'selected' : ''}>Corretiva</option>
-              <option value="Preditiva" ${os.maintenance_type === 'Preditiva' ? 'selected' : ''}>Preditiva</option>
-              <option value="Reforma" ${os.maintenance_type === 'Reforma' ? 'selected' : ''}>Reforma</option>
-              <option value="Instalação" ${os.maintenance_type === 'Instalação' ? 'selected' : ''}>Instalação</option>
-              <option value="Treinamento" ${os.maintenance_type === 'Treinamento' ? 'selected' : ''}>Treinamento</option>
+              <option value="">Selecione...</option>
+              <option value="Manutenção Corretiva Eletroeletrônica" ${os.maintenance_type === 'Manutenção Corretiva Eletroeletrônica' ? 'selected' : ''}>Manutenção Corretiva Eletroeletrônica</option>
+              <option value="Manutenção Corretiva Mecânica" ${os.maintenance_type === 'Manutenção Corretiva Mecânica' ? 'selected' : ''}>Manutenção Corretiva Mecânica</option>
+              <option value="Manutenção Preventiva Eletroeletrônica" ${os.maintenance_type === 'Manutenção Preventiva Eletroeletrônica' ? 'selected' : ''}>Manutenção Preventiva Eletroeletrônica</option>
+              <option value="Manutenção Preventiva Mecânica" ${os.maintenance_type === 'Manutenção Preventiva Mecânica' ? 'selected' : ''}>Manutenção Preventiva Mecânica</option>
+              <option value="Entrega Técnica" ${os.maintenance_type === 'Entrega Técnica' ? 'selected' : ''}>Entrega Técnica</option>
             </select>
           </div>
         </div>
