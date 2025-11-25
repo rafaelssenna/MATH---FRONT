@@ -4293,7 +4293,6 @@ async function openCreateOwnOSModal() {
 
   // Limpa o formulário
   document.getElementById('createOwnOSForm').reset()
-  document.getElementById('newOS_companyId').value = ''
   createOS_selectedCompanyId = null
 
   // Carrega lista de empresas
@@ -4303,11 +4302,12 @@ async function openCreateOwnOSModal() {
 
     createOS_companies = await response.json()
 
-    // Preenche o datalist de empresas
-    const datalist = document.getElementById('newOS_companyList')
-    datalist.innerHTML = createOS_companies
-      .map(c => `<option value="${c.name}" data-id="${c.id}">${c.name}</option>`)
-      .join('')
+    // Preenche o select de empresas
+    const companySelect = document.getElementById('newOS_companySelect')
+    companySelect.innerHTML = '<option value="">Selecione uma empresa...</option>' +
+      createOS_companies
+        .map(c => `<option value="${c.id}">${c.name}</option>`)
+        .join('')
   } catch (error) {
     console.error('[openCreateOwnOSModal] Erro ao carregar empresas:', error)
     showToast('Erro ao carregar empresas', 'error')
@@ -4323,29 +4323,25 @@ async function openCreateOwnOSModal() {
  * Configura os event listeners do formulário de criar OS
  */
 function setupCreateOSListeners() {
-  const companyInput = document.getElementById('newOS_companyInput')
+  const companySelect = document.getElementById('newOS_companySelect')
   const machineSelect = document.getElementById('newOS_machineSelect')
 
-  if (!companyInput) return
+  if (!companySelect) return
 
   // Remove listeners antigos
-  companyInput.replaceWith(companyInput.cloneNode(true))
-  const newCompanyInput = document.getElementById('newOS_companyInput')
+  companySelect.replaceWith(companySelect.cloneNode(true))
+  const newCompanySelect = document.getElementById('newOS_companySelect')
 
   // Quando selecionar empresa, carrega as máquinas
-  newCompanyInput.addEventListener('input', async (e) => {
-    const companyName = e.target.value.trim()
+  newCompanySelect.addEventListener('change', async (e) => {
+    const companyId = e.target.value
 
-    // Busca o company_id baseado no nome selecionado
-    const company = createOS_companies.find(c => c.name === companyName)
-
-    if (company) {
-      createOS_selectedCompanyId = company.id
-      document.getElementById('newOS_companyId').value = company.id
+    if (companyId) {
+      createOS_selectedCompanyId = companyId
 
       // Carrega máquinas da empresa
       try {
-        const response = await fetch(`${API_URL}/api/machines?company_id=${company.id}`)
+        const response = await fetch(`${API_URL}/api/machines?company_id=${companyId}`)
         if (!response.ok) throw new Error('Erro ao carregar máquinas')
 
         createOS_machines = await response.json()
@@ -4361,7 +4357,6 @@ function setupCreateOSListeners() {
       }
     } else {
       createOS_selectedCompanyId = null
-      document.getElementById('newOS_companyId').value = ''
       machineSelect.innerHTML = '<option value="">-- selecione a empresa primeiro --</option>'
     }
   })
@@ -4388,17 +4383,22 @@ async function submitCreateOwnOS(event) {
   submitBtn.textContent = 'Criando...'
 
   try {
-    const companyInput = document.getElementById('newOS_companyInput').value.trim()
-    const companyId = document.getElementById('newOS_companyId').value
+    const companyId = document.getElementById('newOS_companySelect').value
     const machineId = document.getElementById('newOS_machineSelect').value
     const callReason = document.getElementById('newOS_callReason').value.trim()
 
-    if (!companyInput) {
-      throw new Error('Empresa é obrigatória')
+    if (!companyId) {
+      throw new Error('Você deve selecionar uma empresa cadastrada')
     }
 
     if (!callReason) {
       throw new Error('Motivo do chamado é obrigatório')
+    }
+
+    // Busca o nome da empresa pelo ID selecionado
+    const company = createOS_companies.find(c => c.id === parseInt(companyId))
+    if (!company) {
+      throw new Error('Empresa selecionada não encontrada')
     }
 
     // Pega ID do técnico logado - tenta múltiplas formas
@@ -4432,11 +4432,11 @@ async function submitCreateOwnOS(event) {
 
     // Monta payload
     const payload = {
-      company_name: companyInput,
-      company_id: companyId || null,
+      company_name: company.name,
+      company_id: parseInt(companyId),
       machine_id: machineId || null,
       call_reason: callReason || null,
-      client_name: companyInput, // Usa o nome da empresa como cliente por padrão
+      client_name: company.name, // Usa o nome da empresa como cliente
       technician_id: parseInt(techId) // Garante que é número
     }
 
