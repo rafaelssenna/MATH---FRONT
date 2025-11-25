@@ -6896,9 +6896,12 @@ function showSection(sectionId) {
     } else if (sectionId === 'billingSection') {
       // Garante que os elementos DOM estejam prontos antes de carregar
       initBillingYears()
-      setTimeout(() => {
-        switchBillingTab('pending') // Ativa a aba "Pendente" e carrega os dados
-      }, 100)
+      // Usa requestAnimationFrame para garantir que o navegador finalizou a renderização
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          switchBillingTab('pending') // Ativa a aba "Pendente" e carrega os dados
+        })
+      })
     } else if (sectionId === 'reviewSection') {
       loadReviewData()
     } else if (sectionId === 'vehiclesSection') {
