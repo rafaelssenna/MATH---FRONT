@@ -1,43 +1,43 @@
-const CACHE_NAME = 'math-v4'
-const urlsToCache = [
-  './',
-  './index.html',
-  './manifest.webmanifest',
-  './styles.css',
-  './tecnico.js',
-  './company-info.js',
-  './state-manager.js',
-  './utils.js',
+// Incrementa versão a cada deploy para forçar atualização
+const CACHE_NAME = 'math-v' + Date.now()
+
+// Apenas assets estáticos (imagens, ícones)
+const STATIC_ASSETS = [
   './helsenservicelogo.png',
   './logohelsenbranca.png',
   './mate-icon.jpg'
 ]
 
 self.addEventListener('install', (event) => {
-  console.log('Service Worker: Installing...')
+  console.log('🔧 Service Worker: Instalando nova versão...')
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('Service Worker: Caching files')
-      return cache.addAll(urlsToCache)
+      console.log('📦 Service Worker: Cacheando apenas assets estáticos')
+      return cache.addAll(STATIC_ASSETS)
     }).then(() => {
-      console.log('Service Worker: Installation complete')
-      self.skipWaiting()
+      console.log('✅ Service Worker: Instalação completa')
+      // FORÇA ativação imediata do novo SW
+      return self.skipWaiting()
     })
   )
 })
 
 self.addEventListener('activate', (event) => {
-  console.log('Service Worker: Activating...')
+  console.log('🔄 Service Worker: Ativando...')
   event.waitUntil(
     caches.keys().then((keys) => {
+      // DELETA TODOS os caches antigos
       return Promise.all(
-        keys.filter(key => key !== CACHE_NAME).map(key => {
-          console.log('Service Worker: Deleting old cache', key)
-          return caches.delete(key)
+        keys.map(key => {
+          if (key !== CACHE_NAME) {
+            console.log('🗑️ Service Worker: Deletando cache antigo:', key)
+            return caches.delete(key)
+          }
         })
       )
     }).then(() => {
-      console.log('Service Worker: Activation complete')
+      console.log('✅ Service Worker: Ativado! Cache limpo.')
+      // Toma controle de TODAS as abas imediatamente
       return self.clients.claim()
     })
   )
@@ -45,32 +45,50 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const req = event.request
-  
+  const url = new URL(req.url)
+
   // Só intercepta requisições GET
   if (req.method !== 'GET') return
-  
-  // Não intercepta requisições para APIs externas
-  if (req.url.includes('railway.app') || req.url.includes('api/')) return
-  
+
+  // NUNCA cacheia APIs
+  if (req.url.includes('railway.app') || req.url.includes('/api/')) return
+
+  // NETWORK FIRST para .js, .css, .html = SEMPRE busca versão nova primeiro
+  if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css') || url.pathname.endsWith('.html') || url.pathname === './') {
+    event.respondWith(
+      fetch(req)
+        .then(response => {
+          // Salva no cache em background (mas SEMPRE serve da rede)
+          if (response.status === 200) {
+            const copy = response.clone()
+            caches.open(CACHE_NAME).then(cache => cache.put(req, copy)).catch(() => {})
+          }
+          return response
+        })
+        .catch(() => {
+          // Se offline, USA cache como fallback
+          return caches.match(req).then(cached => {
+            if (cached) {
+              console.log('📴 Offline: Servindo do cache:', url.pathname)
+              return cached
+            }
+            return new Response('Offline', { status: 503 })
+          })
+        })
+    )
+    return
+  }
+
+  // CACHE FIRST apenas para imagens (mudam raramente)
   event.respondWith(
-    caches.match(req).then((cached) => {
-      if (cached) {
-        console.log('Service Worker: Serving from cache', req.url)
-        return cached
-      }
-      
-      return fetch(req).then((networkResponse) => {
-        // Só cacheia respostas válidas
-        if (networkResponse.status === 200) {
-          const copy = networkResponse.clone()
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(req, copy)
-          }).catch(() => {})
+    caches.match(req).then(cached => {
+      if (cached) return cached
+      return fetch(req).then(response => {
+        if (response.status === 200) {
+          const copy = response.clone()
+          caches.open(CACHE_NAME).then(cache => cache.put(req, copy)).catch(() => {})
         }
-        return networkResponse
-      }).catch(() => {
-        console.log('Service Worker: Network failed, no cache available for', req.url)
-        return new Response('Offline', { status: 503 })
+        return response
       })
     })
   )
