@@ -2217,6 +2217,15 @@ async function viewOSDetails(id) {
                   <label>Total de Horas (Geral)</label>
                   <span>${currentOS.totalHoras}</span>
               </div>
+              ${
+                currentOS.maintenanceType
+                  ? `
+              <div class="detail-field">
+                  <label>Tipo de Manutenção</label>
+                  <span>${currentOS.maintenanceType}</span>
+              </div>`
+                  : ""
+              }
           </div>
           ${periodsHtml}
           <div class="detail-field" style="margin-top: 1rem;">

@@ -208,7 +208,14 @@ function renderConferenceModal() {
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
           <div>
             <label style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">Cliente / Empresa *</label>
-            <select id="conferenceCompanySelect" onchange="onConferenceCompanyChange()" style="width: 100%; padding: 0.5rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-weight: 600;">
+            <input
+              type="text"
+              id="conferenceCompanySearch"
+              placeholder="Digite para buscar..."
+              oninput="filterConferenceCompanies()"
+              style="width: 100%; padding: 0.5rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px 6px 0 0; color: var(--text-primary); margin-bottom: -1px;"
+            />
+            <select id="conferenceCompanySelect" onchange="onConferenceCompanyChange()" size="5" style="width: 100%; padding: 0.5rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 0 0 6px 6px; color: var(--text-primary); font-weight: 600;">
               ${renderCompanyOptions(os.company_id)}
             </select>
           </div>
@@ -225,6 +232,18 @@ function renderConferenceModal() {
           <div>
             <label style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">Data Finalização</label>
             <div style="font-weight: 600;">${os.finished_at ? new Date(os.finished_at).toLocaleString('pt-BR') : 'N/A'}</div>
+          </div>
+          <div>
+            <label style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">Tipo de Manutenção</label>
+            <select id="conferenceMaintenanceType" style="width: 100%; padding: 0.5rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-weight: 600;">
+              <option value="">Não especificado</option>
+              <option value="Preventiva" ${os.maintenance_type === 'Preventiva' ? 'selected' : ''}>Preventiva</option>
+              <option value="Corretiva" ${os.maintenance_type === 'Corretiva' ? 'selected' : ''}>Corretiva</option>
+              <option value="Preditiva" ${os.maintenance_type === 'Preditiva' ? 'selected' : ''}>Preditiva</option>
+              <option value="Reforma" ${os.maintenance_type === 'Reforma' ? 'selected' : ''}>Reforma</option>
+              <option value="Instalação" ${os.maintenance_type === 'Instalação' ? 'selected' : ''}>Instalação</option>
+              <option value="Treinamento" ${os.maintenance_type === 'Treinamento' ? 'selected' : ''}>Treinamento</option>
+            </select>
           </div>
         </div>
       </div>
@@ -881,9 +900,10 @@ async function approveConferenceOS() {
     const totalServiceCost = hoursCost + displacementCost
     const grandTotal = hoursCost + displacementCost + totalMaterials + totalAdditionalServices
 
-    // Pega valores dos selects de empresa e máquina
+    // Pega valores dos selects de empresa, máquina e tipo de manutenção
     const selectedCompanyId = parseInt(document.getElementById('conferenceCompanySelect')?.value)
     const selectedMachineId = parseInt(document.getElementById('conferenceMachineSelect')?.value)
+    const selectedMaintenanceType = document.getElementById('conferenceMaintenanceType')?.value || null
 
     const response = await fetch(`${API_URL}/api/review/${currentConferenceOS.id}/approve`, {
       method: 'POST',
@@ -891,6 +911,7 @@ async function approveConferenceOS() {
       body: JSON.stringify({
         company_id: selectedCompanyId, // Empresa selecionada
         machine_id: selectedMachineId, // Máquina selecionada
+        maintenance_type: selectedMaintenanceType, // Tipo de manutenção selecionado
         service_description: document.getElementById('conferenceServiceDesc').value,
         is_new_client: isNewClient, // Envia o tipo de cliente atualizado
         value_service: totalAdditionalServices, // Soma dos serviços adicionais
@@ -1032,6 +1053,26 @@ function renderMachineOptions(companyId, selectedMachineId) {
       </option>
     `)
     .join('')
+}
+
+/**
+ * Filtra empresas conforme digitação
+ */
+function filterConferenceCompanies() {
+  const searchInput = document.getElementById('conferenceCompanySearch')
+  const companySelect = document.getElementById('conferenceCompanySelect')
+
+  if (!searchInput || !companySelect) return
+
+  const searchTerm = searchInput.value.toLowerCase()
+
+  // Filtra todas as options
+  Array.from(companySelect.options).forEach(option => {
+    const optionText = option.textContent.toLowerCase()
+    const matches = optionText.includes(searchTerm)
+
+    option.style.display = matches ? '' : 'none'
+  })
 }
 
 /**
