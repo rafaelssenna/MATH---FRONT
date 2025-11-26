@@ -1,0 +1,15 @@
+{
+  "redirects": [
+    { "source": "/", "destination": "/home", "permanent": false }
+  ],
+  "rewrites": [
+    { "source": "/home", "destination": "/index.html" },
+    { "source": "/administracao", "destination": "/modules/admin/index.html" },
+    { "source": "/administracao/:path*", "destination": "/modules/admin/index.html" },
+    { "source": "/tecnico", "destination": "/modules/technician/index.html" },
+    { "source": "/tecnico/:path*", "destination": "/modules/technician/index.html" },
+    { "source": "/cliente", "destination": "/modules/client/index.html" },
+    { "source": "/cliente/:path*", "destination": "/modules/client/index.html" }
+  ],
+  "trailingSlash": false
+}

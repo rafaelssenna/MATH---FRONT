@@ -1,23 +1,23 @@
 // ===== MATH - Sistema de Roteamento Simplificado =====
 // Versão otimizada: Redirecionamento direto sem iframe para máxima performance
 
-// Configuração de módulos
+// Configuração de módulos com URLs limpas
 const MODULES = {
     technician: {
         name: 'Técnico',
-        path: './modules/technician/index.html',
+        path: '/tecnico',
         color: '#3b82f6',
         icon: '👷'
     },
     client: {
         name: 'Cliente',
-        path: './modules/client/index.html',
+        path: '/cliente',
         color: '#10b981',
         icon: '🏢'
     },
     admin: {
         name: 'Administrador',
-        path: './modules/admin/index.html',
+        path: '/administracao',
         color: '#dc2626',
         icon: '⚙️'
     }
@@ -39,12 +39,8 @@ function selectRole(role) {
     localStorage.setItem('math_currentRole', role);
     localStorage.setItem('math_lastAccess', new Date().toISOString());
 
-    // Adiciona timestamp para SEMPRE pegar versão mais recente (anti-cache)
-    const cacheBuster = Date.now();
-    const urlWithCache = `${module.path}?v=${cacheBuster}`;
-
-    // Redireciona DIRETAMENTE (sem iframe = rápido!)
-    window.location.href = urlWithCache;
+    // Redireciona para URL limpa
+    window.location.href = module.path;
 }
 
 /**

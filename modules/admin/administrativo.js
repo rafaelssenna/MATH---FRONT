@@ -7107,11 +7107,11 @@ function showSection(sectionId, updateUrl = true) {
     clickedItem.classList.add('active')
   }
 
-  // Atualiza URL com rota bonita (sem #)
+  // Atualiza URL com rota bonita (caminho limpo)
   if (updateUrl && SECTION_TO_ROUTE[sectionId]) {
-    const basePath = window.location.pathname
-    const newUrl = basePath + '?p=' + SECTION_TO_ROUTE[sectionId]
-    if (window.location.search !== '?p=' + SECTION_TO_ROUTE[sectionId]) {
+    const route = SECTION_TO_ROUTE[sectionId]
+    const newUrl = '/administracao/' + route
+    if (window.location.pathname !== newUrl) {
       history.pushState({ section: sectionId }, '', newUrl)
     }
   }
@@ -7119,8 +7119,11 @@ function showSection(sectionId, updateUrl = true) {
 
 // Navega para seção baseado na URL
 function navigateFromUrl() {
-  const params = new URLSearchParams(window.location.search)
-  const page = params.get('p')
+  const path = window.location.pathname
+
+  // Extrai a rota do caminho (ex: /administracao/os -> os)
+  const match = path.match(/^\/administracao\/([a-z]+)$/)
+  const page = match ? match[1] : null
 
   if (page && ROUTES[page]) {
     showSection(ROUTES[page], false)
