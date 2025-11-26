@@ -209,18 +209,8 @@ function renderConferenceModal() {
           <div>
             <label style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">
               Cliente / Empresa *
-              <button onclick="toggleConferenceCompanySearch()" type="button" style="margin-left: 0.5rem; padding: 0.25rem 0.5rem; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">
-                🔍 Buscar
-              </button>
             </label>
-            <input
-              type="text"
-              id="conferenceCompanySearch"
-              placeholder="Digite para buscar..."
-              oninput="filterConferenceCompanies()"
-              style="display: none; width: 100%; padding: 0.5rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px 6px 0 0; color: var(--text-primary); margin-bottom: -1px;"
-            />
-            <select id="conferenceCompanySelect" onchange="onConferenceCompanyChange()" size="5" style="width: 100%; padding: 0.5rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-weight: 600;">
+            <select id="conferenceCompanySelect" onchange="onConferenceCompanyChange()" style="width: 100%; padding: 0.5rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-weight: 600;">
               ${renderCompanyOptions(os.company_id)}
             </select>
           </div>
@@ -1059,52 +1049,6 @@ function renderMachineOptions(companyId, selectedMachineId) {
     .join('')
 }
 
-/**
- * Mostra/esconde campo de busca de empresas
- */
-function toggleConferenceCompanySearch() {
-  const searchInput = document.getElementById('conferenceCompanySearch')
-  const companySelect = document.getElementById('conferenceCompanySelect')
-
-  if (!searchInput || !companySelect) return
-
-  if (searchInput.style.display === 'none') {
-    // Mostra o campo de busca
-    searchInput.style.display = 'block'
-    companySelect.style.borderRadius = '0 0 6px 6px'
-    searchInput.focus()
-  } else {
-    // Esconde o campo de busca
-    searchInput.style.display = 'none'
-    searchInput.value = '' // Limpa a busca
-    companySelect.style.borderRadius = '6px'
-
-    // Mostra todas as opções novamente
-    Array.from(companySelect.options).forEach(option => {
-      option.style.display = ''
-    })
-  }
-}
-
-/**
- * Filtra empresas conforme digitação
- */
-function filterConferenceCompanies() {
-  const searchInput = document.getElementById('conferenceCompanySearch')
-  const companySelect = document.getElementById('conferenceCompanySelect')
-
-  if (!searchInput || !companySelect) return
-
-  const searchTerm = searchInput.value.toLowerCase()
-
-  // Filtra todas as options
-  Array.from(companySelect.options).forEach(option => {
-    const optionText = option.textContent.toLowerCase()
-    const matches = optionText.includes(searchTerm)
-
-    option.style.display = matches ? '' : 'none'
-  })
-}
 
 /**
  * Atualiza o select de máquinas quando troca a empresa
