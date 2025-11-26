@@ -26,17 +26,20 @@
   --primary-blue: #1e3a8a;
   --primary-red: #dc2626;
   --accent-blue: #3b82f6;
-  --bg-dark: #f8fafc;
-  --bg-card: #ffffff;
-  --bg-input: #f1f5f9;
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --border-color: #e2e8f0;
+  /* Cores suaves para não cansar a vista */
+  --bg-dark: #f5f5f4;
+  --bg-card: #fafaf9;
+  --bg-input: #f0f0ee;
+  --bg-readonly: #ebebea;
+  --text-primary: #1c1917;
+  --text-secondary: #57534e;
+  --border-color: #d6d3d1;
+  --hover-bg: #e7e5e4;
   --success: #10b981;
   --warning: #f59e0b;
   --error: #ef4444;
-  --shadow: rgba(0, 0, 0, 0.1);
-  --shadow-lg: rgba(0, 0, 0, 0.15);
+  --shadow: rgba(0, 0, 0, 0.08);
+  --shadow-lg: rgba(0, 0, 0, 0.12);
 }
 
 body {
