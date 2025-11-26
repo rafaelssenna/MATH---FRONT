@@ -252,6 +252,159 @@ function formatHours(decimalHours) {
   return `${hours}h ${minutes}min`
 }
 
+/**
+ * Retorna feriados nacionais brasileiros para um ano específico
+ * @param {number} year - Ano
+ * @returns {Set<string>} - Set com datas no formato 'YYYY-MM-DD'
+ */
+function getBrazilianHolidays(year) {
+  const holidays = new Set()
+
+  // Feriados fixos
+  holidays.add(`${year}-01-01`) // Ano Novo
+  holidays.add(`${year}-04-21`) // Tiradentes
+  holidays.add(`${year}-05-01`) // Dia do Trabalho
+  holidays.add(`${year}-09-07`) // Independência
+  holidays.add(`${year}-10-12`) // Nossa Senhora Aparecida
+  holidays.add(`${year}-11-02`) // Finados
+  holidays.add(`${year}-11-15`) // Proclamação da República
+  holidays.add(`${year}-12-25`) // Natal
+
+  // Feriados móveis (Páscoa e derivados) - cálculo do Algoritmo de Meeus
+  const calcEaster = (y) => {
+    const a = y % 19
+    const b = Math.floor(y / 100)
+    const c = y % 100
+    const d = Math.floor(b / 4)
+    const e = b % 4
+    const f = Math.floor((b + 8) / 25)
+    const g = Math.floor((b - f + 1) / 3)
+    const h = (19 * a + b - d - g + 15) % 30
+    const i = Math.floor(c / 4)
+    const k = c % 4
+    const l = (32 + 2 * e + 2 * i - h - k) % 7
+    const m = Math.floor((a + 11 * h + 22 * l) / 451)
+    const month = Math.floor((h + l - 7 * m + 114) / 31)
+    const day = ((h + l - 7 * m + 114) % 31) + 1
+    return new Date(y, month - 1, day)
+  }
+
+  const easter = calcEaster(year)
+
+  // Carnaval (47 dias antes da Páscoa - segunda e terça)
+  const carnavalTerca = new Date(easter)
+  carnavalTerca.setDate(easter.getDate() - 47)
+  const carnavalSegunda = new Date(carnavalTerca)
+  carnavalSegunda.setDate(carnavalTerca.getDate() - 1)
+  holidays.add(carnavalSegunda.toISOString().split('T')[0])
+  holidays.add(carnavalTerca.toISOString().split('T')[0])
+
+  // Sexta-feira Santa (2 dias antes da Páscoa)
+  const sextaSanta = new Date(easter)
+  sextaSanta.setDate(easter.getDate() - 2)
+  holidays.add(sextaSanta.toISOString().split('T')[0])
+
+  // Corpus Christi (60 dias após a Páscoa)
+  const corpusChristi = new Date(easter)
+  corpusChristi.setDate(easter.getDate() + 60)
+  holidays.add(corpusChristi.toISOString().split('T')[0])
+
+  return holidays
+}
+
+/**
+ * Verifica se uma data é dia útil (não é fim de semana nem feriado)
+ * @param {Date} date - Data a verificar
+ * @param {Set<string>} holidays - Set de feriados
+ * @returns {boolean}
+ */
+function isBusinessDay(date, holidays) {
+  const dayOfWeek = date.getDay()
+  // 0 = Domingo, 6 = Sábado
+  if (dayOfWeek === 0 || dayOfWeek === 6) return false
+  // Verifica se é feriado
+  const dateStr = date.toISOString().split('T')[0]
+  return !holidays.has(dateStr)
+}
+
+/**
+ * Avança a data para o próximo dia útil se necessário
+ * @param {Date} date - Data inicial
+ * @param {Set<string>} holidays - Set de feriados
+ * @returns {Date} - Próximo dia útil
+ */
+function getNextBusinessDay(date, holidays) {
+  const result = new Date(date)
+  while (!isBusinessDay(result, holidays)) {
+    result.setDate(result.getDate() + 1)
+  }
+  return result
+}
+
+/**
+ * Calcula as datas de vencimento com base no valor total da OS
+ * Regras:
+ * - 0 a 700: 15 dias (1 parcela)
+ * - 701 a 2000: 28 dias (1 parcela)
+ * - 2001 a 4000: 28 e 56 dias (2 parcelas)
+ * - Acima de 4000: 28, 56 e 84 dias (3 parcelas)
+ *
+ * @param {number} totalValue - Valor total da OS
+ * @param {Date} baseDate - Data base (data da OS ou hoje)
+ * @returns {Array<{days: number, date: Date, dateStr: string}>} - Array de vencimentos
+ */
+function calculateDueDates(totalValue, baseDate = new Date()) {
+  const value = Number(totalValue) || 0
+  const base = new Date(baseDate)
+
+  // Carrega feriados do ano atual e próximo (para cobrir vencimentos que passem de ano)
+  const currentYear = base.getFullYear()
+  const holidays = new Set([
+    ...getBrazilianHolidays(currentYear),
+    ...getBrazilianHolidays(currentYear + 1)
+  ])
+
+  // Define os dias de vencimento baseado no valor
+  let dueDays = []
+  if (value <= 700) {
+    dueDays = [15]
+  } else if (value <= 2000) {
+    dueDays = [28]
+  } else if (value <= 4000) {
+    dueDays = [28, 56]
+  } else {
+    dueDays = [28, 56, 84]
+  }
+
+  // Calcula cada vencimento garantindo dia útil
+  return dueDays.map((days, idx) => {
+    const dueDate = new Date(base)
+    dueDate.setDate(base.getDate() + days)
+    const businessDay = getNextBusinessDay(dueDate, holidays)
+    return {
+      parcela: idx + 1,
+      totalParcelas: dueDays.length,
+      days,
+      date: businessDay,
+      dateStr: businessDay.toLocaleDateString('pt-BR')
+    }
+  })
+}
+
+/**
+ * Formata vencimentos para exibição no PDF
+ * @param {number} totalValue - Valor total da OS
+ * @param {Date} baseDate - Data base
+ * @returns {string} - String formatada com vencimentos
+ */
+function formatDueDatesForPDF(totalValue, baseDate = new Date()) {
+  const dueDates = calculateDueDates(totalValue, baseDate)
+  if (dueDates.length === 1) {
+    return dueDates[0].dateStr
+  }
+  return dueDates.map(d => d.dateStr).join(' / ')
+}
+
 // ╔═══════════════════════════════════════════════════════════════════════════════╗
 // ║                   SEÇÃO 5: WEBSOCKET E AUTO-REFRESH                           ║
 // ╚═══════════════════════════════════════════════════════════════════════════════╝
@@ -2663,6 +2816,28 @@ async function viewOSDetails(id) {
           }</span>
         </div>
       `
+
+      // Vencimento (calculado automaticamente baseado no valor)
+      const totalValueForDue = Number(currentOS.totalGeral) || 0
+      const baseDateForDue = currentOS.dataProgramada ? new Date(currentOS.dataProgramada) : new Date()
+      const dueDatesPreview = calculateDueDates(totalValueForDue, baseDateForDue)
+
+      let vencimentoLabelPreview = "Vencimento"
+      let vencimentoTextPreview = ""
+
+      if (dueDatesPreview.length === 1) {
+        vencimentoTextPreview = dueDatesPreview[0].dateStr
+      } else {
+        vencimentoLabelPreview = `Vencimento (${dueDatesPreview.length}x)`
+        vencimentoTextPreview = dueDatesPreview.map(d => d.dateStr).join("  /  ")
+      }
+
+      html += `
+        <div style="margin-top: 0.75rem; padding: 0.75rem 1rem; background: #fffbeb; border: 1px solid #fbbf24; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="color: #92400e; font-weight: 600; font-size: 0.95rem;">${vencimentoLabelPreview}</span>
+          <span style="color: #92400e; font-weight: 600; font-size: 0.95rem;">${vencimentoTextPreview}</span>
+        </div>
+      `
       html += "</div>"
     }
 
@@ -3481,6 +3656,43 @@ async function generateAndOpenOSPDF() {
     doc.setTextColor(0)
     doc.text("Total Geral da O.S.", marginX + LEFT_INNER, y + 5.2)
     doc.text(totalGer, marginX + contentW - doc.getTextWidth(totalGer) - RIGHT_INNER, y + 5.2)
+    y += lineH
+  }
+
+  // ====== VENCIMENTO (calculado automaticamente) ======
+  {
+    const totalValue = Number(currentOS.totalGeral) || 0
+    // Usa a data da OS como base ou a data atual
+    const baseDate = currentOS.dataProgramada ? parseAsLocalTime(currentOS.dataProgramada) : new Date()
+    const dueDates = calculateDueDates(totalValue, baseDate)
+
+    // Monta o texto de vencimento
+    let vencimentoLabel = "Vencimento"
+    let vencimentoText = ""
+
+    if (dueDates.length === 1) {
+      vencimentoText = dueDates[0].dateStr
+    } else {
+      vencimentoLabel = `Vencimento (${dueDates.length}x)`
+      vencimentoText = dueDates.map(d => d.dateStr).join("  /  ")
+    }
+
+    const lineH = 8
+    ensureSpace(lineH)
+
+    // Desenha a linha de vencimento com destaque
+    doc.setDrawColor(200, 200, 200)
+    doc.setFillColor(255, 250, 240) // Fundo levemente amarelado para destaque
+    doc.rect(marginX, y, contentW, lineH, "FD")
+
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(9)
+    doc.setTextColor(0)
+    doc.text(vencimentoLabel + ":", marginX + LEFT_INNER, y + 5.2)
+
+    doc.setFont("helvetica", "normal")
+    doc.text(vencimentoText, marginX + contentW - doc.getTextWidth(vencimentoText) - RIGHT_INNER, y + 5.2)
+
     y += lineH
   }
 
