@@ -2766,6 +2766,23 @@ label:has(input[name="hasAdditionalService"]:checked) {
   width: 100%;
 }
 
+.autocomplete-wrapper input[type="text"] {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.6rem;
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.autocomplete-wrapper input[type="text"]:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
 .autocomplete-suggestions {
   position: absolute;
   top: 100%;
