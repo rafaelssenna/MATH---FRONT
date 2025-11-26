@@ -623,11 +623,14 @@
       <div class="modal-body">
         <form id="createOwnOSForm" onsubmit="submitCreateOwnOS(event)">
           <div class="form-group">
-            <label for="newOS_companySelect">Empresa *</label>
-            <select id="newOS_companySelect" required style="background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.6rem; width: 100%; color: var(--text-primary);">
+            <label for="newOS_companySearch">Empresa *</label>
+            <input type="text" id="newOS_companySearch" placeholder="Digite para buscar empresa..."
+              style="background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.6rem; width: 100%; color: var(--text-primary); margin-bottom: 0.5rem;"
+              autocomplete="off">
+            <select id="newOS_companySelect" required size="5" style="background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.6rem; width: 100%; color: var(--text-primary);">
               <option value="">Selecione uma empresa...</option>
             </select>
-            <small class="hint">Selecione uma empresa já cadastrada no sistema</small>
+            <small class="hint">Digite o nome da empresa para filtrar a lista</small>
           </div>
 
           <div class="form-group">

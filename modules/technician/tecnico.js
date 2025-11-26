@@ -4376,6 +4376,10 @@ async function openCreateOwnOSModal() {
   document.getElementById('createOwnOSForm').reset()
   createOS_selectedCompanyId = null
 
+  // Limpa o campo de busca
+  const companySearch = document.getElementById('newOS_companySearch')
+  if (companySearch) companySearch.value = ''
+
   // Carrega lista de empresas
   try {
     const response = await fetch(`${API_URL}/api/companies?active=true`)
@@ -4384,11 +4388,7 @@ async function openCreateOwnOSModal() {
     createOS_companies = await response.json()
 
     // Preenche o select de empresas
-    const companySelect = document.getElementById('newOS_companySelect')
-    companySelect.innerHTML = '<option value="">Selecione uma empresa...</option>' +
-      createOS_companies
-        .map(c => `<option value="${c.id}">${c.name}</option>`)
-        .join('')
+    updateCompanySelectOptions(createOS_companies)
   } catch (error) {
     console.error('[openCreateOwnOSModal] Erro ao carregar empresas:', error)
     showToast('Erro ao carregar empresas', 'error')
@@ -4401,17 +4401,66 @@ async function openCreateOwnOSModal() {
 }
 
 /**
+ * Atualiza as opções do select de empresas
+ */
+function updateCompanySelectOptions(companies) {
+  const companySelect = document.getElementById('newOS_companySelect')
+  if (!companySelect) return
+
+  companySelect.innerHTML = companies.length === 0
+    ? '<option value="">Nenhuma empresa encontrada</option>'
+    : '<option value="">Selecione uma empresa...</option>' +
+      companies.map(c => `<option value="${c.id}">${c.name}</option>`).join('')
+}
+
+/**
+ * Filtra empresas conforme digitação
+ */
+function filterCompanies(searchTerm) {
+  if (!searchTerm || searchTerm.trim() === '') {
+    updateCompanySelectOptions(createOS_companies)
+    return
+  }
+
+  const term = searchTerm.toLowerCase().trim()
+  const filtered = createOS_companies.filter(c =>
+    c.name.toLowerCase().includes(term)
+  )
+
+  updateCompanySelectOptions(filtered)
+
+  // Se só tiver uma opção, seleciona automaticamente
+  if (filtered.length === 1) {
+    const companySelect = document.getElementById('newOS_companySelect')
+    companySelect.value = filtered[0].id
+    companySelect.dispatchEvent(new Event('change'))
+  }
+}
+
+/**
  * Configura os event listeners do formulário de criar OS
  */
 function setupCreateOSListeners() {
   const companySelect = document.getElementById('newOS_companySelect')
+  const companySearch = document.getElementById('newOS_companySearch')
   const machineSelect = document.getElementById('newOS_machineSelect')
 
   if (!companySelect) return
 
-  // Remove listeners antigos
+  // Remove listeners antigos do select
   companySelect.replaceWith(companySelect.cloneNode(true))
   const newCompanySelect = document.getElementById('newOS_companySelect')
+
+  // Remove listeners antigos do search
+  if (companySearch) {
+    companySearch.replaceWith(companySearch.cloneNode(true))
+    const newCompanySearch = document.getElementById('newOS_companySearch')
+
+    // Filtro ao digitar
+    newCompanySearch.addEventListener('input', (e) => {
+      filterCompanies(e.target.value)
+    })
+  }
 
   // Quando selecionar empresa, carrega as máquinas
   newCompanySelect.addEventListener('change', async (e) => {
