@@ -117,7 +117,7 @@ function closeSidebar() {
 
 // Fecha sidebar quando um item do menu é clicado (em mobile)
 document.addEventListener('DOMContentLoaded', function() {
-  const menuItems = document.querySelectorAll('.sidebar-menu a')
+  const menuItems = document.querySelectorAll('.sidebar-menu li')
   menuItems.forEach(item => {
     item.addEventListener('click', function() {
       if (window.innerWidth <= 1024) {
@@ -988,8 +988,17 @@ function showAdminLogin() {
   console.log('🔐 [showAdminLogin] Exibindo tela de login')
   const login = document.getElementById("admin-login-section")
   const panel = document.getElementById("admin-section")
+  const sidebar = document.getElementById("sidebar")
+  const overlay = document.getElementById("sidebarOverlay")
+  const menuToggle = document.getElementById("menuToggle")
+
   if (login) login.style.display = "block"
   if (panel) panel.style.display = "none"
+
+  // Esconde menu e sidebar na tela de login
+  if (sidebar) sidebar.style.display = "none"
+  if (overlay) overlay.style.display = "none"
+  if (menuToggle) menuToggle.style.display = "none"
 }
 
 /**
@@ -1001,6 +1010,9 @@ function showAdminSection() {
 
   const login = document.getElementById("admin-login-section")
   const panel = document.getElementById("admin-section")
+  const sidebar = document.getElementById("sidebar")
+  const overlay = document.getElementById("sidebarOverlay")
+  const menuToggle = document.getElementById("menuToggle")
 
   console.log('🔍 [showAdminSection] Elementos:', {
     login: login ? 'encontrado' : 'NÃO ENCONTRADO',
@@ -1015,6 +1027,11 @@ function showAdminSection() {
     panel.style.display = "block"
     console.log('✅ [showAdminSection] Admin panel exibido')
   }
+
+  // Restaura visibilidade do sidebar e menu (CSS controla quando mostrar)
+  if (sidebar) sidebar.style.display = ""
+  if (overlay) overlay.style.display = ""
+  if (menuToggle) menuToggle.style.display = ""
 
   const name = localStorage.getItem("adminName") || ""
   const display = document.getElementById("adminNameDisplay")
@@ -7425,75 +7442,7 @@ document.getElementById('companyUserForm')?.addEventListener('submit', async (e)
 })
 
 /* ==================== RESPONSIVIDADE MOBILE ==================== */
-
-/**
- * Inicializa menu mobile (hamburguer) para tablets e celulares
- */
-function initMobileMenu() {
-  // Cria botão hamburguer se não existir
-  if (!document.querySelector('.mobile-menu-toggle')) {
-    const menuBtn = document.createElement('button')
-    menuBtn.className = 'mobile-menu-toggle'
-    menuBtn.innerHTML = `
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="3" y1="12" x2="21" y2="12"/>
-        <line x1="3" y1="6" x2="21" y2="6"/>
-        <line x1="3" y1="18" x2="21" y2="18"/>
-      </svg>
-    `
-    menuBtn.style.display = 'none' // CSS media query vai mostrar em mobile
-    document.body.appendChild(menuBtn)
-
-    // Cria overlay
-    const overlay = document.createElement('div')
-    overlay.className = 'sidebar-overlay'
-    document.body.appendChild(overlay)
-
-    const sidebar = document.querySelector('.sidebar')
-
-    // Toggle sidebar
-    menuBtn.addEventListener('click', () => {
-      sidebar.classList.toggle('active')
-      overlay.classList.toggle('active')
-      document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : ''
-    })
-
-    // Fecha ao clicar no overlay
-    overlay.addEventListener('click', () => {
-      sidebar.classList.remove('active')
-      overlay.classList.remove('active')
-      document.body.style.overflow = ''
-    })
-
-    // Fecha ao clicar em um item do menu
-    const menuItems = document.querySelectorAll('.sidebar-menu li')
-    menuItems.forEach(item => {
-      item.addEventListener('click', () => {
-        if (window.innerWidth <= 768) {
-          sidebar.classList.remove('active')
-          overlay.classList.remove('active')
-          document.body.style.overflow = ''
-        }
-      })
-    })
-
-    // Fecha sidebar ao redimensionar para desktop
-    window.addEventListener('resize', () => {
-      if (window.innerWidth > 768) {
-        sidebar.classList.remove('active')
-        overlay.classList.remove('active')
-        document.body.style.overflow = ''
-      }
-    })
-  }
-}
-
-// Inicializa quando DOM carregar
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initMobileMenu)
-} else {
-  initMobileMenu()
-}
+// Menu mobile já implementado via toggleSidebar() e HTML #menuToggle
 
 /**
  * Otimizações para touch (iOS/Android)

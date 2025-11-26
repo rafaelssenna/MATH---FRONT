@@ -363,6 +363,44 @@ body::before {
     opacity: 0.5;
 }
 
+/* ===== Botão Instalar PWA (só Android) ===== */
+.install-btn {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.875rem 1.5rem;
+    background: linear-gradient(135deg, var(--accent-blue) 0%, #2563eb 100%);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+    z-index: 9999;
+    animation: pulse-install 2s infinite;
+    transition: all var(--transition-base);
+}
+
+.install-btn:hover {
+    transform: translateX(-50%) scale(1.05);
+    box-shadow: 0 6px 25px rgba(59, 130, 246, 0.5);
+}
+
+.install-btn:active {
+    transform: translateX(-50%) scale(0.98);
+}
+
+@keyframes pulse-install {
+    0%, 100% { box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4); }
+    50% { box-shadow: 0 4px 30px rgba(59, 130, 246, 0.6); }
+}
+
 /* ===== Toast Notifications ===== */
 .toast {
     position: fixed;

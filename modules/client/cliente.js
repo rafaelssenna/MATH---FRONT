@@ -61,10 +61,8 @@ async function createCompanyProfile(name) {
   return { id: null, full_name: name }
 }
 async function ensureProfileSelected() {
-  const current = localStorage.getItem("clientProfileName")
-  const profiles = await getCompanyProfiles()
-  const names = Array.isArray(profiles) ? profiles.map(p => p.full_name || p) : []
-  if (current && names.includes(current)) return
+  // SEMPRE abre seletor de perfil para identificar o solicitante
+  // mesmo que já tenha perfil salvo - usuário deve confirmar quem está solicitando
   openProfileSelector()
 }
 function openProfileSelector() {
@@ -361,6 +359,9 @@ function showClientSection() {
   // Inicia auto-refresh e WebSocket
   startAutoRefresh()
   connectWebSocket()
+
+  // SEMPRE exige seleção de perfil ao entrar (identifica o solicitante)
+  setTimeout(() => ensureProfileSelected(), 300)
   
   // Sistema de múltiplas imagens com adição incremental
   window.selectedImages = [] // Array global para armazenar as imagens selecionadas
@@ -630,8 +631,6 @@ function handleClientLogin(e) {
     if (data.id) localStorage.setItem("clientCompanyId", String(data.id))
     showToast("Login realizado com sucesso!", "success")
     showClientSection()
-    // Garante seleção de perfil (Netflix style)
-    setTimeout(() => ensureProfileSelected(), 300)
   })
 
   const clientLogin = () => fetch(`${API_URL}/api/clients/login`, {
@@ -650,8 +649,6 @@ function handleClientLogin(e) {
       if (data.company_id) localStorage.setItem("clientCompanyId", String(data.company_id))
       showToast("Login realizado com sucesso!", "success")
       showClientSection()
-      // Seleção de perfil opcional
-      setTimeout(() => ensureProfileSelected(), 300)
     })
 
   companyLogin.catch((err) => {
@@ -668,7 +665,6 @@ function handleClientLogin(e) {
       if (user.company_id) localStorage.setItem("clientCompanyId", String(user.company_id))
       showToast("Login realizado com sucesso!", "success")
       showClientSection()
-      setTimeout(() => ensureProfileSelected(), 300)
     } else {
       showToast("Credenciais inválidas!", "error")
     }

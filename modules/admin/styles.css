@@ -2522,20 +2522,9 @@ svg.icon {
     left: 0;
   }
 
-  /* Botão de menu hamburguer */
+  /* Botão de menu hamburguer - REMOVIDO, usa apenas #menuToggle do HTML */
   .mobile-menu-toggle {
-    display: block !important;
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    z-index: 1001;
-    background: var(--primary-blue);
-    color: white;
-    border: none;
-    padding: 0.75rem;
-    border-radius: 8px;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    display: none !important;
   }
 
   /* Overlay quando sidebar aberto */

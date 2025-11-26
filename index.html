@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MATH - Sistema Unificado Helsen Service</title>
     <link rel="icon" type="image/png" href="assets/helsenservicelogo.png">
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="/assets/helsenservicelogo.png">
+
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -91,11 +100,80 @@
             <p>© 2024 Helsen Service - Todos os direitos reservados</p>
             <p class="version">MATH v1.0.0</p>
         </div>
+
+        <!-- Botão Instalar App (só Android) -->
+        <button id="installBtn" class="install-btn" style="display: none;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Instalar App
+        </button>
     </div>
 
     <!-- Toast de Notificações -->
     <div class="toast" id="toast"></div>
 
     <script src="app.js"></script>
+
+    <!-- PWA: Registro do Service Worker e Instalação Android -->
+    <script>
+    (function() {
+        // Só roda em Android (não PC, não iOS)
+        const isAndroid = /Android/i.test(navigator.userAgent);
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+        // Registra Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => {
+                    console.log('[PWA] Service Worker registrado');
+                    // Verifica atualizações a cada 1 hora
+                    setInterval(() => reg.update(), 60 * 60 * 1000);
+                })
+                .catch(err => console.log('[PWA] Erro ao registrar SW:', err));
+        }
+
+        // Só mostra botão em Android E se não estiver instalado
+        if (!isAndroid || isStandalone) return;
+
+        let deferredPrompt = null;
+        const installBtn = document.getElementById('installBtn');
+
+        // Captura o evento de instalação
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            // Mostra botão
+            if (installBtn) {
+                installBtn.style.display = 'flex';
+            }
+        });
+
+        // Clique no botão instalar
+        if (installBtn) {
+            installBtn.addEventListener('click', async () => {
+                if (!deferredPrompt) return;
+
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+
+                if (outcome === 'accepted') {
+                    console.log('[PWA] Usuário instalou o app');
+                    installBtn.style.display = 'none';
+                }
+                deferredPrompt = null;
+            });
+        }
+
+        // Esconde botão se já instalou
+        window.addEventListener('appinstalled', () => {
+            console.log('[PWA] App instalado com sucesso!');
+            if (installBtn) installBtn.style.display = 'none';
+            deferredPrompt = null;
+        });
+    })();
+    </script>
 </body>
 </html>
