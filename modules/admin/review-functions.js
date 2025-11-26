@@ -1067,7 +1067,9 @@ async function approveConferenceOS() {
     }, 0)
 
     const totalHours = calculateTotalHours()
-    const hourlyRate = isNewClient ? 175 : 150
+    // Usa taxa customizada se definida, senão usa padrão
+    const defaultRate = isNewClient ? 175 : 150
+    const hourlyRate = customHourlyRate !== null ? customHourlyRate : defaultRate
     const hoursCost = totalHours * hourlyRate
 
     const totalAdditionalServices = conferenceAdditionalServices.reduce((sum, s) => {
@@ -1091,6 +1093,7 @@ async function approveConferenceOS() {
         maintenance_type: selectedMaintenanceType, // Tipo de manutenção selecionado
         service_description: document.getElementById('conferenceServiceDesc').value,
         is_new_client: isNewClient, // Envia o tipo de cliente atualizado
+        effective_hourly_rate: hourlyRate, // Taxa efetiva usada nesta OS
         value_service: totalAdditionalServices, // Soma dos serviços adicionais
         total_service_cost: totalServiceCost,
         total_material_cost: totalMaterials,
