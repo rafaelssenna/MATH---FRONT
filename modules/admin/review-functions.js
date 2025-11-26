@@ -206,20 +206,34 @@ function renderConferenceModal() {
           </div>
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-          <div>
+          <div style="position: relative;">
             <label style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">
               Cliente / Empresa *
             </label>
-            <input
-              type="text"
-              id="conferenceCompanySearch"
-              placeholder="Digite para buscar empresa..."
-              oninput="filterConferenceCompanies()"
-              style="width: 100%; padding: 0.5rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px 6px 0 0; color: var(--text-primary); margin-bottom: -1px;"
-            />
-            <select id="conferenceCompanySelect" onchange="onConferenceCompanyChange()" size="6" style="width: 100%; padding: 0.5rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 0 0 6px 6px; color: var(--text-primary); font-weight: 600; max-height: 180px; overflow-y: auto;">
-              ${renderCompanyOptions(os.company_id)}
-            </select>
+            <!-- Campo que mostra empresa selecionada -->
+            <div
+              id="conferenceCompanyDisplay"
+              onclick="toggleCompanyDropdown()"
+              style="width: 100%; padding: 0.5rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-weight: 600; cursor: pointer; display: flex; justify-content: space-between; align-items: center;"
+            >
+              <span id="conferenceCompanyName">${escapeHtml(os.company_name || 'Selecione...')}</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </div>
+            <!-- Dropdown com busca -->
+            <div id="conferenceCompanyDropdown" style="display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 1000; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; margin-top: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+              <input
+                type="text"
+                id="conferenceCompanySearch"
+                placeholder="Digite para buscar..."
+                oninput="filterConferenceCompanies()"
+                style="width: 100%; padding: 0.5rem; background: var(--bg-input); border: none; border-bottom: 1px solid var(--border-color); border-radius: 6px 6px 0 0; color: var(--text-primary);"
+              />
+              <select id="conferenceCompanySelect" onchange="onConferenceCompanyChange()" size="6" style="width: 100%; padding: 0.5rem; background: var(--bg-input); border: none; border-radius: 0 0 6px 6px; color: var(--text-primary); font-weight: 600;">
+                ${renderCompanyOptions(os.company_id)}
+              </select>
+            </div>
           </div>
           <div>
             <label style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">Técnico</label>
@@ -1058,21 +1072,75 @@ function renderMachineOptions(companyId, selectedMachineId) {
 
 
 /**
+ * Abre/fecha dropdown de empresas
+ */
+function toggleCompanyDropdown() {
+  const dropdown = document.getElementById('conferenceCompanyDropdown')
+  const searchInput = document.getElementById('conferenceCompanySearch')
+
+  if (!dropdown) return
+
+  const isOpen = dropdown.style.display !== 'none'
+
+  if (isOpen) {
+    dropdown.style.display = 'none'
+  } else {
+    dropdown.style.display = 'block'
+    if (searchInput) {
+      searchInput.value = ''
+      searchInput.focus()
+      filterConferenceCompanies() // Mostra todas
+    }
+  }
+}
+
+/**
+ * Fecha dropdown quando clica fora
+ */
+document.addEventListener('click', function(e) {
+  const dropdown = document.getElementById('conferenceCompanyDropdown')
+  const display = document.getElementById('conferenceCompanyDisplay')
+
+  if (!dropdown || !display) return
+
+  // Se clicou fora do dropdown e do display, fecha
+  if (!dropdown.contains(e.target) && !display.contains(e.target)) {
+    dropdown.style.display = 'none'
+  }
+})
+
+/**
  * Atualiza o select de máquinas quando troca a empresa
  */
 function onConferenceCompanyChange() {
   const companySelect = document.getElementById('conferenceCompanySelect')
   const machineSelect = document.getElementById('conferenceMachineSelect')
+  const companyNameDisplay = document.getElementById('conferenceCompanyName')
+  const dropdown = document.getElementById('conferenceCompanyDropdown')
 
   if (!companySelect || !machineSelect) return
 
   const selectedCompanyId = parseInt(companySelect.value)
 
+  // Atualiza o nome exibido
+  const selectedOption = companySelect.options[companySelect.selectedIndex]
+  if (companyNameDisplay && selectedOption) {
+    // Pega só o nome (antes do CNPJ se houver)
+    const fullText = selectedOption.textContent.trim()
+    const nameOnly = fullText.split(' - CNPJ:')[0].trim()
+    companyNameDisplay.textContent = nameOnly
+  }
+
+  // Fecha o dropdown
+  if (dropdown) {
+    dropdown.style.display = 'none'
+  }
+
   // Atualiza o select de máquinas com as máquinas da empresa selecionada
   machineSelect.innerHTML = renderMachineOptions(selectedCompanyId, null)
 
   // Mostra mensagem informativa
-  showToast('Máquinas atualizadas para a empresa selecionada', 'info')
+  showToast('Empresa alterada! Máquinas atualizadas.', 'success')
 }
 
 /**
@@ -1092,12 +1160,6 @@ function filterConferenceCompanies() {
     const matches = searchTerm === '' || optionText.includes(searchTerm)
     option.style.display = matches ? '' : 'none'
   })
-
-  // Se só tem uma opção visível, seleciona ela automaticamente
-  const visibleOptions = Array.from(companySelect.options).filter(opt => opt.style.display !== 'none')
-  if (visibleOptions.length === 1) {
-    companySelect.value = visibleOptions[0].value
-  }
 }
 
 // Compatibilidade com código antigo (apenas aliases)
