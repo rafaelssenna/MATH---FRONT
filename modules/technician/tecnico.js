@@ -4376,19 +4376,28 @@ async function openCreateOwnOSModal() {
   document.getElementById('createOwnOSForm').reset()
   createOS_selectedCompanyId = null
 
-  // Limpa o campo de busca
-  const companySearch = document.getElementById('newOS_companySearch')
-  if (companySearch) companySearch.value = ''
+  // Limpa campos do autocomplete
+  const companyInput = document.getElementById('newOS_companyInput')
+  const companyIdInput = document.getElementById('newOS_companyId')
+  const suggestions = document.getElementById('newOS_companySuggestions')
+  if (companyInput) companyInput.value = ''
+  if (companyIdInput) companyIdInput.value = ''
+  if (suggestions) {
+    suggestions.innerHTML = ''
+    suggestions.classList.remove('active')
+  }
+
+  // Reseta select de máquinas
+  const machineSelect = document.getElementById('newOS_machineSelect')
+  if (machineSelect) {
+    machineSelect.innerHTML = '<option value="">-- selecione a empresa primeiro --</option>'
+  }
 
   // Carrega lista de empresas
   try {
     const response = await fetch(`${API_URL}/api/companies?active=true`)
     if (!response.ok) throw new Error('Erro ao carregar empresas')
-
     createOS_companies = await response.json()
-
-    // Preenche o select de empresas
-    updateCompanySelectOptions(createOS_companies)
   } catch (error) {
     console.error('[openCreateOwnOSModal] Erro ao carregar empresas:', error)
     showToast('Erro ao carregar empresas', 'error')
@@ -4401,24 +4410,15 @@ async function openCreateOwnOSModal() {
 }
 
 /**
- * Atualiza as opções do select de empresas
+ * Mostra sugestões do autocomplete de empresas
  */
-function updateCompanySelectOptions(companies) {
-  const companySelect = document.getElementById('newOS_companySelect')
-  if (!companySelect) return
+function showCompanySuggestions(searchTerm) {
+  const suggestions = document.getElementById('newOS_companySuggestions')
+  if (!suggestions) return
 
-  companySelect.innerHTML = companies.length === 0
-    ? '<option value="">Nenhuma empresa encontrada</option>'
-    : '<option value="">Selecione uma empresa...</option>' +
-      companies.map(c => `<option value="${c.id}">${c.name}</option>`).join('')
-}
-
-/**
- * Filtra empresas conforme digitação
- */
-function filterCompanies(searchTerm) {
   if (!searchTerm || searchTerm.trim() === '') {
-    updateCompanySelectOptions(createOS_companies)
+    suggestions.innerHTML = ''
+    suggestions.classList.remove('active')
     return
   }
 
@@ -4427,13 +4427,52 @@ function filterCompanies(searchTerm) {
     c.name.toLowerCase().includes(term)
   )
 
-  updateCompanySelectOptions(filtered)
+  if (filtered.length === 0) {
+    suggestions.innerHTML = '<div class="autocomplete-item no-results">Nenhuma empresa encontrada</div>'
+  } else {
+    suggestions.innerHTML = filtered
+      .map(c => `<div class="autocomplete-item" data-id="${c.id}" data-name="${c.name}">${c.name}</div>`)
+      .join('')
+  }
 
-  // Se só tiver uma opção, seleciona automaticamente
-  if (filtered.length === 1) {
-    const companySelect = document.getElementById('newOS_companySelect')
-    companySelect.value = filtered[0].id
-    companySelect.dispatchEvent(new Event('change'))
+  suggestions.classList.add('active')
+}
+
+/**
+ * Seleciona uma empresa do autocomplete
+ */
+async function selectCompany(companyId, companyName) {
+  const companyInput = document.getElementById('newOS_companyInput')
+  const companyIdInput = document.getElementById('newOS_companyId')
+  const suggestions = document.getElementById('newOS_companySuggestions')
+  const machineSelect = document.getElementById('newOS_machineSelect')
+
+  // Preenche os campos
+  if (companyInput) companyInput.value = companyName
+  if (companyIdInput) companyIdInput.value = companyId
+  if (suggestions) {
+    suggestions.innerHTML = ''
+    suggestions.classList.remove('active')
+  }
+
+  createOS_selectedCompanyId = companyId
+
+  // Carrega máquinas da empresa
+  if (machineSelect) {
+    try {
+      const response = await fetch(`${API_URL}/api/machines?company_id=${companyId}`)
+      if (!response.ok) throw new Error('Erro ao carregar máquinas')
+
+      createOS_machines = await response.json()
+
+      machineSelect.innerHTML = '<option value="">-- sem máquina --</option>' +
+        createOS_machines
+          .map(m => `<option value="${m.id}">${m.model || 'Sem modelo'} (${m.serial_number})</option>`)
+          .join('')
+    } catch (error) {
+      console.error('[selectCompany] Erro ao carregar máquinas:', error)
+      machineSelect.innerHTML = '<option value="">-- erro ao carregar --</option>'
+    }
   }
 }
 
@@ -4441,53 +4480,50 @@ function filterCompanies(searchTerm) {
  * Configura os event listeners do formulário de criar OS
  */
 function setupCreateOSListeners() {
-  const companySelect = document.getElementById('newOS_companySelect')
-  const companySearch = document.getElementById('newOS_companySearch')
-  const machineSelect = document.getElementById('newOS_machineSelect')
+  const companyInput = document.getElementById('newOS_companyInput')
+  const suggestions = document.getElementById('newOS_companySuggestions')
 
-  if (!companySelect) return
+  if (!companyInput) return
 
-  // Remove listeners antigos do select
-  companySelect.replaceWith(companySelect.cloneNode(true))
-  const newCompanySelect = document.getElementById('newOS_companySelect')
+  // Remove listeners antigos
+  companyInput.replaceWith(companyInput.cloneNode(true))
+  const newCompanyInput = document.getElementById('newOS_companyInput')
 
-  // Remove listeners antigos do search
-  if (companySearch) {
-    companySearch.replaceWith(companySearch.cloneNode(true))
-    const newCompanySearch = document.getElementById('newOS_companySearch')
+  // Ao digitar, mostra sugestões
+  newCompanyInput.addEventListener('input', (e) => {
+    // Limpa seleção anterior quando digitar
+    document.getElementById('newOS_companyId').value = ''
+    createOS_selectedCompanyId = null
+    showCompanySuggestions(e.target.value)
+  })
 
-    // Filtro ao digitar
-    newCompanySearch.addEventListener('input', (e) => {
-      filterCompanies(e.target.value)
+  // Ao focar, mostra sugestões se tiver texto
+  newCompanyInput.addEventListener('focus', (e) => {
+    if (e.target.value.trim()) {
+      showCompanySuggestions(e.target.value)
+    }
+  })
+
+  // Clique nas sugestões
+  const newSuggestions = document.getElementById('newOS_companySuggestions')
+  if (newSuggestions) {
+    newSuggestions.addEventListener('click', (e) => {
+      const item = e.target.closest('.autocomplete-item')
+      if (item && !item.classList.contains('no-results')) {
+        const companyId = item.dataset.id
+        const companyName = item.dataset.name
+        selectCompany(companyId, companyName)
+      }
     })
   }
 
-  // Quando selecionar empresa, carrega as máquinas
-  newCompanySelect.addEventListener('change', async (e) => {
-    const companyId = e.target.value
-
-    if (companyId) {
-      createOS_selectedCompanyId = companyId
-
-      // Carrega máquinas da empresa
-      try {
-        const response = await fetch(`${API_URL}/api/machines?company_id=${companyId}`)
-        if (!response.ok) throw new Error('Erro ao carregar máquinas')
-
-        createOS_machines = await response.json()
-
-        // Preenche o select de máquinas
-        machineSelect.innerHTML = '<option value="">-- sem máquina --</option>' +
-          createOS_machines
-            .map(m => `<option value="${m.id}">${m.model || 'Sem modelo'} (${m.serial_number})</option>`)
-            .join('')
-      } catch (error) {
-        console.error('[setupCreateOSListeners] Erro ao carregar máquinas:', error)
-        machineSelect.innerHTML = '<option value="">-- erro ao carregar --</option>'
+  // Fecha sugestões ao clicar fora
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.autocomplete-wrapper')) {
+      const suggestions = document.getElementById('newOS_companySuggestions')
+      if (suggestions) {
+        suggestions.classList.remove('active')
       }
-    } else {
-      createOS_selectedCompanyId = null
-      machineSelect.innerHTML = '<option value="">-- selecione a empresa primeiro --</option>'
     }
   })
 }
@@ -4513,12 +4549,12 @@ async function submitCreateOwnOS(event) {
   submitBtn.textContent = 'Criando...'
 
   try {
-    const companyId = document.getElementById('newOS_companySelect').value
+    const companyId = document.getElementById('newOS_companyId').value
     const machineId = document.getElementById('newOS_machineSelect').value
     const callReason = document.getElementById('newOS_callReason').value.trim()
 
     if (!companyId) {
-      throw new Error('Você deve selecionar uma empresa cadastrada')
+      throw new Error('Você deve selecionar uma empresa da lista')
     }
 
     if (!callReason) {

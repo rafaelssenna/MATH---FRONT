@@ -2758,3 +2758,58 @@ label:has(input[name="hasAdditionalService"]:checked) {
   }
 }
 
+/* ============================================
+   AUTOCOMPLETE - Campo de busca com sugestões
+   ============================================ */
+.autocomplete-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.autocomplete-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  display: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.autocomplete-suggestions.active {
+  display: block;
+}
+
+.autocomplete-item {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+  transition: background 0.15s;
+}
+
+.autocomplete-item:last-child {
+  border-bottom: none;
+}
+
+.autocomplete-item:hover,
+.autocomplete-item.selected {
+  background: var(--bg-hover);
+}
+
+.autocomplete-item.no-results {
+  color: var(--text-muted);
+  font-style: italic;
+  cursor: default;
+}
+
+.autocomplete-item.no-results:hover {
+  background: transparent;
+}
+
