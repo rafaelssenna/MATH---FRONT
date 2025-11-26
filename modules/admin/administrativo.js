@@ -3614,10 +3614,10 @@ async function generateAndOpenOSPDF() {
   if (Array.isArray(currentOS.materiais) && currentOS.materiais.length > 0) {
     currentOS.materiais.forEach((m) => {
       drawCells([
-        { label: "Material", value: m.name || "", width: 0.4 },
-        { label: "Qtde", value: String(m.quantity || ""), width: 0.2 },
-        { label: "Valor Unitário", value: fmtBRL(m.unit_price), width: 0.2 },
-        { label: "Total", value: fmtBRL(m.line_total), width: 0.2 },
+        { label: "Material", value: m.name || "", width: 0.35 },
+        { label: "Qtde", value: String(m.quantity || ""), width: 0.1 },
+        { label: "Val. Unit.", value: fmtBRL(m.unit_price), width: 0.27 },
+        { label: "Total", value: fmtBRL(m.line_total), width: 0.28 },
       ])
     })
     drawFullRow("Custo Total de Materiais", fmtBRL(custoMatNum))
@@ -3641,28 +3641,15 @@ async function generateAndOpenOSPDF() {
     drawFullRow("Serviço Adicional", fmtBRL(valServicoNum))
   }
 
+  // ====== TOTAL GERAL + VENCIMENTO (na mesma linha) ======
   {
     const totalGer = fmtBRL(currentOS.totalGeral)
-    const lineH = 8
-    ensureSpace(lineH)
-    doc.setFillColor(232, 240, 254)
-    doc.rect(marginX, y, contentW, lineH, "F")
-    doc.setFont("helvetica", "bold")
-    doc.setFontSize(10)
-    doc.setTextColor(0)
-    doc.text("Total Geral da O.S.", marginX + LEFT_INNER, y + 5.2)
-    doc.text(totalGer, marginX + contentW - doc.getTextWidth(totalGer) - RIGHT_INNER, y + 5.2)
-    y += lineH
-  }
 
-  // ====== VENCIMENTO (calculado automaticamente) ======
-  {
+    // Calcula vencimento
     const totalValue = Number(currentOS.totalGeral) || 0
-    // Usa a data da OS como base ou a data atual
     const baseDate = currentOS.dataProgramada ? parseAsLocalTime(currentOS.dataProgramada) : new Date()
     const dueDates = calculateDueDates(totalValue, baseDate)
 
-    // Monta o texto de vencimento (compacto, só no canto direito)
     let vencimentoText = ""
     if (dueDates.length === 1) {
       vencimentoText = `Venc: ${dueDates[0].dateStr}`
@@ -3670,14 +3657,29 @@ async function generateAndOpenOSPDF() {
       vencimentoText = `Venc (${dueDates.length}x): ${dueDates.map(d => d.dateStr).join(" / ")}`
     }
 
-    const lineH = 6
+    const lineH = 8
     ensureSpace(lineH)
+    doc.setFillColor(232, 240, 254)
+    doc.rect(marginX, y, contentW, lineH, "F")
 
-    // Apenas texto no canto direito, sem caixa
+    // Total Geral à esquerda
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(10)
+    doc.setTextColor(0)
+    doc.text("Total Geral da O.S.", marginX + LEFT_INNER, y + 5.2)
+
+    // Vencimento no centro-direita
     doc.setFont("helvetica", "normal")
-    doc.setFontSize(9)
-    doc.setTextColor(100, 100, 100) // Cinza discreto
-    doc.text(vencimentoText, marginX + contentW - doc.getTextWidth(vencimentoText) - RIGHT_INNER, y + 4)
+    doc.setFontSize(8)
+    doc.setTextColor(80, 80, 80)
+    const vencX = marginX + contentW - doc.getTextWidth(totalGer) - doc.getTextWidth(vencimentoText) - RIGHT_INNER - 15
+    doc.text(vencimentoText, vencX, y + 5.2)
+
+    // Valor à direita
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(10)
+    doc.setTextColor(0)
+    doc.text(totalGer, marginX + contentW - doc.getTextWidth(totalGer) - RIGHT_INNER, y + 5.2)
 
     y += lineH
   }
