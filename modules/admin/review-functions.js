@@ -211,47 +211,41 @@ function renderConferenceModal() {
 
   document.getElementById('conferenceModalContent').innerHTML = `
     <div style="display: grid; gap: 1.5rem;">
-      <!-- Informações Básicas (Somente Leitura) -->
+      <!-- Informações Básicas -->
       <div class="card" style="padding: 1.5rem; background: linear-gradient(135deg, #667eea22 0%, #764ba222 100%); border: 2px solid #667eea;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-          <h3 style="margin: 0; color: #667eea;">OS #${os.order_number || os.id}</h3>
-
-          <!-- Toggle Cliente Novo/Antigo -->
-          <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <span style="font-size: 0.875rem; font-weight: 600; color: var(--text-secondary);">Tipo de Cliente:</span>
-            <button
-              id="toggleClientTypeBtn"
-              onclick="toggleClientType()"
-              style="position: relative; width: 180px; height: 40px; border-radius: 20px; border: 2px solid ${os.is_new_client ? '#10b981' : '#6b7280'}; background: ${os.is_new_client ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)'}; color: white; font-weight: 700; font-size: 0.875rem; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.15);"
-              title="Clique para alternar entre Cliente Novo e Cliente Antigo">
-              ${os.is_new_client ? '🆕 CLIENTE NOVO' : '👤 CLIENTE ANTIGO'}
-            </button>
-          </div>
+        <!-- Linha 1: OS + Toggle Cliente -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+          <h3 style="margin: 0; color: #667eea; font-size: 1.5rem;">OS #${os.order_number || os.id}</h3>
+          <button
+            id="toggleClientTypeBtn"
+            onclick="toggleClientType()"
+            style="padding: 0.5rem 1.25rem; border-radius: 20px; border: 2px solid ${os.is_new_client ? '#10b981' : '#6b7280'}; background: ${os.is_new_client ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)'}; color: white; font-weight: 700; font-size: 0.875rem; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.15);"
+            title="Clique para alternar entre Cliente Novo e Cliente Antigo">
+            ${os.is_new_client ? '🆕 CLIENTE NOVO' : '👤 CLIENTE ANTIGO'}
+          </button>
         </div>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+
+        <!-- Linha 2: Empresa + Técnico -->
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem;">
           <div style="position: relative;">
-            <label style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">
-              Cliente / Empresa *
-            </label>
-            <!-- Campo que mostra empresa selecionada -->
+            <label style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 0.5rem;">Cliente / Empresa *</label>
             <div
               id="conferenceCompanyDisplay"
               onclick="toggleCompanyDropdown()"
-              style="width: 100%; padding: 0.5rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-weight: 600; cursor: pointer; display: flex; justify-content: space-between; align-items: center;"
+              style="width: 100%; padding: 0.75rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-weight: 600; cursor: pointer; display: flex; justify-content: space-between; align-items: center; min-height: 44px;"
             >
-              <span id="conferenceCompanyName">${escapeHtml(os.company_name || 'Selecione...')}</span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;">
+              <span id="conferenceCompanyName" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(os.company_name || 'Selecione...')}</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; margin-left: 0.5rem;">
                 <polyline points="6 9 12 15 18 9"/>
               </svg>
             </div>
-            <!-- Dropdown com busca -->
-            <div id="conferenceCompanyDropdown" style="display: none; position: absolute; top: 100%; left: 0; min-width: 350px; z-index: 1000; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; margin-top: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+            <div id="conferenceCompanyDropdown" style="display: none; position: absolute; top: 100%; left: 0; width: 100%; min-width: 300px; z-index: 1000; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; margin-top: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
               <input
                 type="text"
                 id="conferenceCompanySearch"
                 placeholder="Digite para buscar..."
                 oninput="filterConferenceCompanies()"
-                style="width: 100%; padding: 0.5rem; background: var(--bg-input); border: none; border-bottom: 1px solid var(--border-color); border-radius: 6px 6px 0 0; color: var(--text-primary);"
+                style="width: 100%; padding: 0.75rem; background: var(--bg-input); border: none; border-bottom: 1px solid var(--border-color); border-radius: 6px 6px 0 0; color: var(--text-primary); box-sizing: border-box;"
               />
               <select id="conferenceCompanySelect" onchange="onConferenceCompanyChange()" size="6" style="width: 100%; padding: 0.5rem; background: var(--bg-input); border: none; border-radius: 0 0 6px 6px; color: var(--text-primary); font-weight: 600;">
                 ${renderCompanyOptions(os.company_id)}
@@ -259,22 +253,26 @@ function renderConferenceModal() {
             </div>
           </div>
           <div>
-            <label style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">Técnico</label>
-            <div style="font-weight: 600;">${escapeHtml(os.technician_username || 'N/A')}</div>
+            <label style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 0.5rem;">Técnico</label>
+            <div style="font-weight: 600; padding: 0.75rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; min-height: 44px; display: flex; align-items: center;">${escapeHtml(os.technician_username || 'N/A')}</div>
           </div>
+        </div>
+
+        <!-- Linha 3: Máquina + Data + Tipo Manutenção -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.25rem;">
           <div>
-            <label style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">Máquina *</label>
-            <select id="conferenceMachineSelect" style="width: 100%; padding: 0.5rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-weight: 600;">
+            <label style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 0.5rem;">Máquina *</label>
+            <select id="conferenceMachineSelect" style="width: 100%; padding: 0.75rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-weight: 600; min-height: 44px;">
               ${renderMachineOptions(os.company_id, os.machine_id)}
             </select>
           </div>
           <div>
-            <label style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">Data Finalização</label>
-            <div style="font-weight: 600;">${os.finished_at ? new Date(os.finished_at).toLocaleString('pt-BR') : 'N/A'}</div>
+            <label style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 0.5rem;">Data Finalização</label>
+            <div style="font-weight: 600; padding: 0.75rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; min-height: 44px; display: flex; align-items: center;">${os.finished_at ? new Date(os.finished_at).toLocaleString('pt-BR') : 'N/A'}</div>
           </div>
           <div>
-            <label style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">Tipo de Manutenção</label>
-            <select id="conferenceMaintenanceType" style="width: 100%; padding: 0.5rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-weight: 600;">
+            <label style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 0.5rem;">Tipo de Manutenção</label>
+            <select id="conferenceMaintenanceType" style="width: 100%; padding: 0.75rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-weight: 600; min-height: 44px;">
               <option value="">Selecione...</option>
               <option value="Manutenção Corretiva Eletroeletrônica" ${os.maintenance_type === 'Manutenção Corretiva Eletroeletrônica' ? 'selected' : ''}>Manutenção Corretiva Eletroeletrônica</option>
               <option value="Manutenção Corretiva Mecânica" ${os.maintenance_type === 'Manutenção Corretiva Mecânica' ? 'selected' : ''}>Manutenção Corretiva Mecânica</option>
