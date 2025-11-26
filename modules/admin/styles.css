@@ -803,7 +803,6 @@ body {
 }
 
 .card:hover {
-  transform: translateY(-4px);
   box-shadow: 0 12px 32px var(--shadow);
 }
 
@@ -885,7 +884,6 @@ body {
 
 .company-card:hover,
 .machine-card:hover {
-  transform: translateY(-8px) scale(1.02);
   box-shadow: 0 16px 40px var(--shadow);
   border-color: var(--primary-blue);
 }
@@ -939,7 +937,6 @@ body {
 
 .os-card:hover {
   border-color: var(--primary-blue);
-  transform: translateY(-4px);
   box-shadow: 0 12px 32px var(--shadow);
 }
 
