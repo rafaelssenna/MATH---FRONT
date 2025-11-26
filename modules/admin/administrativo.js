@@ -15,6 +15,26 @@ const API_URL = "https://hs-back-production-f54a.up.railway.app"
 let cachedTechnicians = []
 let cachedCompanies = []
 
+// ==========================================
+// SISTEMA DE ROTAS COM URLs BONITAS
+// ==========================================
+const ROUTES = {
+  'solicitacoes': 'requestsSection',
+  'programacao': 'scheduleSection',
+  'os': 'osSection',
+  'empresas': 'companiesSection',
+  'usuarios': 'usersSection',
+  'veiculos': 'vehiclesSection',
+  'maquinas': 'machinesSection',
+  'conferencia': 'reviewSection',
+  'faturamento': 'billingSection'
+}
+
+// Mapeamento inverso (seção → rota)
+const SECTION_TO_ROUTE = Object.fromEntries(
+  Object.entries(ROUTES).map(([route, section]) => [section, route])
+)
+
 // Sistema de auto-refresh e WebSocket
 let autoRefreshIntervals = []
 let socket = null
@@ -971,13 +991,16 @@ function showAdminSection() {
 
   // Configura navegação lateral após carregar dados
   setupSidebar()
-  
+
   // Conecta ao WebSocket para notificações em tempo real
   connectWebSocket()
-  
+
   // Garante que o botão de arrastar esteja oculto inicialmente
   const dragToggle = document.getElementById('dragModeToggle')
   if (dragToggle) dragToggle.style.display = 'none'
+
+  // Inicializa sistema de rotas (URLs bonitas)
+  initRouter()
 }
 
 /**
@@ -7030,18 +7053,18 @@ async function handleDrop(e) {
 }
 
 // Mostrar/ocultar seções ao clicar no menu lateral
-function showSection(sectionId) {
+function showSection(sectionId, updateUrl = true) {
   // Esconde todas as seções admin-page
   const sections = document.querySelectorAll('.admin-page')
   sections.forEach(section => {
     section.style.display = 'none'
   })
-  
+
   // Mostra a seção solicitada
   const targetSection = document.getElementById(sectionId)
   if (targetSection) {
     targetSection.style.display = 'block'
-    
+
     // Carregar dados específicos da seção
     if (sectionId === 'scheduleSection') {
       loadSchedule()
@@ -7055,34 +7078,62 @@ function showSection(sectionId) {
       loadVehiclesList()
     }
   }
-  
+
   // Gerenciar botão drag & drop - SEMPRE ocultar primeiro, depois mostrar APENAS se for Programação
   const toggleBtn = document.getElementById('dragModeToggle')
   if (toggleBtn) {
     // SEMPRE oculta primeiro
     toggleBtn.style.display = 'none'
-    
+
     // Desativa modo drag se estava ativo e não é mais Programação
     if (dragModeActive && sectionId !== 'scheduleSection') {
       toggleDragMode()
     }
-    
+
     // SÓ mostra se for Programação
     if (sectionId === 'scheduleSection') {
       toggleBtn.style.display = 'flex'
     }
   }
-  
+
   // Remove classe active de todos os itens do menu
   document.querySelectorAll('.sidebar ul li').forEach(item => {
     item.classList.remove('active')
   })
-  
+
   // Adiciona classe active ao item clicado
-  const clickedItem = document.querySelector(`[onclick="showSection('${sectionId}')"]`)?.parentElement
+  const clickedItem = document.querySelector(`[data-section="${sectionId}"]`)
   if (clickedItem) {
     clickedItem.classList.add('active')
   }
+
+  // Atualiza URL com rota bonita
+  if (updateUrl && SECTION_TO_ROUTE[sectionId]) {
+    const newHash = '#/' + SECTION_TO_ROUTE[sectionId]
+    if (window.location.hash !== newHash) {
+      history.pushState(null, '', newHash)
+    }
+  }
+}
+
+// Navega para seção baseado na URL
+function navigateFromUrl() {
+  const hash = window.location.hash.replace('#/', '').replace('#', '')
+
+  if (hash && ROUTES[hash]) {
+    showSection(ROUTES[hash], false)
+  } else if (!hash || hash === '') {
+    // Rota padrão: solicitações
+    showSection('requestsSection', false)
+  }
+}
+
+// Listener para mudanças de URL (botões voltar/avançar)
+window.addEventListener('hashchange', navigateFromUrl)
+
+// Inicializa rota ao carregar página (será chamado após login)
+function initRouter() {
+  navigateFromUrl()
 }
 
 // Função para alternar visualização de empresas
