@@ -2517,64 +2517,152 @@ async function viewOSDetails(id) {
       html += "</div>"
     }
 
-    // Fechamento Financeiro (informativo)
+    // Fechamento Financeiro (informativo) - espelha os campos do PDF
     if (
       currentOS.valorServico !== undefined ||
       currentOS.custoServico !== undefined ||
       currentOS.custoMateriais !== undefined ||
       currentOS.totalGeral !== undefined
     ) {
-      html += `<div class="detail-section"><h3>Fechamento Financeiro</h3>`
-      html += '<div class="detail-grid">'
+      // Calcula valores financeiros (igual ao PDF)
+      const totalHorasNum = Number(currentOS.totalHorasNum || 0)
+      const isNew = !!currentOS.isNewClient
+      let valorHoraNum = 0
+      if (currentOS.valorHoraTecnico !== undefined && currentOS.valorHoraTecnico !== null && Number(currentOS.valorHoraTecnico) > 0) {
+        valorHoraNum = Number(currentOS.valorHoraTecnico)
+      } else {
+        valorHoraNum = isNew ? 175 : 150
+      }
+      const custoHorasTrabalhadas = valorHoraNum * totalHorasNum
+
+      // Calcula custo de deslocamento (igual ao PDF)
+      const perKm = isNew ? 2.57 : 2.2
+      let totalKm = 0
+      let deslocCost = 0
+      if (Array.isArray(currentOS.displacements) && currentOS.displacements.length > 0) {
+        currentOS.displacements.forEach((d) => {
+          let km = 0
+          if (d && d.km_total !== undefined && d.km_total !== null && String(d.km_total).trim() !== "") {
+            const parsed = Number(d.km_total)
+            if (!isNaN(parsed) && parsed > 0) km = parsed
+          } else if (d && d.km_option) {
+            const opt = String(d.km_option).toLowerCase()
+            if (opt.includes("50")) km = 50
+            else if (opt.includes("100")) km = 100
+          }
+          if (km > 0) {
+            totalKm += km
+            if (km <= 50) deslocCost += isNew ? 95 : 80
+            else if (km <= 100) deslocCost += isNew ? 170 : 150
+            else deslocCost += Math.round(km * perKm * 100) / 100
+          }
+        })
+      } else {
+        const kmVal = Number(currentOS.deslocamentoKm || 0)
+        if (kmVal > 0) {
+          totalKm = kmVal
+          if (kmVal <= 50) deslocCost = isNew ? 95 : 80
+          else if (kmVal <= 100) deslocCost = isNew ? 170 : 150
+          else deslocCost = Math.round(kmVal * perKm * 100) / 100
+        }
+      }
+
+      html += `<div class="detail-section"><h3>Dados Financeiros</h3>`
+
+      // Custo de Mão de Obra (Horas)
       html += `
-        ${
-          currentOS.valorServico !== null &&
-          currentOS.valorServico !== undefined &&
-          Number(currentOS.valorServico) > 0
-            ? `
-        <div class="detail-field">
-          <label>Valor do Serviço Adicional</label>
-          <span>R$ ${Number(currentOS.valorServico).toFixed(2)}</span>
+        <div class="detail-grid" style="margin-bottom: 1rem; padding: 0.75rem; background: var(--bg-input); border-radius: 8px;">
+          <div class="detail-field">
+            <label>Horas Trabalhadas</label>
+            <span>${currentOS.totalHoras || "0.00 horas"}</span>
+          </div>
+          <div class="detail-field">
+            <label>Valor/Hora</label>
+            <span>R$ ${valorHoraNum.toFixed(2)}</span>
+          </div>
+          <div class="detail-field">
+            <label>Custo de Mão de Obra</label>
+            <span style="font-weight: 600;">R$ ${custoHorasTrabalhadas.toFixed(2)}</span>
+          </div>
         </div>
+      `
+
+      // Custo de Deslocamento
+      if (totalKm > 0) {
+        html += `
+          <div class="detail-grid" style="margin-bottom: 1rem; padding: 0.75rem; background: var(--bg-input); border-radius: 8px;">
+            <div class="detail-field">
+              <label>Quilometragem Total</label>
+              <span>${totalKm} km</span>
+            </div>
+            <div class="detail-field">
+              <label>Custo de Deslocamento</label>
+              <span style="font-weight: 600;">R$ ${deslocCost.toFixed(2)}</span>
+            </div>
+          </div>
         `
-            : ""
-        }
-        <div class="detail-field">
-          <label>Custo Total de Serviços</label>
-          <span>R$ ${
-            currentOS.custoServico !== null && currentOS.custoServico !== undefined
-              ? Number(currentOS.custoServico).toFixed(2)
-              : "0.00"
-          }</span>
-        </div>
-        <div class="detail-field">
-          <label>Custo Total de Materiais</label>
-          <span>R$ ${
-            currentOS.custoMateriais !== null && currentOS.custoMateriais !== undefined
-              ? Number(currentOS.custoMateriais).toFixed(2)
-              : "0.00"
-          }</span>
-        </div>
-        ${
-          currentOS.observacoes
-            ? `
-        <div class="detail-field">
-          <label>Obs. Serviço Adicional</label>
-          <span>${currentOS.observacoes}</span>
-        </div>
+      }
+
+      // Serviços Adicionais
+      if (Array.isArray(currentOS.additionalServices) && currentOS.additionalServices.length > 0) {
+        html += `<p style="font-weight: 600; margin-bottom: 0.5rem; color: var(--text-secondary); font-size: 0.85rem;">SERVIÇOS ADICIONAIS</p>`
+        html += `<div style="margin-bottom: 1rem; padding: 0.75rem; background: var(--bg-input); border-radius: 8px;">`
+        currentOS.additionalServices.forEach((s) => {
+          const serviceValue = Number(s.value || 0)
+          html += `
+            <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; border-bottom: 1px solid var(--border-color);">
+              <span>${s.description || "Serviço"}</span>
+              <span style="font-weight: 500;">R$ ${serviceValue.toFixed(2)}</span>
+            </div>
+          `
+        })
+        html += `
+          <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; font-weight: 600;">
+            <span>Total Serviços Adicionais</span>
+            <span>R$ ${Number(currentOS.valorServico || 0).toFixed(2)}</span>
+          </div>
         `
-            : ""
-        }
-        <div class="detail-field">
-          <label>Total Geral</label>
-          <span>R$ ${
+        html += `</div>`
+      } else if (currentOS.valorServico !== null && currentOS.valorServico !== undefined && Number(currentOS.valorServico) > 0) {
+        html += `
+          <div class="detail-grid" style="margin-bottom: 1rem; padding: 0.75rem; background: var(--bg-input); border-radius: 8px;">
+            <div class="detail-field">
+              <label>Serviço Adicional</label>
+              <span>R$ ${Number(currentOS.valorServico).toFixed(2)}</span>
+            </div>
+            ${currentOS.observacoes ? `
+            <div class="detail-field">
+              <label>Observação</label>
+              <span>${currentOS.observacoes}</span>
+            </div>
+            ` : ""}
+          </div>
+        `
+      }
+
+      // Custo de Materiais (se houver)
+      if (currentOS.custoMateriais !== null && currentOS.custoMateriais !== undefined && Number(currentOS.custoMateriais) > 0) {
+        html += `
+          <div class="detail-grid" style="margin-bottom: 1rem; padding: 0.75rem; background: var(--bg-input); border-radius: 8px;">
+            <div class="detail-field">
+              <label>Custo Total de Materiais</label>
+              <span style="font-weight: 600;">R$ ${Number(currentOS.custoMateriais).toFixed(2)}</span>
+            </div>
+          </div>
+        `
+      }
+
+      // Total Geral (destaque)
+      html += `
+        <div style="margin-top: 1rem; padding: 1rem; background: linear-gradient(135deg, var(--primary-blue), #3b82f6); border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="color: white; font-weight: 600; font-size: 1.1rem;">TOTAL GERAL DA O.S.</span>
+          <span style="color: white; font-weight: 700; font-size: 1.25rem;">R$ ${
             currentOS.totalGeral !== null && currentOS.totalGeral !== undefined
               ? Number(currentOS.totalGeral).toFixed(2)
               : "0.00"
           }</span>
         </div>
       `
-      html += "</div>"
       html += "</div>"
     }
 
@@ -3381,8 +3469,6 @@ async function generateAndOpenOSPDF() {
     // Fallback: se não houver array de serviços, mostra só o total (compatibilidade)
     drawFullRow("Serviço Adicional", fmtBRL(valServicoNum))
   }
-
-  drawFullRow("Custo Total de Serviços", fmtBRL(custoServicoNum))
 
   {
     const totalGer = fmtBRL(currentOS.totalGeral)
