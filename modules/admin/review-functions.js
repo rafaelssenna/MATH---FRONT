@@ -500,6 +500,7 @@ function renderConferenceDisplacements() {
       <div>
         <label style="font-size: 0.75rem; color: var(--text-secondary);">Opção KM</label>
         <select onchange="updateDisplacementKmOption(${idx}, this.value)" style="width: 100%; padding: 0.5rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary);">
+          <option value="sem_deslocamento" ${d.km_option === 'sem_deslocamento' ? 'selected' : ''}>Sem deslocamento</option>
           <option value="ate_50km" ${d.km_option === 'ate_50km' ? 'selected' : ''}>Até 50 km</option>
           <option value="ate_100km" ${d.km_option === 'ate_100km' ? 'selected' : ''}>Até 100 km</option>
           <option value="acima_100km" ${d.km_option === 'acima_100km' ? 'selected' : ''}>Acima de 100 km</option>
@@ -660,6 +661,11 @@ function updateWorklogEnd(idx, value) {
  * Calcula custo de deslocamento baseado em km_option e is_new_client
  */
 function calculateDisplacementCost(displacement, isNewClient) {
+  // Sem deslocamento = R$ 0
+  if (displacement.km_option === 'sem_deslocamento') {
+    return 0
+  }
+
   let km = 0
 
   // Determina KM baseado na opção
