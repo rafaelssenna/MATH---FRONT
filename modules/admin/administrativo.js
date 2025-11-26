@@ -3390,6 +3390,13 @@ window.activateSection = function(section) {
     loadReviewData()
   }
 
+  // Seção de faturamento
+  if (section === "billingSection") {
+    console.log('📊 Abrindo seção de faturamento...')
+    initBillingYears()
+    switchBillingTab('pending')
+  }
+
   // Seção de programação semanal
   if (section === "scheduleSection") {
     // Inicializa a data da semana corrente se ainda não definida
