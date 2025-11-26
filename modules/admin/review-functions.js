@@ -33,6 +33,7 @@ let conferenceAdditionalServices = []
 let conferenceVehicles = []
 let allCompaniesForReview = []
 let allMachinesForReview = []
+let customHourlyRate = null // Valor da hora customizado (null = usar padrão)
 
 /**
  * Carrega dados de conferência (chamado ao abrir a seção)
@@ -280,6 +281,7 @@ function renderConferenceModal() {
               <option value="Manutenção Preventiva Eletroeletrônica" ${os.maintenance_type === 'Manutenção Preventiva Eletroeletrônica' ? 'selected' : ''}>Manutenção Preventiva Eletroeletrônica</option>
               <option value="Manutenção Preventiva Mecânica" ${os.maintenance_type === 'Manutenção Preventiva Mecânica' ? 'selected' : ''}>Manutenção Preventiva Mecânica</option>
               <option value="Entrega Técnica" ${os.maintenance_type === 'Entrega Técnica' ? 'selected' : ''}>Entrega Técnica</option>
+              <option value="Reforma" ${os.maintenance_type === 'Reforma' ? 'selected' : ''}>Reforma</option>
             </select>
           </div>
         </div>
@@ -743,10 +745,11 @@ function recalculateConferenceTotals() {
 
   // 3. Calcula custo de horas trabalhadas
   const totalHours = calculateTotalHours()
-  // Usa taxa baseada em cliente novo (175) ou antigo (150)
-  const hourlyRate = isNewClient ? 175 : 150
+  // Usa taxa customizada se definida, senão usa padrão baseado em cliente novo (175) ou antigo (150)
+  const defaultRate = isNewClient ? 175 : 150
+  const hourlyRate = customHourlyRate !== null ? customHourlyRate : defaultRate
   const hoursCost = totalHours * hourlyRate
-  console.log('⏱️ Horas:', totalHours, '× Taxa:', hourlyRate, `(${isNewClient ? 'NOVO' : 'ANTIGO'})`, '=', hoursCost)
+  console.log('⏱️ Horas:', totalHours, '× Taxa:', hourlyRate, `(${customHourlyRate !== null ? 'CUSTOM' : isNewClient ? 'NOVO' : 'ANTIGO'})`, '=', hoursCost)
 
   // 4. Calcula total de serviços adicionais
   const totalAdditionalServices = conferenceAdditionalServices.reduce((sum, s) => {
@@ -770,7 +773,38 @@ function recalculateConferenceTotals() {
 
   let fieldsHTML = ''
 
-  // Campo: Custo de Horas (sempre aparece)
+  // Campo: Valor da Hora (editável)
+  const isCustomRate = customHourlyRate !== null
+  fieldsHTML += `
+    <div>
+      <label style="font-size: 0.875rem; color: var(--text-secondary); display: block; margin-bottom: 0.5rem;">
+        💵 Valor da Hora
+      </label>
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <span style="color: var(--text-secondary);">R$</span>
+        <input
+          type="number"
+          id="customHourlyRateInput"
+          value="${hourlyRate}"
+          step="0.01"
+          min="0"
+          style="flex: 1; padding: 0.5rem; background: var(--bg-input); border: 1px solid ${isCustomRate ? '#f59e0b' : 'var(--border-color)'}; border-radius: 6px; color: var(--text-primary); font-weight: 600; font-size: 1rem;"
+          onchange="updateCustomHourlyRate(this.value)"
+          oninput="updateCustomHourlyRate(this.value)"
+        >
+        ${isCustomRate ? `
+          <button onclick="resetHourlyRate()" style="padding: 0.5rem; background: #f59e0b; border: none; border-radius: 6px; color: white; cursor: pointer; font-size: 0.75rem;" title="Voltar ao padrão">
+            ↩️
+          </button>
+        ` : ''}
+      </div>
+      <div style="font-size: 0.75rem; color: ${isCustomRate ? '#f59e0b' : 'var(--text-secondary)'}; margin-top: 0.25rem;">
+        ${isCustomRate ? '⚠️ Valor customizado' : `Padrão: ${isNewClient ? 'Cliente Novo (R$ 175)' : 'Cliente Antigo (R$ 150)'}`}
+      </div>
+    </div>
+  `
+
+  // Campo: Custo de Horas (calculado)
   fieldsHTML += `
     <div>
       <label style="font-size: 0.875rem; color: var(--text-secondary); display: block; margin-bottom: 0.5rem;">
@@ -879,6 +913,9 @@ function toggleClientType() {
 
   console.log(`🔄 Tipo de cliente alterado para: ${isNew ? 'NOVO' : 'ANTIGO'}`)
 
+  // Quando troca tipo de cliente, reseta valor customizado para usar o padrão
+  customHourlyRate = null
+
   // Recalcula todos os valores automaticamente
   recalculateConferenceTotals()
 
@@ -887,6 +924,102 @@ function toggleClientType() {
     `Cliente alterado para ${isNew ? 'NOVO (R$ 175/h)' : 'ANTIGO (R$ 150/h)'}. Valores recalculados!`,
     'success'
   )
+}
+
+/**
+ * Atualiza o valor da hora customizado
+ */
+function updateCustomHourlyRate(value) {
+  const numValue = parseFloat(value)
+  if (isNaN(numValue) || numValue < 0) return
+
+  const isNewClient = currentConferenceOS?.is_new_client || false
+  const defaultRate = isNewClient ? 175 : 150
+
+  // Se o valor for igual ao padrão, não precisa de custom
+  if (numValue === defaultRate) {
+    customHourlyRate = null
+  } else {
+    customHourlyRate = numValue
+  }
+
+  // Recalcula sem re-renderizar completamente para evitar perder foco do input
+  recalculateConferenceTotalsQuick()
+}
+
+/**
+ * Reseta o valor da hora para o padrão
+ */
+function resetHourlyRate() {
+  customHourlyRate = null
+  recalculateConferenceTotals()
+  showToast('Valor da hora resetado para o padrão', 'info')
+}
+
+/**
+ * Recalcula totais rapidamente (sem re-renderizar o input para não perder foco)
+ */
+function recalculateConferenceTotalsQuick() {
+  if (!currentConferenceOS) return
+
+  const isNewClient = currentConferenceOS.is_new_client || false
+  const defaultRate = isNewClient ? 175 : 150
+  const hourlyRate = customHourlyRate !== null ? customHourlyRate : defaultRate
+
+  // Total de materiais
+  const totalMaterials = conferenceMaterials.reduce((sum, m) => {
+    const qty = parseFloat(m.quantity) || 0
+    const price = parseFloat(m.unit_price) || 0
+    return sum + (qty * price)
+  }, 0)
+
+  // Total de deslocamentos
+  const displacementCost = conferenceDisplacements.reduce((sum, d) => {
+    return sum + calculateDisplacementCost(d, isNewClient)
+  }, 0)
+
+  // Total de horas
+  const totalHours = calculateTotalHours()
+  const hoursCost = totalHours * hourlyRate
+
+  // Total de serviços adicionais
+  const totalAdditionalServices = conferenceAdditionalServices.reduce((sum, s) => {
+    const value = parseFloat(s.value) || 0
+    return sum + value
+  }, 0)
+
+  // Total geral
+  const grandTotal = hoursCost + displacementCost + totalMaterials + totalAdditionalServices
+
+  // Atualiza apenas os valores, não o HTML completo
+  const formatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
+
+  // Atualiza total geral
+  const totalEl = document.getElementById('conferenceGrandTotal')
+  if (totalEl) {
+    totalEl.textContent = formatter.format(grandTotal)
+  }
+
+  // Atualiza também os outros valores na tela se existirem
+  // Isso garante que a tela está sempre em sincronia
+  const breakdown = document.getElementById('conferenceFinancialBreakdown')
+  if (breakdown) {
+    // Procura e atualiza o valor do custo de horas
+    const hoursCostDivs = breakdown.querySelectorAll('div')
+    hoursCostDivs.forEach(div => {
+      const label = div.querySelector('label')
+      if (label && label.textContent.includes('Custo de Horas')) {
+        const valueDiv = div.querySelector('div[style*="font-size: 1.125rem"]')
+        if (valueDiv) {
+          valueDiv.textContent = formatter.format(hoursCost)
+        }
+        const detailDiv = div.querySelector('div[style*="font-size: 0.75rem"]')
+        if (detailDiv && detailDiv.textContent.includes('×')) {
+          detailDiv.textContent = `${totalHours.toFixed(2)}h × ${formatter.format(hourlyRate)}/h`
+        }
+      }
+    })
+  }
 }
 
 /**
@@ -900,6 +1033,7 @@ function closeConferenceModal() {
   conferenceDisplacements = []
   conferenceAdditionalServices = []
   conferenceVehicles = []
+  customHourlyRate = null // Reseta valor customizado ao fechar
 }
 
 /**
