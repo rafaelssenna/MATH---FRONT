@@ -1,6 +1,12 @@
 /**
- * State Manager para o Portal do Cliente
- * Gerencia persistência de estado e sincronização com URL
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║               STATE MANAGER - PORTAL DO CLIENTE                               ║
+ * ╠═══════════════════════════════════════════════════════════════════════════════╣
+ * ║  Gerencia persistência de estado e sincronização com URL                      ║
+ * ║  - Salva dados do formulário de solicitação                                   ║
+ * ║  - Salva filtros de histórico                                                 ║
+ * ║  - Restaura posição de scroll                                                 ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
  */
 
 class ClientStateManager {

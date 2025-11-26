@@ -1,6 +1,12 @@
 /**
- * State Manager para o Painel Administrativo
- * Gerencia persistência de estado e sincronização com URL
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║              STATE MANAGER - PAINEL ADMINISTRATIVO                            ║
+ * ╠═══════════════════════════════════════════════════════════════════════════════╣
+ * ║  Gerencia persistência de estado e sincronização com URL                      ║
+ * ║  - Salva seção atual e sub-tabs                                               ║
+ * ║  - Restaura posição de scroll                                                 ║
+ * ║  - Sincroniza estado com hash da URL                                          ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
  */
 
 class AdminStateManager {

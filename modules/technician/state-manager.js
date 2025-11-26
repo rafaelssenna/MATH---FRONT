@@ -1,6 +1,12 @@
 /**
- * State Manager para o Painel do Técnico
- * Gerencia persistência de estado e sincronização com URL
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║               STATE MANAGER - PAINEL DO TÉCNICO                               ║
+ * ╠═══════════════════════════════════════════════════════════════════════════════╣
+ * ║  Gerencia persistência de estado e sincronização com URL                      ║
+ * ║  - Salva estado do formulário de finalização                                  ║
+ * ║  - Restaura posição de scroll                                                 ║
+ * ║  - Sincroniza estado com hash da URL                                          ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
  */
 
 class TechnicianStateManager {
@@ -147,7 +153,8 @@ class TechnicianStateManager {
    * Limpa estado (útil no logout)
    */
   clearState() {
-    sessionStorage.removeItem(this.STATE_KEY)
+    // CORREÇÃO: Usa localStorage (não sessionStorage) pois loadState usa localStorage
+    localStorage.removeItem(this.STATE_KEY)
     this.currentState = this.getDefaultState()
     window.history.replaceState(null, '', window.location.pathname + '#/os')
   }

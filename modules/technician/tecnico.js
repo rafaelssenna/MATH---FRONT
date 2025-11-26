@@ -1,8 +1,70 @@
-// === Config ===
-// URL base da API do backend. Ajuste se necessário.
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║                      PAINEL DO TÉCNICO - MATH HELSEN                          ║
+ * ╠═══════════════════════════════════════════════════════════════════════════════╣
+ * ║  Sistema de gestão de OS para técnicos - aceitar, executar e finalizar OS     ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
+ *
+ * ┌─────────────────────────────────────────────────────────────────────────────┐
+ * │                           ÍNDICE DO ARQUIVO                                  │
+ * ├─────────────────────────────────────────────────────────────────────────────┤
+ * │                                                                              │
+ * │  SEÇÃO 1: CONFIGURAÇÕES E STORAGE ............................ linha ~30    │
+ * │    - API_URL, localStorage helpers, parseAsLocalTime                        │
+ * │                                                                              │
+ * │  SEÇÃO 2: WEBSOCKET E AUTO-REFRESH ........................... linha ~60    │
+ * │    - connectWebSocket, startAutoRefresh, stopAutoRefresh                    │
+ * │                                                                              │
+ * │  SEÇÃO 3: UI HELPERS ......................................... linha ~145   │
+ * │    - showToast, setupAutoRewrite, escapeHtml                                │
+ * │                                                                              │
+ * │  SEÇÃO 4: ÁUDIO E TRANSCRIÇÃO ................................ linha ~420   │
+ * │    - initAudioRecording, handleRecordAudioClick, transcrição                │
+ * │                                                                              │
+ * │  SEÇÃO 5: TEMA E INICIALIZAÇÃO ............................... linha ~965   │
+ * │    - initializeTheme, initThemeToggle, initLogoutButton                     │
+ * │                                                                              │
+ * │  SEÇÃO 6: AUTENTICAÇÃO ....................................... linha ~1035  │
+ * │    - checkTechnicianLogin, handleTechnicianLogin, logout                    │
+ * │                                                                              │
+ * │  SEÇÃO 7: LISTAGEM DE OS ..................................... linha ~1160  │
+ * │    - loadOSList, downloadOS, translateStatus                                │
+ * │                                                                              │
+ * │  SEÇÃO 8: PREVIEW E MODAL DE OS .............................. linha ~1312  │
+ * │    - openPreviewOsModal, loadCallInfoForPreview, acceptOS                   │
+ * │                                                                              │
+ * │  SEÇÃO 9: FINALIZAÇÃO DE OS .................................. linha ~1595  │
+ * │    - openFinishModal, handleFinishSubmit, autoSaveFormData                  │
+ * │                                                                              │
+ * │  SEÇÃO 10: MATERIAIS E DESLOCAMENTOS ......................... linha ~2325  │
+ * │    - addMaterialLine, addDisplacementRow, addTimeEntryRow                   │
+ * │                                                                              │
+ * │  SEÇÃO 11: MÁQUINAS .......................................... linha ~2655  │
+ * │    - populateMachineSelect, getMachinesForCompany                           │
+ * │                                                                              │
+ * │  SEÇÃO 12: ASSINATURAS ....................................... linha ~3170  │
+ * │    - initSignatureFeature, saveTechnicianSignature                          │
+ * │                                                                              │
+ * │  SEÇÃO 13: EMPRESAS E HISTÓRICO .............................. linha ~3820  │
+ * │    - searchCompanies, loadCompanyMachines, viewOSHistory                    │
+ * │                                                                              │
+ * │  SEÇÃO 14: CRIAR OS PRÓPRIA .................................. linha ~4285  │
+ * │    - openCreateOwnOSModal, submitCreateOwnOS                                │
+ * │                                                                              │
+ * │  SEÇÃO 15: INICIALIZAÇÃO DO DOM .............................. linha ~4475  │
+ * │    - DOMContentLoaded, setupEventListeners                                  │
+ * │                                                                              │
+ * └─────────────────────────────────────────────────────────────────────────────┘
+ */
+
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                    SEÇÃO 1: CONFIGURAÇÕES E STORAGE                           ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
+
+// URL base da API do backend
 const API_URL = "https://hs-back-production-f54a.up.railway.app"
 
-// === Armazenamento local ===
+// --- Helpers de localStorage ---
 function getStoredTechnicianId() {
   return localStorage.getItem("technicianId")
 }
@@ -52,7 +114,10 @@ function formatForDatetimeLocal(date) {
   return `${year}-${month}-${day}T${hours}:${minutes}`
 }
 
-// === Auto-refresh e WebSocket ===
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                    SEÇÃO 2: WEBSOCKET E AUTO-REFRESH                          ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
+
 let autoRefreshInterval = null
 let socket = null
 
@@ -138,7 +203,9 @@ function stopAutoRefresh() {
   }
 }
 
-// === UI helpers ===
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                          SEÇÃO 3: UI HELPERS                                  ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
 function showToast(message, type = "success") {
   const toast = document.getElementById("toast")
   if (!toast) return
@@ -413,7 +480,9 @@ function setupAutoRewriteAdditionalNote() {
   })
 }
 
-// === Áudio e Transcrição ===
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                       SEÇÃO 4: ÁUDIO E TRANSCRIÇÃO                            ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
 let mediaRecorder = null
 let recordedChunks = []
 
@@ -1030,7 +1099,9 @@ function initLogoutButton() {
   })
 }
 
-// === Session / Sections ===
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                    SEÇÃO 5: SESSÃO E NAVEGAÇÃO                                ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
 function checkTechnicianLogin() {
   const logged = localStorage.getItem("technicianLoggedIn") === "true"
   if (logged) showTechnicianSection()
@@ -1095,7 +1166,9 @@ function showTechnicianSection() {
   }
 }
 
-// === Auth ===
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                         SEÇÃO 6: AUTENTICAÇÃO                                 ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
 async function handleTechnicianLogin(e) {
   if (e) {
     e.preventDefault()
@@ -1156,7 +1229,9 @@ async function handleTechnicianLogin(e) {
   return false
 }
 
-// === OS List / Actions ===
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                        SEÇÃO 7: LISTAGEM DE OS                                ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
 async function loadOSList() {
   const listEl = document.getElementById("osList")
   if (!listEl) return
@@ -1308,7 +1383,9 @@ function translateStatus(status) {
   }
 }
 
-// === Modal de Preview da OS ===
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                     SEÇÃO 8: PREVIEW E MODAL DE OS                            ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
 function openPreviewOsModal(os) {
   const modal = document.getElementById('previewOsModal')
   if (!modal) return
@@ -1591,7 +1668,9 @@ async function acceptOS(id) {
   }
 }
 
-// === Finish OS ===
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                       SEÇÃO 9: FINALIZAÇÃO DE OS                              ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
 let currentOsId = null
 let isSubmittingFinish = false
 
@@ -3164,7 +3243,9 @@ async function handleFinishSubmit(e) {
   }
 }
 
-// === Assinaturas (técnico e cliente) ===
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                        SEÇÃO 12: ASSINATURAS                                  ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
 function initSignatureFeature() {
   const openBtn = document.getElementById("openSignatureModal")
   const modal = document.getElementById("signatureModal")

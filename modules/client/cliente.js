@@ -1,17 +1,50 @@
-/*
- * Lógica específica da página do cliente.
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║                      PORTAL DO CLIENTE - MATH HELSEN                          ║
+ * ╠═══════════════════════════════════════════════════════════════════════════════╣
+ * ║  Sistema para clientes abrirem chamados e acompanharem OS                     ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
  *
- * Este arquivo implementa autenticação e cadastro de clientes,
- * funcionalidades de abertura de chamados, visualização de histórico,
- * avaliação de atendimentos e modal de detalhes. As informações são
- * armazenadas no localStorage para simular um backend ausente.
+ * ┌─────────────────────────────────────────────────────────────────────────────┐
+ * │                           ÍNDICE DO ARQUIVO                                  │
+ * ├─────────────────────────────────────────────────────────────────────────────┤
+ * │                                                                              │
+ * │  SEÇÃO 1: UI HELPERS E TOAST ............................... linha ~35      │
+ * │    - showToast                                                               │
+ * │                                                                              │
+ * │  SEÇÃO 2: SISTEMA DE PERFIS (Netflix-style) ................ linha ~50      │
+ * │    - getCompanyProfiles, createCompanyProfile, openProfileSelector          │
+ * │                                                                              │
+ * │  SEÇÃO 3: WEBSOCKET E AUTO-REFRESH ......................... linha ~140     │
+ * │    - connectWebSocket, startAutoRefresh, stopAutoRefresh                    │
+ * │                                                                              │
+ * │  SEÇÃO 4: TEMA E INICIALIZAÇÃO ............................. linha ~250     │
+ * │    - initializeTheme, updateLogo, handleLogout                              │
+ * │                                                                              │
+ * │  SEÇÃO 5: AUTENTICAÇÃO ..................................... linha ~310     │
+ * │    - checkClientLogin, handleClientLogin, showLoginSection                  │
+ * │                                                                              │
+ * │  SEÇÃO 6: MÁQUINAS ......................................... linha ~505     │
+ * │    - loadMachineOptions                                                      │
+ * │                                                                              │
+ * │  SEÇÃO 7: ABERTURA DE CHAMADOS ............................. linha ~685     │
+ * │    - initializeClientFeatures, handleClientRequest                          │
+ * │                                                                              │
+ * │  SEÇÃO 8: HISTÓRICO E FILTROS .............................. linha ~940     │
+ * │    - filterClientHistory, filterHistory                                     │
+ * │                                                                              │
+ * │  SEÇÃO 9: MODAL DE DETALHES ................................ linha ~1120    │
+ * │    - viewClientOSDetails, closeClientModal, getStatusText                   │
+ * │                                                                              │
+ * └─────────────────────────────────────────────────────────────────────────────┘
  */
 
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                       SEÇÃO 1: UI HELPERS E TOAST                             ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
+
 /**
- * Exibe mensagens de feedback na área de toast. O parâmetro type
- * altera a cor de fundo de acordo com as classes CSS definidas.
- * @param {string} message Mensagem a ser exibida
- * @param {string} [type] Tipo de mensagem: success ou error
+ * Exibe mensagens de feedback na área de toast
  */
 function showToast(message, type = "success") {
   const toast = document.getElementById("toast")
@@ -23,7 +56,9 @@ function showToast(message, type = "success") {
   }, 3000)
 }
 
-// === Perfis (estilo Netflix) ===
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                   SEÇÃO 2: SISTEMA DE PERFIS (Netflix-style)                  ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
 function getProfilesKey() {
   const companyUser = localStorage.getItem("clientUsername") || ""
   return `profiles:${companyUser}`
@@ -130,7 +165,10 @@ let machinesOptions = []
 let selectedMachine = null
 let machinePending = false
 
-// Auto-refresh e WebSocket
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                    SEÇÃO 3: WEBSOCKET E AUTO-REFRESH                          ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
+
 let autoRefreshInterval = null
 let socket = null
 
@@ -244,6 +282,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 })
 
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                      SEÇÃO 4: TEMA E INICIALIZAÇÃO                            ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
+
 /**
  * Inicializa o tema da aplicação baseado na preferência salva
  */
@@ -303,6 +345,10 @@ function handleLogout() {
   const logoutBtn = document.getElementById("logoutBtn")
   if (logoutBtn) logoutBtn.style.display = "none"
 }
+
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                          SEÇÃO 5: AUTENTICAÇÃO                                ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
 
 /**
  * Verifica se existe um cliente logado no localStorage. Caso positivo
@@ -497,9 +543,12 @@ function showClientSection() {
   window.updatePhotoCount()
 }
 
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                            SEÇÃO 6: MÁQUINAS                                  ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
+
 /**
- * Busca lista de máquinas cadastradas no backend e popula o select.  A lista exibe
- * o modelo e número de série.  Inclui opção para indicar pendência.
+ * Busca lista de máquinas cadastradas no backend e popula o select.
  */
 function loadMachineOptions() {
   const select = document.getElementById("clientMachineSelect")
@@ -671,9 +720,9 @@ function handleClientLogin(e) {
   })
 }
 
-// A criação de contas de cliente é realizada pelo administrador. A função
-// handleClientRegister foi removida pois o fluxo de cadastro não é mais
-// acessível a partir da interface do cliente.
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                      SEÇÃO 7: ABERTURA DE CHAMADOS                            ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
 
 /**
  * Inicializa funcionalidades específicas do portal do cliente:
@@ -930,6 +979,10 @@ function handleRating(e) {
     })
 }
 
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                       SEÇÃO 8: HISTÓRICO E FILTROS                            ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
+
 /**
  * Filtra o histórico de ordens de serviço e solicitações por máquina.
  * Organiza os resultados agrupados por máquina para facilitar a visualização.
@@ -1109,6 +1162,10 @@ function filterHistory() {
     )
     .join("")
 }
+
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                       SEÇÃO 9: MODAL DE DETALHES                              ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
 
 /**
  * Exibe detalhes de uma solicitação ou OS na visão do cliente. Se for

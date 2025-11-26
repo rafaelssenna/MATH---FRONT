@@ -1,17 +1,77 @@
-/*
- * Lógica específica do painel administrativo.
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════════╗
+ * ║                    PAINEL ADMINISTRATIVO - MATH HELSEN                        ║
+ * ╠═══════════════════════════════════════════════════════════════════════════════╣
+ * ║  Sistema de gestão de ordens de serviço, empresas, técnicos e faturamento     ║
+ * ╚═══════════════════════════════════════════════════════════════════════════════╝
  *
- * Implementa autenticação de administradores e funcionalidades de
- * gerenciamento de ordens de serviço: listagem, pesquisa, visualização
- * detalhada e geração de PDF. As ordens de serviço são armazenadas
- * no localStorage. Um administrador padrão é criado caso nenhum
- * esteja presente.
+ * ┌─────────────────────────────────────────────────────────────────────────────┐
+ * │                           ÍNDICE DO ARQUIVO                                  │
+ * ├─────────────────────────────────────────────────────────────────────────────┤
+ * │                                                                              │
+ * │  SEÇÃO 1: CONFIGURAÇÕES E VARIÁVEIS GLOBAIS ..................... linha ~30 │
+ * │    - API_URL, caches, configurações de paginação                             │
+ * │                                                                              │
+ * │  SEÇÃO 2: UTILITÁRIOS ............................................ linha ~50 │
+ * │    - debounce, escapeHtml, formatDate, formatHours, showToast               │
+ * │                                                                              │
+ * │  SEÇÃO 3: ÍCONES SVG ............................................ linha ~65  │
+ * │    - SVGIcons object com todos os ícones do sistema                          │
+ * │                                                                              │
+ * │  SEÇÃO 4: SIDEBAR E NAVEGAÇÃO .................................. linha ~85   │
+ * │    - toggleSidebar, closeSidebar, setupSidebar, showSection                 │
+ * │                                                                              │
+ * │  SEÇÃO 5: WEBSOCKET E AUTO-REFRESH ............................. linha ~190  │
+ * │    - connectWebSocket, startAutoRefresh, stopAutoRefresh                    │
+ * │                                                                              │
+ * │  SEÇÃO 6: PRÉ-CARREGAMENTO DE DADOS ............................ linha ~277  │
+ * │    - preloadSystemData, loadTechniciansForTransfer, loadCompaniesCache      │
+ * │                                                                              │
+ * │  SEÇÃO 7: AUTENTICAÇÃO ......................................... linha ~970  │
+ * │    - checkAdminLogin, showAdminLogin, handleAdminLogin                      │
+ * │                                                                              │
+ * │  SEÇÃO 8: ORDENS DE SERVIÇO (OS) ............................... linha ~1153 │
+ * │    - loadOSList, searchOS, viewOSDetails, generatePDF                       │
+ * │                                                                              │
+ * │  SEÇÃO 9: GESTÃO DE EMPRESAS ................................... linha ~1369 │
+ * │    - loadCompaniesAdmin, handleCompanyForm, showCompanyDetails              │
+ * │    - editCompany, deleteCompany, searchCompanies                            │
+ * │                                                                              │
+ * │  SEÇÃO 10: GESTÃO DE MÁQUINAS .................................. linha ~2020 │
+ * │    - handleMachineForm, loadMachinesList, searchMachines                    │
+ * │                                                                              │
+ * │  SEÇÃO 11: TÉCNICOS/USUÁRIOS ................................... linha ~3470 │
+ * │    - loadUsersSection, handleCreateTechnician, deleteTech                   │
+ * │                                                                              │
+ * │  SEÇÃO 12: SOLICITAÇÕES ........................................ linha ~3771 │
+ * │    - loadRequestsSection, showRequestPreview, openAssignModal               │
+ * │                                                                              │
+ * │  SEÇÃO 13: VEÍCULOS ............................................ linha ~4313 │
+ * │    - loadVehiclesList, handleVehicleForm, editVehicle, deleteVehicle        │
+ * │                                                                              │
+ * │  SEÇÃO 14: PROGRAMAÇÃO SEMANAL ................................. linha ~4505 │
+ * │    - loadSchedule, renderScheduleTable, enableOSResize, drag&drop           │
+ * │                                                                              │
+ * │  SEÇÃO 15: EDIÇÃO DE OS ........................................ linha ~5619 │
+ * │    - openEditOsModal, saveOSEdit, recalculateOSTotals                       │
+ * │                                                                              │
+ * │  SEÇÃO 16: FATURAMENTO ......................................... linha ~6477 │
+ * │    - loadBillingData, markOSAsBilled, returnOSToReview                      │
+ * │                                                                              │
+ * │  SEÇÃO 17: ROTEAMENTO E INICIALIZAÇÃO .......................... linha ~7204 │
+ * │    - showSection, navigateFromUrl, initRouter                               │
+ * │                                                                              │
+ * └─────────────────────────────────────────────────────────────────────────────┘
  */
 
-// URL base da API do backend (Railway). Atualize conforme o domínio de produção.
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                    SEÇÃO 1: CONFIGURAÇÕES E VARIÁVEIS GLOBAIS                 ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
+
+// URL base da API do backend (Railway)
 const API_URL = "https://hs-back-production-f54a.up.railway.app"
 
-// Lista de técnicos em cache para facilitar transferência de OS
+// Cache de dados para evitar requisições repetidas
 let cachedTechnicians = []
 let cachedCompanies = []
 
@@ -43,6 +103,10 @@ let osPagination = { page: 1, limit: 10, total: 0 }
 // Visualização de empresas (cards ou lista)
 let companiesViewMode = localStorage.getItem('companiesViewMode') || 'cards'
 
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                         SEÇÃO 2: UTILITÁRIOS                                  ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
+
 /**
  * Função utilitária debounce para evitar chamadas excessivas
  */
@@ -57,6 +121,10 @@ function debounce(func, wait) {
     timeout = setTimeout(later, wait)
   }
 }
+
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                         SEÇÃO 3: ÍCONES SVG                                   ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
 
 /**
  * Ícones SVG profissionais para substituir emojis
@@ -78,9 +146,9 @@ const SVGIcons = {
   plus: '<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'
 }
 
-// ==========================================
-// CONTROLE DA SIDEBAR MOBILE
-// ==========================================
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                    SEÇÃO 4: SIDEBAR E NAVEGAÇÃO                               ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
 
 /**
  * Abre/fecha a sidebar em dispositivos móveis
@@ -183,6 +251,10 @@ function formatHours(decimalHours) {
   if (minutes === 0) return `${hours}h`
   return `${hours}h ${minutes}min`
 }
+
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                   SEÇÃO 5: WEBSOCKET E AUTO-REFRESH                           ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
 
 /**
  * Conecta ao WebSocket para notificações em tempo real
@@ -963,6 +1035,10 @@ async function resolveClientCNPJByName(name) {
   return null
 }
 
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                         SEÇÃO 7: AUTENTICAÇÃO                                 ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
+
 /**
  * Verifica se um administrador está autenticado. Caso afirmativo,
  * exibe o painel; caso contrário mostra a tela de login.
@@ -1145,6 +1221,10 @@ function handleAdminLogin(e) {
       }
     })
 }
+
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                    SEÇÃO 8: ORDENS DE SERVIÇO (OS)                            ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
 
 /**
  * Carrega a lista de ordens de serviço do localStorage e exibe
@@ -1364,7 +1444,9 @@ function renderOsPaginationBar() {
   if (next) next.onclick = () => { const tp = Math.max(1, Math.ceil((osPagination.total || 0)/osPagination.limit)); if (osPagination.page < tp) { osPagination.page += 1; loadOSList() } }
 }
 
-/* ====================== Gestão de Empresas e Máquinas ====================== */
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                       SEÇÃO 9: GESTÃO DE EMPRESAS                             ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
 
 function loadCompaniesAdmin() {
   fetch(`${API_URL}/api/companies`)
@@ -2013,6 +2095,10 @@ function searchCompanies() {
     })
     .join('')
 }
+
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                      SEÇÃO 10: GESTÃO DE MÁQUINAS                             ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
 
 /**
  * Envia o cadastro de uma nova máquina para o backend.
@@ -3465,7 +3551,9 @@ function restoreAdminState() {
   }
 }
 
-/* ==================== Gestão de Usuários ==================== */
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                     SEÇÃO 11: TÉCNICOS E USUÁRIOS                             ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
 
 function loadUsersSection() {
   const techForm = document.getElementById("createTechnicianForm")
@@ -3766,7 +3854,9 @@ function handleCreateTechnician(e) {
     })
 }
 
-/* ==================== Gestão de Solicitações ==================== */
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                        SEÇÃO 12: SOLICITAÇÕES                                 ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
 
 function loadRequestsSection() {
   const container = document.getElementById("requestsList")
@@ -4306,6 +4396,10 @@ function openCreateOSModal() {
       showToast("Erro ao carregar dados para criar OS", "error")
     })
 }
+
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                          SEÇÃO 13: VEÍCULOS                                   ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
 
 /**
  * Lista veículos no painel.
@@ -5174,7 +5268,10 @@ function findMorningCell(techId, dateStr) {
   return null
 }
 
-// Carrega e exibe a programação da semana corrente
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                      SEÇÃO 14: PROGRAMAÇÃO SEMANAL                            ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
+
 async function loadSchedule() {
   const label = document.getElementById('scheduleWeekLabel')
   try {
@@ -5611,6 +5708,10 @@ function toDatetimeLocal(value) {
     return ''
   }
 }
+
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                        SEÇÃO 15: EDIÇÃO DE OS                                 ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
 
 /**
  * Abre a janela modal de edição de OS.
@@ -6468,6 +6569,10 @@ async function revertOSToPending(osId) {
   }
 }
 
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                         SEÇÃO 16: FATURAMENTO                                 ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
+
 // Estado atual da aba de faturamento
 let currentBillingTab = 'pending'
 
@@ -7199,6 +7304,10 @@ async function handleDrop(e) {
 
   window.draggedOSData = null
 }
+
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                   SEÇÃO 17: ROTEAMENTO E INICIALIZAÇÃO                        ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
 
 // Mostrar/ocultar seções ao clicar no menu lateral
 function showSection(sectionId, updateUrl = true) {
