@@ -222,7 +222,7 @@ function renderConferenceModal() {
               </svg>
             </div>
             <!-- Dropdown com busca -->
-            <div id="conferenceCompanyDropdown" style="display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 1000; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; margin-top: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+            <div id="conferenceCompanyDropdown" style="display: none; position: absolute; top: 100%; left: 0; min-width: 350px; z-index: 1000; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; margin-top: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
               <input
                 type="text"
                 id="conferenceCompanySearch"
