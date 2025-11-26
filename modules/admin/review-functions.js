@@ -477,6 +477,31 @@ function renderConferenceAdditionalServices() {
 }
 
 /**
+ * Normaliza o valor de km_option para o formato padrão do sistema
+ * Aceita valores do técnico (50, 100, maior, nenhum) e converte para formato unificado
+ */
+function normalizeKmOption(kmOption) {
+  if (!kmOption) return 'sem_deslocamento'
+  const opt = String(kmOption).toLowerCase().trim()
+
+  // Mapeamento de valores do técnico → formato padrão
+  if (opt === 'nenhum' || opt === 'none' || opt === 'sem_deslocamento' || opt === 'sem deslocamento') {
+    return 'sem_deslocamento'
+  }
+  if (opt === '50' || opt === 'ate_50km' || opt.includes('50')) {
+    return 'ate_50km'
+  }
+  if (opt === '100' || opt === 'ate_100km' || opt.includes('100')) {
+    return 'ate_100km'
+  }
+  if (opt === 'maior' || opt === 'acima_100km' || opt.includes('acima') || opt.includes('maior')) {
+    return 'acima_100km'
+  }
+
+  return 'sem_deslocamento'
+}
+
+/**
  * Renderiza lista de deslocamentos
  */
 function renderConferenceDisplacements() {
@@ -485,23 +510,26 @@ function renderConferenceDisplacements() {
   }
 
   return conferenceDisplacements.map((d, idx) => {
+    // Normaliza km_option para garantir compatibilidade
+    const normalizedKmOption = normalizeKmOption(d.km_option)
+
     // Gera opções de veículos
     const vehicleOptions = conferenceVehicles.map(v =>
       `<option value="${v.id}" ${d.vehicle_id == v.id ? 'selected' : ''}>${escapeHtml(v.plate)}${v.name ? ' - ' + escapeHtml(v.name) : ''}</option>`
     ).join('')
 
     // KM Total só aparece se for acima de 100km
-    const showKmTotal = d.km_option === 'acima_100km'
+    const showKmTotal = normalizedKmOption === 'acima_100km'
 
     return `
     <div style="display: grid; grid-template-columns: 1fr ${showKmTotal ? '1fr ' : ''}1fr auto; gap: 0.75rem; margin-bottom: 0.75rem; align-items: end;">
       <div>
         <label style="font-size: 0.75rem; color: var(--text-secondary);">Opção KM</label>
         <select onchange="updateDisplacementKmOption(${idx}, this.value)" style="width: 100%; padding: 0.5rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary);">
-          <option value="sem_deslocamento" ${d.km_option === 'sem_deslocamento' ? 'selected' : ''}>Sem deslocamento</option>
-          <option value="ate_50km" ${d.km_option === 'ate_50km' ? 'selected' : ''}>Até 50 km</option>
-          <option value="ate_100km" ${d.km_option === 'ate_100km' ? 'selected' : ''}>Até 100 km</option>
-          <option value="acima_100km" ${d.km_option === 'acima_100km' ? 'selected' : ''}>Acima de 100 km</option>
+          <option value="sem_deslocamento" ${normalizedKmOption === 'sem_deslocamento' ? 'selected' : ''}>Sem deslocamento</option>
+          <option value="ate_50km" ${normalizedKmOption === 'ate_50km' ? 'selected' : ''}>Até 50 km</option>
+          <option value="ate_100km" ${normalizedKmOption === 'ate_100km' ? 'selected' : ''}>Até 100 km</option>
+          <option value="acima_100km" ${normalizedKmOption === 'acima_100km' ? 'selected' : ''}>Acima de 100 km</option>
         </select>
       </div>
       ${showKmTotal ? `
@@ -659,19 +687,22 @@ function updateWorklogEnd(idx, value) {
  * Calcula custo de deslocamento baseado em km_option e is_new_client
  */
 function calculateDisplacementCost(displacement, isNewClient) {
+  // Normaliza km_option para garantir compatibilidade
+  const normalizedKmOption = normalizeKmOption(displacement.km_option)
+
   // Sem deslocamento = R$ 0
-  if (displacement.km_option === 'sem_deslocamento') {
+  if (normalizedKmOption === 'sem_deslocamento') {
     return 0
   }
 
   let km = 0
 
-  // Determina KM baseado na opção
-  if (displacement.km_total > 0 && displacement.km_option === 'acima_100km') {
+  // Determina KM baseado na opção normalizada
+  if (displacement.km_total > 0 && normalizedKmOption === 'acima_100km') {
     km = parseFloat(displacement.km_total)
-  } else if (displacement.km_option === 'ate_50km') {
+  } else if (normalizedKmOption === 'ate_50km') {
     km = 50
-  } else if (displacement.km_option === 'ate_100km') {
+  } else if (normalizedKmOption === 'ate_100km') {
     km = 100
   }
 
