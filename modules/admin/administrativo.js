@@ -7107,29 +7107,31 @@ function showSection(sectionId, updateUrl = true) {
     clickedItem.classList.add('active')
   }
 
-  // Atualiza URL com rota bonita
+  // Atualiza URL com rota bonita (sem #)
   if (updateUrl && SECTION_TO_ROUTE[sectionId]) {
-    const newHash = '#/' + SECTION_TO_ROUTE[sectionId]
-    if (window.location.hash !== newHash) {
-      history.pushState(null, '', newHash)
+    const basePath = window.location.pathname
+    const newUrl = basePath + '?p=' + SECTION_TO_ROUTE[sectionId]
+    if (window.location.search !== '?p=' + SECTION_TO_ROUTE[sectionId]) {
+      history.pushState({ section: sectionId }, '', newUrl)
     }
   }
 }
 
 // Navega para seção baseado na URL
 function navigateFromUrl() {
-  const hash = window.location.hash.replace('#/', '').replace('#', '')
+  const params = new URLSearchParams(window.location.search)
+  const page = params.get('p')
 
-  if (hash && ROUTES[hash]) {
-    showSection(ROUTES[hash], false)
-  } else if (!hash || hash === '') {
+  if (page && ROUTES[page]) {
+    showSection(ROUTES[page], false)
+  } else {
     // Rota padrão: solicitações
     showSection('requestsSection', false)
   }
 }
 
 // Listener para mudanças de URL (botões voltar/avançar)
-window.addEventListener('hashchange', navigateFromUrl)
+window.addEventListener('popstate', navigateFromUrl)
 
 // Inicializa rota ao carregar página (será chamado após login)
 function initRouter() {
