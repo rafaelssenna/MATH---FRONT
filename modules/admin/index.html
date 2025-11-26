@@ -45,7 +45,14 @@
                 <img src="helsenservicelogo.png" alt="Helsen Service" class="logo-image">
             </div>
             <div class="header-actions">
-                <!-- Mobile menu toggle will be added by JavaScript -->
+                <!-- Mobile menu toggle -->
+                <button id="menuToggle" class="menu-toggle" onclick="toggleSidebar()" aria-label="Abrir menu">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="3" y1="6" x2="21" y2="6"/>
+                        <line x1="3" y1="12" x2="21" y2="12"/>
+                        <line x1="3" y1="18" x2="21" y2="18"/>
+                    </svg>
+                </button>
                 <span id="adminNameDisplay" class="admin-name"></span>
                 <!-- Botão voltar para seleção de área -->
                 <button id="switchAreaBtn" class="btn-icon" title="Trocar de área" aria-label="Voltar para seleção de área" onclick="window.location.href='/home'">
@@ -124,7 +131,9 @@
         <!-- Painel administrativo; oculto até login ser efetuado -->
         <section id="admin-section" style="display:none">
             <div class="admin-wrapper">
-                <aside class="sidebar">
+                <!-- Overlay para fechar sidebar em mobile -->
+                <div id="sidebarOverlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
+                <aside class="sidebar" id="sidebar">
                     <div class="sidebar-header">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="3" y="3" width="7" height="7"/>

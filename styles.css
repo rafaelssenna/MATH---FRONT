@@ -528,3 +528,110 @@ body::before {
 ::-webkit-scrollbar-thumb:hover {
     background: var(--border-color);
 }
+
+/* ====================================
+   RESPONSIVIDADE iOS / SAFE AREAS
+   ==================================== */
+
+/* iOS Safe Areas */
+@supports (padding: env(safe-area-inset-top)) {
+    .container {
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+    }
+
+    .toast {
+        bottom: calc(2rem + env(safe-area-inset-bottom));
+    }
+}
+
+/* Mobile Small (iPhone SE) */
+@media (max-width: 375px) {
+    .container {
+        padding: 1rem;
+    }
+
+    .company-logo {
+        width: 100px;
+    }
+
+    .math-logo {
+        font-size: 2rem;
+    }
+
+    .subtitle {
+        font-size: 0.75rem;
+    }
+
+    .system-description {
+        font-size: 0.85rem;
+    }
+
+    .role-card {
+        padding: 1.25rem;
+    }
+
+    .role-icon svg {
+        width: 36px;
+        height: 36px;
+    }
+
+    .role-card h2 {
+        font-size: 1.1rem;
+    }
+
+    .role-card p {
+        font-size: 0.8rem;
+    }
+
+    .role-btn {
+        padding: 0.75rem;
+        font-size: 0.8rem;
+    }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+    .role-card {
+        cursor: pointer;
+    }
+
+    .role-btn {
+        min-height: 48px;
+    }
+
+    /* Remove hover effects on touch */
+    .role-card:hover {
+        transform: none;
+    }
+
+    .role-card:active {
+        transform: scale(0.98);
+    }
+}
+
+/* iOS specific fixes */
+@supports (-webkit-touch-callout: none) {
+    body {
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-y: none;
+    }
+}
+
+/* Accessibility - Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .role-card,
+    .role-btn {
+        transition: none;
+    }
+}

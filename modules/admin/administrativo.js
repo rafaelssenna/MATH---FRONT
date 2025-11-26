@@ -78,6 +78,55 @@ const SVGIcons = {
   plus: '<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'
 }
 
+// ==========================================
+// CONTROLE DA SIDEBAR MOBILE
+// ==========================================
+
+/**
+ * Abre/fecha a sidebar em dispositivos móveis
+ */
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar')
+  const overlay = document.getElementById('sidebarOverlay')
+
+  if (sidebar && overlay) {
+    const isOpen = sidebar.classList.contains('open')
+    if (isOpen) {
+      closeSidebar()
+    } else {
+      sidebar.classList.add('open')
+      overlay.classList.add('active')
+      document.body.style.overflow = 'hidden' // Previne scroll do body
+    }
+  }
+}
+
+/**
+ * Fecha a sidebar
+ */
+function closeSidebar() {
+  const sidebar = document.getElementById('sidebar')
+  const overlay = document.getElementById('sidebarOverlay')
+
+  if (sidebar && overlay) {
+    sidebar.classList.remove('open')
+    overlay.classList.remove('active')
+    document.body.style.overflow = '' // Restaura scroll
+  }
+}
+
+// Fecha sidebar quando um item do menu é clicado (em mobile)
+document.addEventListener('DOMContentLoaded', function() {
+  const menuItems = document.querySelectorAll('.sidebar-menu a')
+  menuItems.forEach(item => {
+    item.addEventListener('click', function() {
+      if (window.innerWidth <= 1024) {
+        closeSidebar()
+      }
+    })
+  })
+})
+
 /**
  * Escapa caracteres HTML para prevenir XSS
  */
