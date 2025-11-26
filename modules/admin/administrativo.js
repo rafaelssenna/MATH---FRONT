@@ -6595,6 +6595,7 @@ async function revertOSToPending(osId) {
 
 // Estado atual da aba de faturamento
 let currentBillingTab = 'pending'
+let billedOSListCache = [] // Cache para filtro de OS faturadas
 
 /**
  * Troca entre abas de faturamento (pendente / faturadas)
@@ -6612,6 +6613,16 @@ function switchBillingTab(tab) {
     title.textContent = tab === 'pending' ? 'OS Pendentes de Faturamento' : 'OS Faturadas'
   }
 
+  // Mostra/esconde campo de busca (só na aba faturadas)
+  const searchContainer = document.getElementById('billingSearchContainer')
+  if (searchContainer) {
+    searchContainer.style.display = tab === 'billed' ? 'block' : 'none'
+  }
+
+  // Limpa busca ao trocar de aba
+  const searchInput = document.getElementById('billingSearchInput')
+  if (searchInput) searchInput.value = ''
+
   // Recarrega dados
   loadBillingData()
 }
@@ -6622,33 +6633,70 @@ function switchBillingTab(tab) {
 async function loadBillingData() {
   const year = document.getElementById('billingYear')?.value || ''
   const month = document.getElementById('billingMonth')?.value || ''
-  
+
   try {
     // Busca estatísticas
     let statsUrl = `${API_URL}/api/billing/stats?`
     if (year) statsUrl += `year=${year}&`
     if (month) statsUrl += `month=${month}`
-    
+
     // Busca OS com filtro de billed
     let osUrl = `${API_URL}/api/billing/finished-os?billed=${currentBillingTab === 'billed' ? 'true' : 'false'}`
     if (year) osUrl += `&year=${year}`
     if (month) osUrl += `&month=${month}`
-    
+
     const [statsRes, osRes] = await Promise.all([
       fetch(statsUrl).then(r => r.json()),
       fetch(osUrl).then(r => r.json())
     ])
-    
+
     // Renderiza estatísticas
     renderBillingStats(statsRes)
-    
+
+    // Salva no cache se for aba de faturadas (para filtro)
+    if (currentBillingTab === 'billed') {
+      billedOSListCache = osRes || []
+    }
+
     // Renderiza lista de OS
     renderBillingOSList(osRes, currentBillingTab)
-    
+
   } catch (error) {
     console.error('Erro ao carregar faturamento:', error)
     showToast('Erro ao carregar dados de faturamento', 'error')
   }
+}
+
+/**
+ * Filtra OS faturadas por número de OS ou NF
+ */
+function filterBillingOS() {
+  const searchInput = document.getElementById('billingSearchInput')
+  const searchTerm = (searchInput?.value || '').trim().toLowerCase()
+
+  if (!searchTerm) {
+    // Sem busca, mostra tudo
+    renderBillingOSList(billedOSListCache, 'billed')
+    return
+  }
+
+  // Filtra por número de OS ou número de NF
+  const filtered = billedOSListCache.filter(os => {
+    const osNumber = String(os.order_number || '').toLowerCase()
+    const invoiceNumber = String(os.invoice_number || '').toLowerCase()
+    return osNumber.includes(searchTerm) || invoiceNumber.includes(searchTerm)
+  })
+
+  renderBillingOSList(filtered, 'billed')
+}
+
+/**
+ * Limpa busca de OS faturadas
+ */
+function clearBillingSearch() {
+  const searchInput = document.getElementById('billingSearchInput')
+  if (searchInput) searchInput.value = ''
+  renderBillingOSList(billedOSListCache, 'billed')
 }
 
 /**

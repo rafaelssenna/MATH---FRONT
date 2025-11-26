@@ -756,7 +756,26 @@
                         <button class="sub-nav-btn active" onclick="switchBillingTab('pending')" id="billingTabPending">Pendente de Faturamento</button>
                         <button class="sub-nav-btn" onclick="switchBillingTab('billed')" id="billingTabBilled">Faturadas</button>
                     </div>
-                    
+
+                    <!-- Campo de busca para OS Faturadas -->
+                    <div id="billingSearchContainer" style="display: none; margin-bottom: 1rem;">
+                        <div class="search-bar" style="display: flex; gap: 0.5rem; align-items: center;">
+                            <input
+                                type="text"
+                                id="billingSearchInput"
+                                placeholder="Buscar por número da OS ou Nota Fiscal..."
+                                style="flex: 1; padding: 0.75rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary);"
+                                onkeyup="filterBillingOS()"
+                            >
+                            <button class="btn-secondary" onclick="clearBillingSearch()" style="padding: 0.75rem;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"/>
+                                    <line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- Lista de OS -->
                     <div class="card">
                         <div class="card-header">
