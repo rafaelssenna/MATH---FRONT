@@ -2740,17 +2740,39 @@ async function viewOSDetails(id) {
         </div>
       `
 
-      // Custo de Deslocamento
+      // Calcula vencimento para preview
+      const totalValueForDuePreview = Number(currentOS.totalGeral) || 0
+      const baseDateForDuePreview = currentOS.dataProgramada ? new Date(currentOS.dataProgramada) : new Date()
+      const dueDatesPreviewCalc = calculateDueDates(totalValueForDuePreview, baseDateForDuePreview)
+      let vencimentoPreviewText = ""
+      if (dueDatesPreviewCalc.length === 1) {
+        vencimentoPreviewText = dueDatesPreviewCalc[0].dateStr
+      } else {
+        vencimentoPreviewText = dueDatesPreviewCalc.map(d => d.dateStr).join(" / ")
+      }
+      const vencimentoLabelPreview = `Vencimento${dueDatesPreviewCalc.length > 1 ? ` (${dueDatesPreviewCalc.length}x)` : ''}`
+
+      // Deslocamento + Vencimento (na mesma linha)
       if (totalKm > 0) {
         html += `
           <div class="detail-grid" style="margin-bottom: 1rem; padding: 0.75rem; background: var(--bg-input); border-radius: 8px;">
             <div class="detail-field">
-              <label>Quilometragem Total</label>
-              <span>${totalKm} km</span>
+              <label>Deslocamento (${totalKm} km)</label>
+              <span style="font-weight: 600;">R$ ${deslocCost.toFixed(2)}</span>
             </div>
             <div class="detail-field">
-              <label>Custo de Deslocamento</label>
-              <span style="font-weight: 600;">R$ ${deslocCost.toFixed(2)}</span>
+              <label>${vencimentoLabelPreview}</label>
+              <span style="font-weight: 600;">${vencimentoPreviewText}</span>
+            </div>
+          </div>
+        `
+      } else {
+        // Só vencimento se não tiver deslocamento
+        html += `
+          <div class="detail-grid" style="margin-bottom: 1rem; padding: 0.75rem; background: var(--bg-input); border-radius: 8px;">
+            <div class="detail-field">
+              <label>${vencimentoLabelPreview}</label>
+              <span style="font-weight: 600;">${vencimentoPreviewText}</span>
             </div>
           </div>
         `
@@ -2817,23 +2839,6 @@ async function viewOSDetails(id) {
         </div>
       `
 
-      // Vencimento (calculado automaticamente baseado no valor) - compacto no canto direito
-      const totalValueForDue = Number(currentOS.totalGeral) || 0
-      const baseDateForDue = currentOS.dataProgramada ? new Date(currentOS.dataProgramada) : new Date()
-      const dueDatesPreview = calculateDueDates(totalValueForDue, baseDateForDue)
-
-      let vencimentoTextPreview = ""
-      if (dueDatesPreview.length === 1) {
-        vencimentoTextPreview = `Venc: ${dueDatesPreview[0].dateStr}`
-      } else {
-        vencimentoTextPreview = `Venc (${dueDatesPreview.length}x): ${dueDatesPreview.map(d => d.dateStr).join(" / ")}`
-      }
-
-      html += `
-        <div style="margin-top: 0.5rem; text-align: right;">
-          <span style="color: var(--text-secondary); font-size: 0.9rem;">${vencimentoTextPreview}</span>
-        </div>
-      `
       html += "</div>"
     }
 
@@ -3623,8 +3628,28 @@ async function generateAndOpenOSPDF() {
     drawFullRow("Custo Total de Materiais", fmtBRL(custoMatNum))
   }
 
+  // Calcula vencimento (usado abaixo)
+  const totalValueForVenc = Number(currentOS.totalGeral) || 0
+  const baseDateForVenc = currentOS.dataProgramada ? parseAsLocalTime(currentOS.dataProgramada) : new Date()
+  const dueDatesCalc = calculateDueDates(totalValueForVenc, baseDateForVenc)
+  let vencimentoText = ""
+  if (dueDatesCalc.length === 1) {
+    vencimentoText = dueDatesCalc[0].dateStr
+  } else {
+    vencimentoText = dueDatesCalc.map(d => d.dateStr).join(" / ")
+  }
+
+  // Deslocamento + Vencimento (na mesma linha, como células separadas)
   if (totalKm > 0) {
-    drawFullRow(`Deslocamento (${totalKm} km)`, fmtBRL(deslocCost))
+    drawCells([
+      { label: `Deslocamento (${totalKm} km)`, value: fmtBRL(deslocCost), width: 0.5 },
+      { label: `Vencimento${dueDatesCalc.length > 1 ? ` (${dueDatesCalc.length}x)` : ''}`, value: vencimentoText, width: 0.5 },
+    ])
+  } else {
+    // Se não tiver deslocamento, mostra só o vencimento
+    drawCells([
+      { label: `Vencimento${dueDatesCalc.length > 1 ? ` (${dueDatesCalc.length}x)` : ''}`, value: vencimentoText, width: 1 },
+    ])
   }
 
   if (Array.isArray(currentOS.additionalServices) && currentOS.additionalServices.length > 0) {
@@ -3641,46 +3666,18 @@ async function generateAndOpenOSPDF() {
     drawFullRow("Serviço Adicional", fmtBRL(valServicoNum))
   }
 
-  // ====== TOTAL GERAL + VENCIMENTO (na mesma linha) ======
+  // ====== TOTAL GERAL ======
   {
     const totalGer = fmtBRL(currentOS.totalGeral)
-
-    // Calcula vencimento
-    const totalValue = Number(currentOS.totalGeral) || 0
-    const baseDate = currentOS.dataProgramada ? parseAsLocalTime(currentOS.dataProgramada) : new Date()
-    const dueDates = calculateDueDates(totalValue, baseDate)
-
-    let vencimentoText = ""
-    if (dueDates.length === 1) {
-      vencimentoText = `Venc: ${dueDates[0].dateStr}`
-    } else {
-      vencimentoText = `Venc (${dueDates.length}x): ${dueDates.map(d => d.dateStr).join(" / ")}`
-    }
-
     const lineH = 8
     ensureSpace(lineH)
     doc.setFillColor(232, 240, 254)
     doc.rect(marginX, y, contentW, lineH, "F")
-
-    // Total Geral à esquerda
     doc.setFont("helvetica", "bold")
     doc.setFontSize(10)
     doc.setTextColor(0)
     doc.text("Total Geral da O.S.", marginX + LEFT_INNER, y + 5.2)
-
-    // Vencimento no centro-direita
-    doc.setFont("helvetica", "normal")
-    doc.setFontSize(8)
-    doc.setTextColor(80, 80, 80)
-    const vencX = marginX + contentW - doc.getTextWidth(totalGer) - doc.getTextWidth(vencimentoText) - RIGHT_INNER - 15
-    doc.text(vencimentoText, vencX, y + 5.2)
-
-    // Valor à direita
-    doc.setFont("helvetica", "bold")
-    doc.setFontSize(10)
-    doc.setTextColor(0)
     doc.text(totalGer, marginX + contentW - doc.getTextWidth(totalGer) - RIGHT_INNER, y + 5.2)
-
     y += lineH
   }
 
