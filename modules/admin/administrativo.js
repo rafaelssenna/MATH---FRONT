@@ -405,6 +405,65 @@ function formatDueDatesForPDF(totalValue, baseDate = new Date()) {
   return dueDates.map(d => d.dateStr).join(' / ')
 }
 
+/**
+ * Calcula vencimentos usando regra customizada da empresa se existir
+ * @param {number} totalValue - Valor total da OS
+ * @param {Date} baseDate - Data base
+ * @param {string} companyName - Nome da empresa para buscar regra customizada
+ * @returns {Promise<Array>} - Array de vencimentos
+ */
+async function calculateDueDatesWithCustomRule(totalValue, baseDate, companyName) {
+  // Busca empresa no cache para verificar se tem regra customizada
+  const company = (cachedCompanies || []).find(
+    c => c.name && c.name.toLowerCase() === (companyName || '').toLowerCase()
+  )
+
+  // Se não encontrou empresa ou não tem regra customizada, usa regra padrão local
+  if (!company || !company.billing_rule) {
+    return calculateDueDates(totalValue, baseDate)
+  }
+
+  // Tem regra customizada - chama API para processar com OpenAI
+  try {
+    console.log(`[Vencimento] Usando regra customizada da empresa ${company.name}: "${company.billing_rule.substring(0, 50)}..."`)
+
+    const token = localStorage.getItem('adminToken')
+    const response = await fetch(`${API_URL}/api/billing/calculate-due-dates`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        totalValue: totalValue,
+        baseDate: baseDate.toISOString(),
+        companyId: company.id,
+        billingRule: company.billing_rule
+      })
+    })
+
+    if (!response.ok) {
+      console.warn('[Vencimento] Erro na API, usando regra padrão')
+      return calculateDueDates(totalValue, baseDate)
+    }
+
+    const data = await response.json()
+
+    if (data.success && Array.isArray(data.dueDates) && data.dueDates.length > 0) {
+      console.log(`[Vencimento] Regra customizada aplicada: ${data.dueDates.map(d => d.dateStr).join(', ')}`)
+      return data.dueDates
+    }
+
+    // Fallback para regra padrão se API retornar vazio
+    return calculateDueDates(totalValue, baseDate)
+
+  } catch (error) {
+    console.error('[Vencimento] Erro ao processar regra customizada:', error)
+    // Fallback para regra padrão em caso de erro
+    return calculateDueDates(totalValue, baseDate)
+  }
+}
+
 // ╔═══════════════════════════════════════════════════════════════════════════════╗
 // ║                   SEÇÃO 5: WEBSOCKET E AUTO-REFRESH                           ║
 // ╚═══════════════════════════════════════════════════════════════════════════════╝
@@ -1701,6 +1760,7 @@ function handleCompanyForm(e) {
   const phone1Input = document.getElementById("companyPhone1")
   const emailInput = document.getElementById("companyEmail")
   const observationsInput = document.getElementById("companyObservations")
+  const billingRuleInput = document.getElementById("companyBillingRule")
   const isNewInput = document.getElementById("companyIsNew")
 
   // Extrai valores com segurança
@@ -1712,6 +1772,7 @@ function handleCompanyForm(e) {
   const phone1 = phone1Input ? phone1Input.value.trim() : ""
   const email = emailInput ? emailInput.value.trim() : ""
   const observations = observationsInput ? observationsInput.value.trim() : ""
+  const billingRule = billingRuleInput ? billingRuleInput.value.trim() : ""
   const isNew = isNewInput ? isNewInput.checked : false
 
   // Verifica se está editando ou criando
@@ -1735,6 +1796,7 @@ function handleCompanyForm(e) {
     phone1,
     email,
     observations: observations || null,
+    billing_rule: billingRule || null,
     is_new: isNew,
   }
 
@@ -1772,6 +1834,7 @@ function handleCompanyForm(e) {
       if (phone1Input) phone1Input.value = ""
       if (emailInput) emailInput.value = ""
       if (observationsInput) observationsInput.value = ""
+      if (billingRuleInput) billingRuleInput.value = ""
       if (isNewInput) isNewInput.checked = false
 
       // Remove flag de edição
@@ -1879,7 +1942,14 @@ function populateCompanyDetails(company, osList = []) {
     // Armazena o ID da empresa para usar no toggle
     isNewCheckbox.dataset.companyId = company.id
   }
-  
+
+  // Preenche textarea "Regra de Faturamento"
+  const billingRuleTextarea = document.getElementById('detailsCompanyBillingRule')
+  if (billingRuleTextarea) {
+    billingRuleTextarea.value = company.billing_rule || ''
+    billingRuleTextarea.dataset.companyId = company.id
+  }
+
   // Preenche lista de máquinas
   const tbody = document.getElementById('detailsCompanyMachines')
   if (tbody) {
@@ -2113,6 +2183,51 @@ async function toggleCompanyIsNew() {
 }
 
 /**
+ * Salva a regra de faturamento customizada de uma empresa
+ */
+async function saveCompanyBillingRule() {
+  const textarea = document.getElementById('detailsCompanyBillingRule')
+  if (!textarea) return
+
+  const companyId = textarea.dataset.companyId
+  const billingRule = textarea.value.trim()
+
+  if (!companyId) {
+    showToast('ID da empresa não encontrado', 'error')
+    return
+  }
+
+  try {
+    const token = localStorage.getItem('adminToken')
+    const res = await fetch(`${API_URL}/api/companies/${companyId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ billing_rule: billingRule || null })
+    })
+
+    if (!res.ok) {
+      const error = await res.json()
+      throw new Error(error.message || 'Erro ao salvar regra')
+    }
+
+    if (billingRule) {
+      showToast('Regra de faturamento salva com sucesso', 'success')
+    } else {
+      showToast('Regra removida - será usada regra padrão', 'success')
+    }
+
+    // Atualiza cache de empresas
+    loadCompaniesCache()
+  } catch (error) {
+    console.error('Erro ao salvar regra de faturamento:', error)
+    showToast(error.message || 'Erro ao salvar regra', 'error')
+  }
+}
+
+/**
  * Deleta uma empresa após confirmação do usuário.
  */
 async function deleteCompany(companyId) {
@@ -2192,6 +2307,7 @@ async function editCompany(companyId) {
     const phone1Input = document.getElementById('companyPhone1')
     const emailInput = document.getElementById('companyEmail')
     const observationsInput = document.getElementById('companyObservations')
+    const billingRuleInput = document.getElementById('companyBillingRule')
     const isNewInput = document.getElementById('companyIsNew')
 
     if (nameInput) nameInput.value = company.name || ''
@@ -2202,6 +2318,7 @@ async function editCompany(companyId) {
     if (phone1Input) phone1Input.value = company.phone1 || ''
     if (emailInput) emailInput.value = company.email || ''
     if (observationsInput) observationsInput.value = company.observations || ''
+    if (billingRuleInput) billingRuleInput.value = company.billing_rule || ''
     if (isNewInput) isNewInput.checked = company.is_new || false
 
     // Armazena ID da empresa sendo editada
@@ -2740,10 +2857,10 @@ async function viewOSDetails(id) {
         </div>
       `
 
-      // Calcula vencimento para preview
+      // Calcula vencimento para preview - usa regra customizada se empresa tiver
       const totalValueForDuePreview = Number(currentOS.totalGeral) || 0
       const baseDateForDuePreview = currentOS.dataProgramada ? new Date(currentOS.dataProgramada) : new Date()
-      const dueDatesPreviewCalc = calculateDueDates(totalValueForDuePreview, baseDateForDuePreview)
+      const dueDatesPreviewCalc = await calculateDueDatesWithCustomRule(totalValueForDuePreview, baseDateForDuePreview, currentOS.cliente)
       let vencimentoPreviewText = ""
       if (dueDatesPreviewCalc.length === 1) {
         vencimentoPreviewText = dueDatesPreviewCalc[0].dateStr
@@ -3628,10 +3745,10 @@ async function generateAndOpenOSPDF() {
     drawFullRow("Custo Total de Materiais", fmtBRL(custoMatNum))
   }
 
-  // Calcula vencimento (usado abaixo)
+  // Calcula vencimento (usado abaixo) - usa regra customizada se empresa tiver
   const totalValueForVenc = Number(currentOS.totalGeral) || 0
   const baseDateForVenc = currentOS.dataProgramada ? parseAsLocalTime(currentOS.dataProgramada) : new Date()
-  const dueDatesCalc = calculateDueDates(totalValueForVenc, baseDateForVenc)
+  const dueDatesCalc = await calculateDueDatesWithCustomRule(totalValueForVenc, baseDateForVenc, currentOS.cliente)
   let vencimentoText = ""
   if (dueDatesCalc.length === 1) {
     vencimentoText = dueDatesCalc[0].dateStr

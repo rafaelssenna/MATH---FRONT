@@ -447,6 +447,11 @@
                                     <textarea id="companyObservations" placeholder="Observações gerais (opcional)"></textarea>
                                 </div>
                                 <div class="form-group">
+                                    <label for="companyBillingRule">Regra de Faturamento (opcional)</label>
+                                    <textarea id="companyBillingRule" placeholder="Ex: Até 500 vence em 7 dias, de 500 a 1000 vence em 14 dias, acima de 1000 divide em 2x de 30 e 60 dias" rows="2"></textarea>
+                                    <small style="color: var(--text-secondary); font-size: 0.75rem;">Se não preenchido, usa regra padrão do sistema.</small>
+                                </div>
+                                <div class="form-group">
                                     <label class="checkbox-label">
                                         <input type="checkbox" id="companyIsNew">
                                         <span>Cliente Novo (tarifa diferenciada)</span>
@@ -510,6 +515,20 @@
                                                 <span></span>
                                             </label>
                                         </div>
+                                    </div>
+
+                                    <div style="margin: 1.5rem 0; padding: 1rem; background: var(--bg-input); border-radius: 12px; border: 1px solid var(--border-color);">
+                                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+                                            <div style="flex: 1;">
+                                                <strong style="font-size: 1rem; color: var(--text-primary);">Regra de Faturamento</strong>
+                                                <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem; color: var(--text-secondary);">Define como calcular vencimentos para esta empresa</p>
+                                                <textarea id="detailsCompanyBillingRule" placeholder="Ex: Até 500 vence em 7 dias..." rows="2" style="margin-top: 0.5rem; width: 100%;"></textarea>
+                                            </div>
+                                            <button class="btn-secondary" onclick="saveCompanyBillingRule()" style="white-space: nowrap;">
+                                                Salvar Regra
+                                            </button>
+                                        </div>
+                                        <small style="color: var(--text-secondary); font-size: 0.75rem; display: block; margin-top: 0.5rem;">Se vazio, usa regra padrão do sistema.</small>
                                     </div>
 
                                     <h4>Máquinas</h4>
