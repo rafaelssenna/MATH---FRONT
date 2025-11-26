@@ -2817,25 +2817,21 @@ async function viewOSDetails(id) {
         </div>
       `
 
-      // Vencimento (calculado automaticamente baseado no valor)
+      // Vencimento (calculado automaticamente baseado no valor) - compacto no canto direito
       const totalValueForDue = Number(currentOS.totalGeral) || 0
       const baseDateForDue = currentOS.dataProgramada ? new Date(currentOS.dataProgramada) : new Date()
       const dueDatesPreview = calculateDueDates(totalValueForDue, baseDateForDue)
 
-      let vencimentoLabelPreview = "Vencimento"
       let vencimentoTextPreview = ""
-
       if (dueDatesPreview.length === 1) {
-        vencimentoTextPreview = dueDatesPreview[0].dateStr
+        vencimentoTextPreview = `Venc: ${dueDatesPreview[0].dateStr}`
       } else {
-        vencimentoLabelPreview = `Vencimento (${dueDatesPreview.length}x)`
-        vencimentoTextPreview = dueDatesPreview.map(d => d.dateStr).join("  /  ")
+        vencimentoTextPreview = `Venc (${dueDatesPreview.length}x): ${dueDatesPreview.map(d => d.dateStr).join(" / ")}`
       }
 
       html += `
-        <div style="margin-top: 0.75rem; padding: 0.75rem 1rem; background: #fffbeb; border: 1px solid #fbbf24; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-          <span style="color: #92400e; font-weight: 600; font-size: 0.95rem;">${vencimentoLabelPreview}</span>
-          <span style="color: #92400e; font-weight: 600; font-size: 0.95rem;">${vencimentoTextPreview}</span>
+        <div style="margin-top: 0.5rem; text-align: right;">
+          <span style="color: var(--text-secondary); font-size: 0.9rem;">${vencimentoTextPreview}</span>
         </div>
       `
       html += "</div>"
@@ -3666,32 +3662,22 @@ async function generateAndOpenOSPDF() {
     const baseDate = currentOS.dataProgramada ? parseAsLocalTime(currentOS.dataProgramada) : new Date()
     const dueDates = calculateDueDates(totalValue, baseDate)
 
-    // Monta o texto de vencimento
-    let vencimentoLabel = "Vencimento"
+    // Monta o texto de vencimento (compacto, só no canto direito)
     let vencimentoText = ""
-
     if (dueDates.length === 1) {
-      vencimentoText = dueDates[0].dateStr
+      vencimentoText = `Venc: ${dueDates[0].dateStr}`
     } else {
-      vencimentoLabel = `Vencimento (${dueDates.length}x)`
-      vencimentoText = dueDates.map(d => d.dateStr).join("  /  ")
+      vencimentoText = `Venc (${dueDates.length}x): ${dueDates.map(d => d.dateStr).join(" / ")}`
     }
 
-    const lineH = 8
+    const lineH = 6
     ensureSpace(lineH)
 
-    // Desenha a linha de vencimento com destaque
-    doc.setDrawColor(200, 200, 200)
-    doc.setFillColor(255, 250, 240) // Fundo levemente amarelado para destaque
-    doc.rect(marginX, y, contentW, lineH, "FD")
-
-    doc.setFont("helvetica", "bold")
-    doc.setFontSize(9)
-    doc.setTextColor(0)
-    doc.text(vencimentoLabel + ":", marginX + LEFT_INNER, y + 5.2)
-
+    // Apenas texto no canto direito, sem caixa
     doc.setFont("helvetica", "normal")
-    doc.text(vencimentoText, marginX + contentW - doc.getTextWidth(vencimentoText) - RIGHT_INNER, y + 5.2)
+    doc.setFontSize(9)
+    doc.setTextColor(100, 100, 100) // Cinza discreto
+    doc.text(vencimentoText, marginX + contentW - doc.getTextWidth(vencimentoText) - RIGHT_INNER, y + 4)
 
     y += lineH
   }
