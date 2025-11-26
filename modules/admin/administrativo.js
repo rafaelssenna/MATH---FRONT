@@ -1478,7 +1478,6 @@ function loadCompaniesAdmin() {
                       <th>Status</th>
                       <th>Máquinas</th>
                       <th>Responsável</th>
-                      <th>Ações</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1493,13 +1492,6 @@ function loadCompaniesAdmin() {
                         </td>
                         <td>${company.machines?.length || 0}</td>
                         <td>${escapeHtml(company.responsible) || '-'}</td>
-                        <td onclick="event.stopPropagation()">
-                          <div class="company-actions">
-                            <button class="btn-view" onclick="showCompanyDetails(${company.id})">Ver</button>
-                            <button class="btn-edit" onclick="editCompany(${company.id})">Editar</button>
-                            <button class="btn-delete" onclick="deleteCompany(${company.id})">Excluir</button>
-                          </div>
-                        </td>
                       </tr>
                     `).join('')}
                   </tbody>
@@ -1723,6 +1715,10 @@ function populateCompanyDetails(company, osList = []) {
   setText('detailsCompanyEmail', company.email || '')
   setText('detailsCompanyObservations', company.observations || company.info || '')
 
+  // Armazena ID da empresa no modal para usar nos botões de ação
+  const modal = document.getElementById('companyDetailsModal')
+  if (modal) modal.dataset.companyId = company.id
+
   // Preenche checkbox "Cliente Novo"
   const isNewCheckbox = document.getElementById('detailsCompanyIsNew')
   if (isNewCheckbox) {
@@ -1894,6 +1890,29 @@ function renderCompanyOSList(osList, container) {
 function closeCompanyDetailsModal() {
   const modal = document.getElementById('companyDetailsModal')
   if (modal) modal.classList.remove('active')
+}
+
+/**
+ * Abre o formulário de edição da empresa a partir do modal de detalhes.
+ */
+function editCompanyFromModal() {
+  const modal = document.getElementById('companyDetailsModal')
+  const companyId = modal?.dataset.companyId
+  if (companyId) {
+    closeCompanyDetailsModal()
+    editCompany(parseInt(companyId))
+  }
+}
+
+/**
+ * Exclui a empresa a partir do modal de detalhes.
+ */
+function deleteCompanyFromModal() {
+  const modal = document.getElementById('companyDetailsModal')
+  const companyId = modal?.dataset.companyId
+  if (companyId) {
+    deleteCompany(parseInt(companyId))
+  }
 }
 
 /**

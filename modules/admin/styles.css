@@ -2316,22 +2316,20 @@ datalist option:hover {
   table-layout: fixed;
   margin: 0;
   padding: 0;
-  min-width: 1200px; /* Largura mínima aumentada */
+  min-width: 800px; /* 5 colunas */
 }
 
-.companies-list-view th:nth-child(1) { width: 25%; min-width: 250px; } /* Nome */
-.companies-list-view th:nth-child(2) { width: 15%; min-width: 150px; } /* CNPJ */
-.companies-list-view th:nth-child(3) { width: 10%; min-width: 100px; } /* Status */
-.companies-list-view th:nth-child(4) { width: 10%; min-width: 80px; } /* Máquinas */
-.companies-list-view th:nth-child(5) { width: 15%; min-width: 150px; } /* Responsável */
-.companies-list-view th:nth-child(6) { width: 25%; min-width: 200px; } /* Ações */
+.companies-list-view th:nth-child(1) { width: 30%; min-width: 250px; } /* Nome */
+.companies-list-view th:nth-child(2) { width: 20%; min-width: 180px; } /* CNPJ */
+.companies-list-view th:nth-child(3) { width: 15%; min-width: 100px; } /* Status */
+.companies-list-view th:nth-child(4) { width: 15%; min-width: 100px; } /* Máquinas */
+.companies-list-view th:nth-child(5) { width: 20%; min-width: 150px; } /* Responsável */
 
-.companies-list-view td:nth-child(1) { width: 25%; min-width: 250px; }
-.companies-list-view td:nth-child(2) { width: 15%; min-width: 150px; }
-.companies-list-view td:nth-child(3) { width: 10%; min-width: 100px; }
-.companies-list-view td:nth-child(4) { width: 10%; min-width: 80px; }
-.companies-list-view td:nth-child(5) { width: 15%; min-width: 150px; }
-.companies-list-view td:nth-child(6) { width: 25%; min-width: 200px; }
+.companies-list-view td:nth-child(1) { width: 30%; min-width: 250px; }
+.companies-list-view td:nth-child(2) { width: 20%; min-width: 180px; }
+.companies-list-view td:nth-child(3) { width: 15%; min-width: 100px; }
+.companies-list-view td:nth-child(4) { width: 15%; min-width: 100px; }
+.companies-list-view td:nth-child(5) { width: 20%; min-width: 150px; }
 
 .companies-list-view th {
   background: var(--bg-secondary);
@@ -2447,11 +2445,43 @@ datalist option:hover {
   background: #dc2626;
 }
 
-/* Coluna de ações não deve ter ellipsis */
-.companies-list-view td:nth-child(6) {
-  white-space: normal;
-  overflow: visible;
-  text-overflow: unset;
+/* Botões de ação no modal de detalhes da empresa */
+.company-modal-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.company-modal-actions button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.company-modal-actions .btn-secondary {
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.company-modal-actions .btn-secondary:hover {
+  background: var(--bg-hover);
+  border-color: var(--primary-blue);
+}
+
+.company-modal-actions .btn-danger {
+  background: #dc2626;
+  border: none;
+  color: white;
+}
+
+.company-modal-actions .btn-danger:hover {
+  background: #b91c1c;
 }
 
 /* SVG Icons */
