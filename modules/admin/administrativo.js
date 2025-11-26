@@ -6560,6 +6560,7 @@ function renderBillingStats(stats) {
 
 /**
  * Renderiza lista de OS finalizadas
+ * Usa cards no mobile e tabela no desktop
  */
 function renderBillingOSList(osList, tab) {
   console.log('🔍 renderBillingOSList - tab:', tab, '| currentBillingTab:', currentBillingTab)
@@ -6573,7 +6574,81 @@ function renderBillingOSList(osList, tab) {
   }
 
   const formatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
-  
+  const isMobile = window.innerWidth <= 768
+
+  // Mobile: renderiza cards
+  if (isMobile) {
+    container.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 1rem;">
+        ${osList.map(os => `
+          <div style="
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+          ">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+              <span style="font-weight: 700; font-size: 1.1rem; color: var(--primary-blue);">#${os.order_number || 'N/A'}</span>
+              <span style="font-weight: 700; font-size: 1.1rem; color: var(--success-color);">${formatter.format(os.grand_total || 0)}</span>
+            </div>
+            <div style="display: grid; gap: 0.5rem; font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 1rem;">
+              <div><strong>Cliente:</strong> ${os.client_name || os.company_name || 'N/A'}</div>
+              <div><strong>Técnico:</strong> ${os.technician_username || 'N/A'}</div>
+              <div><strong>Concluída:</strong> ${os.finished_at ? new Date(os.finished_at).toLocaleDateString('pt-BR') : 'N/A'}</div>
+              ${tab === 'billed' ? `<div><strong>NF:</strong> <span style="color: var(--primary-blue); font-weight: 600;">${os.invoice_number || 'N/A'}</span></div>` : ''}
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+              <button onclick="viewOSDetails(${os.id})" style="
+                flex: 1;
+                min-width: 80px;
+                padding: 0.625rem;
+                background: #3498db;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 0.875rem;
+                font-weight: 500;
+              ">Ver</button>
+              ${tab === 'pending' ? `
+                <button onclick="returnOSToReview(${os.id}, ${os.order_number})" style="
+                  flex: 1;
+                  min-width: 80px;
+                  padding: 0.625rem;
+                  background: #f39c12;
+                  color: white;
+                  border: none;
+                  border-radius: 8px;
+                  cursor: pointer;
+                  font-size: 0.875rem;
+                  font-weight: 500;
+                ">Restaurar</button>
+                <button onclick="markOSAsBilled(${os.id}, ${os.order_number})" style="
+                  flex: 1;
+                  min-width: 80px;
+                  padding: 0.625rem;
+                  background: #27ae60;
+                  color: white;
+                  border: none;
+                  border-radius: 8px;
+                  cursor: pointer;
+                  font-size: 0.875rem;
+                  font-weight: 500;
+                ">Faturar</button>
+              ` : `
+                <span style="flex: 1; text-align: center; color: var(--success-color); font-weight: 600; padding: 0.625rem;">
+                  ✓ Faturada
+                </span>
+              `}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `
+    return
+  }
+
+  // Desktop: renderiza tabela
   container.innerHTML = `
     <table style="width: 100%; border-collapse: collapse;">
       <thead>
