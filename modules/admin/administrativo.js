@@ -4610,6 +4610,100 @@ function handleVehicleForm(e) {
     })
 }
 
+/**
+ * Carrega estatísticas de faturamento de veículos
+ */
+async function loadVehicleBillingStats() {
+  const container = document.getElementById('vehicleBillingStats')
+  if (!container) return
+
+  const yearSelect = document.getElementById('vehicleBillingYear')
+  const monthSelect = document.getElementById('vehicleBillingMonth')
+
+  // Popula o select de anos se ainda não foi feito
+  if (yearSelect && yearSelect.options.length <= 1) {
+    const currentYear = new Date().getFullYear()
+    for (let y = currentYear; y >= currentYear - 5; y--) {
+      const option = document.createElement('option')
+      option.value = y
+      option.textContent = y
+      yearSelect.appendChild(option)
+    }
+  }
+
+  const year = yearSelect?.value || ''
+  const month = monthSelect?.value || ''
+
+  container.innerHTML = '<p style="text-align: center; padding: 1rem;">Carregando...</p>'
+
+  try {
+    let url = `${API_URL}/api/billing/vehicle-stats`
+    const params = []
+    if (year) params.push(`year=${year}`)
+    if (month) params.push(`month=${month}`)
+    if (params.length > 0) url += '?' + params.join('&')
+
+    const response = await fetch(url)
+    if (!response.ok) throw new Error('Erro ao carregar dados')
+
+    const data = await response.json()
+    const formatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
+
+    if (!data.vehicles || data.vehicles.length === 0) {
+      container.innerHTML = '<p class="empty-state">Nenhum deslocamento faturado encontrado</p>'
+      return
+    }
+
+    container.innerHTML = `
+      <!-- Totais -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+        <div style="background: var(--bg-card); padding: 1rem; border-radius: 8px; text-align: center; border: 1px solid var(--border-color);">
+          <div style="font-size: 1.5rem; font-weight: 700; color: #27ae60;">${formatter.format(data.totals.total_faturado)}</div>
+          <div style="font-size: 0.875rem; color: var(--text-secondary);">Total Faturado</div>
+        </div>
+        <div style="background: var(--bg-card); padding: 1rem; border-radius: 8px; text-align: center; border: 1px solid var(--border-color);">
+          <div style="font-size: 1.5rem; font-weight: 700; color: #3498db;">${data.totals.total_km.toLocaleString('pt-BR')} km</div>
+          <div style="font-size: 0.875rem; color: var(--text-secondary);">Total KM</div>
+        </div>
+        <div style="background: var(--bg-card); padding: 1rem; border-radius: 8px; text-align: center; border: 1px solid var(--border-color);">
+          <div style="font-size: 1.5rem; font-weight: 700; color: #667eea;">${data.totals.total_os}</div>
+          <div style="font-size: 0.875rem; color: var(--text-secondary);">Total OS</div>
+        </div>
+      </div>
+
+      <!-- Tabela por veículo -->
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+          <thead>
+            <tr style="background: var(--bg-input); border-bottom: 2px solid var(--border-color);">
+              <th style="padding: 0.75rem; text-align: left;">Veículo</th>
+              <th style="padding: 0.75rem; text-align: center;">OS</th>
+              <th style="padding: 0.75rem; text-align: right;">KM Total</th>
+              <th style="padding: 0.75rem; text-align: right;">Valor Faturado</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.vehicles.map(v => `
+              <tr style="border-bottom: 1px solid var(--border-color);">
+                <td style="padding: 0.75rem;">
+                  <strong>${escapeHtml(v.plate)}</strong>
+                  ${v.vehicle_name ? `<br><span style="font-size: 0.8rem; color: var(--text-secondary);">${escapeHtml(v.vehicle_name)}</span>` : ''}
+                </td>
+                <td style="padding: 0.75rem; text-align: center;">${v.total_os}</td>
+                <td style="padding: 0.75rem; text-align: right;">${v.total_km.toLocaleString('pt-BR')} km</td>
+                <td style="padding: 0.75rem; text-align: right; font-weight: 600; color: #27ae60;">${formatter.format(v.total_faturado)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `
+  } catch (error) {
+    console.error('[loadVehicleBillingStats] Erro:', error)
+    container.innerHTML = '<p class="empty-state" style="color: var(--danger-color);">Erro ao carregar dados de faturamento</p>'
+  }
+}
+
 /* ==================== Programação Semanal ==================== */
 
 /**
@@ -6772,8 +6866,8 @@ function renderBillingOSList(osList, tab) {
             </div>
             <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
               <button onclick="viewOSDetails(${os.id})" style="
-                flex: 1;
-                min-width: 80px;
+                flex: 1 1 0;
+                min-width: 90px;
                 padding: 0.625rem;
                 background: #3498db;
                 color: white;
@@ -6785,8 +6879,8 @@ function renderBillingOSList(osList, tab) {
               ">Ver</button>
               ${tab === 'pending' ? `
                 <button onclick="returnOSToReview(${os.id}, ${os.order_number})" style="
-                  flex: 1;
-                  min-width: 80px;
+                  flex: 1 1 0;
+                  min-width: 90px;
                   padding: 0.625rem;
                   background: #f39c12;
                   color: white;
@@ -6797,8 +6891,8 @@ function renderBillingOSList(osList, tab) {
                   font-weight: 500;
                 ">Restaurar</button>
                 <button onclick="markOSAsBilled(${os.id}, ${os.order_number})" style="
-                  flex: 1;
-                  min-width: 80px;
+                  flex: 1 1 0;
+                  min-width: 90px;
                   padding: 0.625rem;
                   background: #27ae60;
                   color: white;
@@ -6858,7 +6952,7 @@ function renderBillingOSList(osList, tab) {
                 align-items: center;
                 gap: 0.35rem;
                 margin-right: 0.5rem;
-                min-width: 90px;
+                min-width: 100px;
                 justify-content: center;
                 transition: all 0.2s;
               " onmouseover="this.style.background='#2980b9'" onmouseout="this.style.background='#3498db'">
@@ -6904,7 +6998,7 @@ function renderBillingOSList(osList, tab) {
                   display: inline-flex;
                   align-items: center;
                   gap: 0.35rem;
-                  min-width: 95px;
+                  min-width: 100px;
                   justify-content: center;
                   transition: all 0.2s;
                 " onmouseover="this.style.background='#229954'" onmouseout="this.style.background='#27ae60'">
