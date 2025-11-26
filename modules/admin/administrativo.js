@@ -7120,7 +7120,8 @@ function showSection(sectionId, updateUrl = true) {
     } else if (sectionId === 'billingSection') {
       // Carrega dados de faturamento imediatamente
       initBillingYears()
-      loadBillingData()
+      // Inicializa com a aba "Pendente" ativa e carrega os dados
+      switchBillingTab('pending')
     } else if (sectionId === 'reviewSection') {
       loadReviewData()
     } else if (sectionId === 'vehiclesSection') {
