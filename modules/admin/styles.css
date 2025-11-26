@@ -94,22 +94,22 @@
   --transition-speed: 0.3s;
 }
 
-/* Light theme variables - cores suaves para não cansar a vista */
+/* Light theme variables - off-white suave */
 [data-theme="light"] {
   --primary-blue: #1e40af;
   --primary-red: #dc2626;
-  --bg-dark: #f5f5f4;
-  --bg-card: #fafaf9;
-  --bg-input: #f0f0ee;
-  --bg-readonly: #ebebea;
-  --text-primary: #1c1917;
-  --text-secondary: #57534e;
-  --border-color: #d6d3d1;
+  --bg-dark: #faf8f5;
+  --bg-card: #fffdf9;
+  --bg-input: #f7f5f2;
+  --bg-readonly: #f2f0ed;
+  --text-primary: #2d2a26;
+  --text-secondary: #6b6560;
+  --border-color: #e5e0db;
   --success: #059669;
   --warning: #d97706;
   --error: #dc2626;
-  --shadow: rgba(0, 0, 0, 0.08);
-  --hover-bg: #e7e5e4;
+  --shadow: rgba(0, 0, 0, 0.06);
+  --hover-bg: #f0eeeb;
 }
 
 body {
