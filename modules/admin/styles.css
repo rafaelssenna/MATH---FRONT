@@ -854,6 +854,11 @@ body {
   margin-top: 1rem;
 }
 
+/* Quando contém visualização em lista, desativa o grid */
+.card-list:has(.companies-list-view) {
+  display: block;
+}
+
 .company-card,
 .machine-card {
   background: var(--bg-card);
