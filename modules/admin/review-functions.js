@@ -210,7 +210,14 @@ function renderConferenceModal() {
             <label style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">
               Cliente / Empresa *
             </label>
-            <select id="conferenceCompanySelect" onchange="onConferenceCompanyChange()" style="width: 100%; padding: 0.5rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-weight: 600;">
+            <input
+              type="text"
+              id="conferenceCompanySearch"
+              placeholder="Digite para buscar empresa..."
+              oninput="filterConferenceCompanies()"
+              style="width: 100%; padding: 0.5rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px 6px 0 0; color: var(--text-primary); margin-bottom: -1px;"
+            />
+            <select id="conferenceCompanySelect" onchange="onConferenceCompanyChange()" size="6" style="width: 100%; padding: 0.5rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 0 0 6px 6px; color: var(--text-primary); font-weight: 600; max-height: 180px; overflow-y: auto;">
               ${renderCompanyOptions(os.company_id)}
             </select>
           </div>
@@ -1066,6 +1073,31 @@ function onConferenceCompanyChange() {
 
   // Mostra mensagem informativa
   showToast('Máquinas atualizadas para a empresa selecionada', 'info')
+}
+
+/**
+ * Filtra empresas conforme digitação no campo de busca
+ */
+function filterConferenceCompanies() {
+  const searchInput = document.getElementById('conferenceCompanySearch')
+  const companySelect = document.getElementById('conferenceCompanySelect')
+
+  if (!searchInput || !companySelect) return
+
+  const searchTerm = searchInput.value.toLowerCase().trim()
+
+  // Filtra todas as options
+  Array.from(companySelect.options).forEach(option => {
+    const optionText = option.textContent.toLowerCase()
+    const matches = searchTerm === '' || optionText.includes(searchTerm)
+    option.style.display = matches ? '' : 'none'
+  })
+
+  // Se só tem uma opção visível, seleciona ela automaticamente
+  const visibleOptions = Array.from(companySelect.options).filter(opt => opt.style.display !== 'none')
+  if (visibleOptions.length === 1) {
+    companySelect.value = visibleOptions[0].value
+  }
 }
 
 // Compatibilidade com código antigo (apenas aliases)
