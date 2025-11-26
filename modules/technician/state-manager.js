@@ -10,11 +10,11 @@ class TechnicianStateManager {
   }
 
   /**
-   * Carrega estado salvo do sessionStorage
+   * Carrega estado salvo do localStorage (persiste mesmo fechando o navegador)
    */
   loadState() {
     try {
-      const saved = sessionStorage.getItem(this.STATE_KEY)
+      const saved = localStorage.getItem(this.STATE_KEY)
       return saved ? JSON.parse(saved) : this.getDefaultState()
     } catch (e) {
       console.warn('Erro ao carregar estado:', e)
@@ -44,12 +44,12 @@ class TechnicianStateManager {
   }
 
   /**
-   * Salva estado atual no sessionStorage
+   * Salva estado atual no localStorage (persiste mesmo fechando o navegador)
    */
   saveState() {
     try {
       this.currentState.lastUpdate = Date.now()
-      sessionStorage.setItem(this.STATE_KEY, JSON.stringify(this.currentState))
+      localStorage.setItem(this.STATE_KEY, JSON.stringify(this.currentState))
     } catch (e) {
       console.warn('Erro ao salvar estado:', e)
     }
