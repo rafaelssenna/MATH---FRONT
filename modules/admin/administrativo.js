@@ -1469,29 +1469,30 @@ function loadCompaniesAdmin() {
         } else {
           if (companiesViewMode === 'list') {
             list.innerHTML = `
-              <div class="companies-list-view" style="overflow-x: auto; max-width: 100%;">
-                <table style="width: 100%; min-width: 800px; table-layout: auto;">
+              <div class="companies-list-view">
+                <table>
                   <thead>
                     <tr>
-                      <th style="min-width: 200px;">Nome</th>
-                      <th style="min-width: 150px;">CNPJ</th>
-                      <th style="min-width: 100px;">Status</th>
-                      <th style="min-width: 100px;">Máquinas</th>
-                      <th style="min-width: 200px;">Ações</th>
+                      <th>Nome</th>
+                      <th>CNPJ</th>
+                      <th>Status</th>
+                      <th>Máquinas</th>
+                      <th>Responsável</th>
+                      <th>Ações</th>
                     </tr>
                   </thead>
                   <tbody>
                     ${companies.map(company => `
-                      <tr onclick="showCompanyDetails(${company.id})" style="cursor: pointer;">
-                        <td><strong>${company.name}</strong></td>
-                        <td>${company.cnpj || 'N/A'}</td>
+                      <tr onclick="showCompanyDetails(${company.id})">
+                        <td><strong>${escapeHtml(company.name)}</strong></td>
+                        <td>${escapeHtml(company.cnpj) || 'N/A'}</td>
                         <td>
-                          <span class="company-status ${company.active ? 'active' : 'inactive'}">
-                            <span style="width: 6px; height: 6px; border-radius: 50%; background: ${company.active ? '#16a34a' : '#dc2626'}; display: inline-block;"></span>
-                            ${company.active ? 'Ativo' : 'Inativo'}
+                          <span class="company-status ${company.active !== false ? 'active' : 'inactive'}">
+                            ${company.active !== false ? 'Ativo' : 'Inativo'}
                           </span>
                         </td>
                         <td>${company.machines?.length || 0}</td>
+                        <td>${escapeHtml(company.responsible) || '-'}</td>
                         <td onclick="event.stopPropagation()">
                           <div class="company-actions">
                             <button class="btn-view" onclick="showCompanyDetails(${company.id})">Ver</button>
