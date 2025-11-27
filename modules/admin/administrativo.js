@@ -2558,40 +2558,203 @@ function searchCompanies() {
 
 /**
  * Envia o cadastro de uma nova máquina para o backend.
+ * Verifica se o número de série já existe em outra empresa e oferece transferência.
  */
-function handleMachineForm(e) {
+async function handleMachineForm(e) {
   e.preventDefault()
   const companyId = document.getElementById("machineCompanySelect").value
   const model = document.getElementById("machineModel").value.trim()
   const serial = document.getElementById("machineSerial").value.trim()
+
   if (!companyId || !serial) {
     showToast("Empresa e número de série são obrigatórios", "error")
     return
   }
-  fetch(`${API_URL}/api/machines`, {
+
+  try {
+    // 1. Verifica se o número de série já existe em OUTRA empresa
+    const checkResponse = await fetch(`${API_URL}/api/machines/check-serial/${encodeURIComponent(serial)}?exclude_company_id=${companyId}`)
+    const checkData = await checkResponse.json()
+
+    if (checkData.exists) {
+      // Máquina já existe em outra empresa - oferece transferência
+      showMachineTransferModal(checkData, companyId, model, serial)
+      return
+    }
+
+    // 2. Se não existe duplicado, cria normalmente
+    await createMachine(companyId, model, serial)
+
+  } catch (err) {
+    console.error(err)
+    showToast(err.message || "Erro ao cadastrar máquina", "error")
+  }
+}
+
+/**
+ * Cria uma nova máquina (chamada após verificação de duplicidade)
+ */
+async function createMachine(companyId, model, serial) {
+  const response = await fetch(`${API_URL}/api/machines`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ company_id: companyId, model, serial_number: serial }),
   })
-    .then((res) => {
-      if (!res.ok)
-        return res.json().then((data) => {
-          throw new Error(data.message)
-        })
-      return res.json()
+
+  if (!response.ok) {
+    const data = await response.json()
+    throw new Error(data.message)
+  }
+
+  showToast("Máquina cadastrada com sucesso!", "success")
+  clearMachineForm()
+  loadMachinesList(companyId)
+}
+
+/**
+ * Limpa o formulário de máquina
+ */
+function clearMachineForm() {
+  document.getElementById("machineCompanySearch").value = ""
+  document.getElementById("machineCompanySelect").value = ""
+  document.getElementById("machineModel").value = ""
+  document.getElementById("machineSerial").value = ""
+}
+
+/**
+ * Mostra modal para transferir máquina de outra empresa
+ */
+function showMachineTransferModal(checkData, newCompanyId, model, serial) {
+  const { machine, company, os_count } = checkData
+
+  const modalHtml = `
+    <div id="machineTransferModal" style="
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      padding: 1rem;
+    ">
+      <div style="
+        background: var(--bg-primary);
+        border-radius: 12px;
+        padding: 2rem;
+        max-width: 550px;
+        width: 100%;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      ">
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+          <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+              <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+          </div>
+          <div>
+            <h2 style="margin: 0; color: var(--text-primary);">Máquina já cadastrada!</h2>
+            <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); font-size: 0.875rem;">Número de série já existe em outra empresa</p>
+          </div>
+        </div>
+
+        <div style="background: var(--bg-input); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+          <p style="margin: 0 0 0.5rem 0; color: var(--text-secondary); font-size: 0.875rem;">Máquina encontrada:</p>
+          <p style="margin: 0; color: var(--text-primary); font-weight: 600;">
+            ${escapeHtml(machine.serial_number)} ${machine.model ? '- ' + escapeHtml(machine.model) : ''}
+          </p>
+          <p style="margin: 0.5rem 0 0 0; color: var(--text-secondary);">
+            <strong>Empresa atual:</strong> ${escapeHtml(company.name)}
+          </p>
+          ${os_count > 0 ? `
+          <p style="margin: 0.5rem 0 0 0; color: #f59e0b; font-size: 0.875rem;">
+            <strong>${os_count} OS</strong> vinculada(s) a esta máquina (histórico será mantido)
+          </p>
+          ` : ''}
+        </div>
+
+        <p style="margin: 0 0 1.5rem 0; color: var(--text-primary);">
+          Deseja <strong>transferir</strong> esta máquina para a nova empresa?
+          O histórico de OS permanecerá vinculado.
+        </p>
+
+        <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+          <button onclick="closeMachineTransferModal()" class="btn-secondary" style="padding: 0.75rem 1.5rem;">
+            Cancelar
+          </button>
+          <button onclick="createMachineDuplicate(${newCompanyId}, '${escapeHtml(model)}', '${escapeHtml(serial)}')" class="btn-secondary" style="padding: 0.75rem 1.5rem;">
+            Criar Nova (Duplicar)
+          </button>
+          <button onclick="transferMachine(${machine.id}, ${newCompanyId})" class="btn-primary" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 0.75rem 1.5rem;">
+            Transferir
+          </button>
+        </div>
+      </div>
+    </div>
+  `
+
+  document.body.insertAdjacentHTML('beforeend', modalHtml)
+}
+
+/**
+ * Fecha modal de transferência de máquina
+ */
+function closeMachineTransferModal() {
+  document.getElementById('machineTransferModal')?.remove()
+}
+
+/**
+ * Cria máquina duplicada (mesmo serial em duas empresas)
+ */
+async function createMachineDuplicate(companyId, model, serial) {
+  closeMachineTransferModal()
+
+  if (!confirm('Tem certeza? Isso criará uma segunda máquina com o mesmo número de série.')) {
+    return
+  }
+
+  try {
+    await createMachine(companyId, model, serial)
+  } catch (err) {
+    showToast(err.message || "Erro ao cadastrar máquina", "error")
+  }
+}
+
+/**
+ * Transfere máquina para nova empresa
+ */
+async function transferMachine(machineId, newCompanyId) {
+  closeMachineTransferModal()
+
+  try {
+    const response = await fetch(`${API_URL}/api/machines/${machineId}/transfer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ new_company_id: newCompanyId })
     })
-    .then(() => {
-      showToast("Máquina cadastrada com sucesso!", "success")
-      document.getElementById("machineCompanySearch").value = ""
-      document.getElementById("machineCompanySelect").value = ""
-      document.getElementById("machineModel").value = ""
-      document.getElementById("machineSerial").value = ""
-      loadMachinesList(companyId)
-    })
-    .catch((err) => {
-      console.error(err)
-      showToast(err.message || "Erro ao cadastrar máquina", "error")
-    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.message || 'Erro ao transferir máquina')
+    }
+
+    const result = await response.json()
+
+    showToast(
+      `Máquina transferida de "${result.from_company.name}" para "${result.to_company.name}"! ` +
+      `${result.os_transferred > 0 ? `(${result.os_transferred} OS no histórico)` : ''}`,
+      'success'
+    )
+
+    clearMachineForm()
+    loadMachinesList(newCompanyId)
+  } catch (err) {
+    console.error(err)
+    showToast(err.message || 'Erro ao transferir máquina', 'error')
+  }
 }
 
 /**
