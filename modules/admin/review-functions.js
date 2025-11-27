@@ -84,16 +84,20 @@ function renderConferenceStats(stats) {
   if (!container) return
 
   container.innerHTML = `
-    <div class="stat-card" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 1.5rem; border-radius: 12px;">
+    <div class="stat-card" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; padding: 1.5rem; border-radius: 12px;">
       <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">Aguardando Conferência</div>
       <div style="font-size: 2rem; font-weight: 700;">${stats.pending || 0}</div>
+    </div>
+    <div class="stat-card" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 1.5rem; border-radius: 12px; cursor: pointer;" onclick="activateSection('standbySection')">
+      <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">Em Standby</div>
+      <div style="font-size: 2rem; font-weight: 700;">${stats.standby || 0}</div>
     </div>
     <div class="stat-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 1.5rem; border-radius: 12px;">
       <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">Aprovadas (Faturamento)</div>
       <div style="font-size: 2rem; font-weight: 700;">${stats.completed || 0}</div>
     </div>
-    <div class="stat-card" style="background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); color: white; padding: 1.5rem; border-radius: 12px;">
-      <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">Arquivadas</div>
+    <div class="stat-card" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 1.5rem; border-radius: 12px;">
+      <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">Canceladas</div>
       <div style="font-size: 2rem; font-weight: 700;">${stats.archived || 0}</div>
     </div>
   `
@@ -1149,18 +1153,18 @@ async function approveConferenceOS() {
 }
 
 /**
- * Arquiva OS
+ * Cancela OS (antiga função de arquivar)
  */
-async function archiveConferenceOS() {
+async function cancelConferenceOS() {
   if (!currentConferenceOS) {
     showToast('Nenhuma OS selecionada', 'error')
     return
   }
 
-  const reason = prompt(`Por que você deseja arquivar a OS #${currentConferenceOS.order_number || currentConferenceOS.id}?\n\n(Ela não será faturada, mas será mantida no sistema)`)
+  const reason = prompt(`Por que você deseja CANCELAR a OS #${currentConferenceOS.order_number || currentConferenceOS.id}?\n\n(Ela não será faturada e ficará como cancelada no sistema)`)
 
   if (!reason || reason.trim() === '') {
-    showToast('Você deve informar o motivo do arquivamento', 'error')
+    showToast('Você deve informar o motivo do cancelamento', 'error')
     return
   }
 
@@ -1173,17 +1177,57 @@ async function archiveConferenceOS() {
 
     if (!response.ok) {
       const error = await response.json()
-      throw new Error(error.message || 'Erro ao arquivar OS')
+      throw new Error(error.message || 'Erro ao cancelar OS')
     }
 
-    showToast(`OS #${currentConferenceOS.order_number || currentConferenceOS.id} arquivada com sucesso.`, 'success')
+    showToast(`OS #${currentConferenceOS.order_number || currentConferenceOS.id} cancelada com sucesso.`, 'success')
     closeConferenceModal()
     loadReviewData()
   } catch (error) {
-    console.error('Erro ao arquivar OS:', error)
-    showToast(error.message || 'Erro ao arquivar OS', 'error')
+    console.error('Erro ao cancelar OS:', error)
+    showToast(error.message || 'Erro ao cancelar OS', 'error')
   }
 }
+
+/**
+ * Envia OS para Standby (aguardando material, informação, etc.)
+ */
+async function standbyConferenceOS() {
+  if (!currentConferenceOS) {
+    showToast('Nenhuma OS selecionada', 'error')
+    return
+  }
+
+  const reason = prompt(`Por que a OS #${currentConferenceOS.order_number || currentConferenceOS.id} está em STANDBY?\n\n(Ex: Aguardando material, aguardando aprovação do cliente, etc.)`)
+
+  if (!reason || reason.trim() === '') {
+    showToast('Você deve informar o motivo do standby', 'error')
+    return
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/api/review/${currentConferenceOS.id}/standby`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason })
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.message || 'Erro ao colocar OS em standby')
+    }
+
+    showToast(`OS #${currentConferenceOS.order_number || currentConferenceOS.id} enviada para Standby.`, 'success')
+    closeConferenceModal()
+    loadReviewData()
+  } catch (error) {
+    console.error('Erro ao colocar OS em standby:', error)
+    showToast(error.message || 'Erro ao colocar OS em standby', 'error')
+  }
+}
+
+// Alias para compatibilidade
+const archiveConferenceOS = cancelConferenceOS
 
 /**
  * Cria modal de conferência (se não existir)
@@ -1198,16 +1242,26 @@ function createConferenceModal() {
         </div>
         <div id="conferenceModalContent" class="modal-body"></div>
         <div class="modal-footer" style="display: flex; gap: 1rem; justify-content: space-between;">
-          <button class="btn-secondary" onclick="archiveConferenceOS()" style="background: #6b7280; color: white;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 0.5rem;">
-              <polyline points="21 8 21 21 3 21 3 8"/>
-              <rect x="1" y="3" width="22" height="5"/>
-              <line x1="10" y1="12" x2="14" y2="12"/>
-            </svg>
-            Arquivar
-          </button>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn-danger" onclick="cancelConferenceOS()" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; padding: 0.75rem 1rem; border-radius: 8px; font-weight: 600; cursor: pointer;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 0.5rem;">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="15" y1="9" x2="9" y2="15"/>
+                <line x1="9" y1="9" x2="15" y2="15"/>
+              </svg>
+              Cancelar OS
+            </button>
+            <button class="btn-warning" onclick="standbyConferenceOS()" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; border: none; padding: 0.75rem 1rem; border-radius: 8px; font-weight: 600; cursor: pointer;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 0.5rem;">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              Standby
+            </button>
+          </div>
           <div style="display: flex; gap: 1rem;">
-            <button class="btn-secondary" onclick="closeConferenceModal()">Cancelar</button>
+            <button class="btn-secondary" onclick="closeConferenceModal()">Fechar</button>
             <button class="btn-primary" onclick="approveConferenceOS()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 0.5rem;">
                 <polyline points="20 6 9 17 4 12"/>
@@ -1354,6 +1408,143 @@ function filterConferenceCompanies() {
     const matches = searchTerm === '' || optionText.includes(searchTerm)
     option.style.display = matches ? '' : 'none'
   })
+}
+
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                         SEÇÃO: STANDBY DE OS                                  ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
+
+/**
+ * Carrega OS em Standby
+ */
+async function loadStandbyOS() {
+  try {
+    const response = await fetch(`${API_URL}/api/review/standby`)
+    if (!response.ok) {
+      throw new Error('Erro ao carregar OS em standby')
+    }
+
+    const osList = await response.json()
+    renderStandbyOSList(osList)
+
+    // Atualiza contador
+    const countEl = document.getElementById('standbyCount')
+    if (countEl) {
+      countEl.textContent = osList.length
+    }
+
+  } catch (error) {
+    console.error('Erro ao carregar standby:', error)
+    showToast(error.message || 'Erro ao carregar OS em standby', 'error')
+  }
+}
+
+/**
+ * Renderiza lista de OS em Standby
+ */
+function renderStandbyOSList(osList) {
+  const container = document.getElementById('standbyOSList')
+  if (!container) return
+
+  if (!osList || osList.length === 0) {
+    container.innerHTML = '<p class="empty-state">Nenhuma OS em standby</p>'
+    return
+  }
+
+  const html = osList.map(os => {
+    const standbyDate = os.standby_at ? new Date(os.standby_at).toLocaleDateString('pt-BR') : 'N/A'
+    const reason = os.standby_reason || 'Não informado'
+
+    return `
+      <div class="os-card" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; margin-bottom: 0.75rem; border: 2px solid #f59e0b; border-radius: 12px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.05) 100%);">
+        <div style="flex: 1;">
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+            <span style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary);">OS #${os.order_number || os.id}</span>
+            <span style="background: #f59e0b; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">STANDBY</span>
+          </div>
+          <div style="color: var(--text-secondary); font-size: 0.875rem;">
+            <p style="margin: 0.25rem 0;"><strong>Cliente:</strong> ${os.company_name || 'Não informado'}</p>
+            <p style="margin: 0.25rem 0;"><strong>Técnico:</strong> ${os.technician_username || 'Não atribuído'}</p>
+            <p style="margin: 0.25rem 0;"><strong>Data Standby:</strong> ${standbyDate}</p>
+            <p style="margin: 0.25rem 0; color: #f59e0b;"><strong>Motivo:</strong> ${reason}</p>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+          <button onclick="viewStandbyOS(${os.id})" class="btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 0.25rem;">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            Ver
+          </button>
+          <button onclick="returnStandbyToReview(${os.id})" class="btn-primary" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 0.5rem 1rem; font-size: 0.875rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 0.25rem;">
+              <polyline points="1 4 1 10 7 10"/>
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+            </svg>
+            Voltar para Conferência
+          </button>
+        </div>
+      </div>
+    `
+  }).join('')
+
+  container.innerHTML = html
+}
+
+/**
+ * Visualiza detalhes de uma OS em Standby
+ */
+async function viewStandbyOS(osId) {
+  try {
+    const response = await fetch(`${API_URL}/api/review/${osId}`)
+    if (!response.ok) {
+      throw new Error('Erro ao carregar OS')
+    }
+
+    const os = await response.json()
+
+    // Usa a modal de conferência para mostrar os dados (somente leitura)
+    currentConferenceOS = os
+    conferenceMaterials = os.materials || []
+    conferenceWorklogs = os.worklogs || []
+    conferenceDisplacements = os.displacements || []
+
+    // Abre modal de conferência
+    openConferenceModal(osId)
+
+  } catch (error) {
+    console.error('Erro ao visualizar OS:', error)
+    showToast(error.message || 'Erro ao carregar OS', 'error')
+  }
+}
+
+/**
+ * Retorna uma OS de Standby para Conferência
+ */
+async function returnStandbyToReview(osId) {
+  if (!confirm('Tem certeza que deseja retornar esta OS para conferência?')) {
+    return
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/api/review/${osId}/return-to-review`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.message || 'Erro ao retornar OS')
+    }
+
+    showToast('OS retornada para conferência!', 'success')
+    loadStandbyOS() // Recarrega lista de standby
+
+  } catch (error) {
+    console.error('Erro ao retornar OS:', error)
+    showToast(error.message || 'Erro ao retornar OS para conferência', 'error')
+  }
 }
 
 // Compatibilidade com código antigo (apenas aliases)

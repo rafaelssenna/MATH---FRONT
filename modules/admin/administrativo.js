@@ -3913,6 +3913,11 @@ window.activateSection = function(section) {
     loadReviewData()
   }
 
+  // Seção de standby
+  if (section === "standbySection") {
+    loadStandbyOS()
+  }
+
   // Seção de faturamento
   if (section === "billingSection") {
     console.log('📊 Abrindo seção de faturamento...')
