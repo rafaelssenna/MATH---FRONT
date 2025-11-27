@@ -33,12 +33,16 @@ let conferenceAdditionalServices = []
 let conferenceVehicles = []
 let allCompaniesForReview = []
 let allMachinesForReview = []
+let conferenceOSListCache = [] // Cache para filtro de busca
 let customHourlyRate = null // Valor da hora customizado (null = usar padrão)
 
 /**
  * Carrega dados de conferência (chamado ao abrir a seção)
  */
 async function loadReviewData() {
+  // Mostra spinner enquanto carrega
+  showInlineSpinner('reviewOSList', 'Carregando OS para conferência...')
+
   try {
     // Busca estatísticas, OS pendentes, empresas e máquinas em paralelo
     const [statsResponse, pendingResponse, companiesResponse, machinesResponse] = await Promise.all([
@@ -106,9 +110,14 @@ function renderConferenceStats(stats) {
 /**
  * Renderiza lista de OS para conferência
  */
-function renderConferenceOSList(osList) {
+function renderConferenceOSList(osList, isFiltered = false) {
   const container = document.getElementById('reviewOSList')
   if (!container) return
+
+  // Salva no cache se não for filtrado (lista completa)
+  if (!isFiltered) {
+    conferenceOSListCache = osList || []
+  }
 
   // Atualiza título
   const title = document.getElementById('reviewListTitle')
@@ -116,14 +125,35 @@ function renderConferenceOSList(osList) {
     title.textContent = 'OS Aguardando Conferência'
   }
 
+  // Campo de busca (sempre mostra)
+  const searchHtml = `
+    <div style="margin-bottom: 1rem;">
+      <input
+        type="text"
+        id="conferenceListSearch"
+        placeholder="Buscar por número da OS, cliente ou técnico..."
+        oninput="filterConferenceOSList()"
+        style="
+          width: 100%;
+          padding: 0.75rem;
+          background: var(--bg-input);
+          border: 1px solid var(--border-color);
+          border-radius: 6px;
+          color: var(--text-primary);
+          font-size: 0.9rem;
+        "
+      />
+    </div>
+  `
+
   if (!osList || osList.length === 0) {
-    container.innerHTML = `<p class="empty-state">Nenhuma OS aguardando conferência</p>`
+    container.innerHTML = searchHtml + `<p class="empty-state">${isFiltered ? 'Nenhuma OS encontrada com esse filtro' : 'Nenhuma OS aguardando conferência'}</p>`
     return
   }
 
   const formatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 
-  container.innerHTML = `
+  container.innerHTML = searchHtml + `
     <table style="width: 100%; border-collapse: collapse;">
       <thead>
         <tr style="border-bottom: 2px solid var(--border-color);">
@@ -161,6 +191,30 @@ function renderConferenceOSList(osList) {
       </tbody>
     </table>
   `
+}
+
+/**
+ * Filtra lista de OS de conferência por busca
+ */
+function filterConferenceOSList() {
+  const searchInput = document.getElementById('conferenceListSearch')
+  const searchTerm = (searchInput?.value || '').trim().toLowerCase()
+
+  if (!searchTerm) {
+    renderConferenceOSList(conferenceOSListCache, true)
+    return
+  }
+
+  const filtered = conferenceOSListCache.filter(os => {
+    const osNumber = String(os.order_number || os.id || '').toLowerCase()
+    const companyName = (os.company_name || '').toLowerCase()
+    const technicianName = (os.technician_username || '').toLowerCase()
+    return osNumber.includes(searchTerm) ||
+           companyName.includes(searchTerm) ||
+           technicianName.includes(searchTerm)
+  })
+
+  renderConferenceOSList(filtered, true)
 }
 
 /**
@@ -1076,6 +1130,56 @@ function closeConferenceModal() {
 }
 
 /**
+ * Valida dados antes de aprovar OS
+ * Retorna { valid: boolean, errors: string[] }
+ */
+function validateConferenceData() {
+  const errors = []
+
+  // 1. Validar empresa selecionada
+  const companySelect = document.getElementById('conferenceCompanySelect')
+  if (!companySelect?.value || companySelect.value === '' || companySelect.value === '0') {
+    errors.push('Selecione uma empresa')
+  }
+
+  // 2. Validar máquina selecionada
+  const machineSelect = document.getElementById('conferenceMachineSelect')
+  if (!machineSelect?.value || machineSelect.value === '' || machineSelect.value === '0') {
+    errors.push('Selecione uma máquina')
+  }
+
+  // 3. Validar worklogs (fim > início)
+  for (let i = 0; i < conferenceWorklogs.length; i++) {
+    const w = conferenceWorklogs[i]
+    if (w.start_datetime && w.end_datetime) {
+      const start = new Date(w.start_datetime)
+      const end = new Date(w.end_datetime)
+      if (end <= start) {
+        errors.push(`Período ${i + 1}: Fim deve ser após o início`)
+      }
+    }
+  }
+
+  // 4. Validar valores não negativos
+  for (let i = 0; i < conferenceMaterials.length; i++) {
+    const m = conferenceMaterials[i]
+    if (parseFloat(m.quantity) < 0) {
+      errors.push(`Material "${m.name}": Quantidade não pode ser negativa`)
+    }
+    if (parseFloat(m.unit_price) < 0) {
+      errors.push(`Material "${m.name}": Preço não pode ser negativo`)
+    }
+  }
+
+  // 5. Validar valor da hora customizado
+  if (customHourlyRate !== null && customHourlyRate <= 0) {
+    errors.push('Valor da hora deve ser maior que zero')
+  }
+
+  return { valid: errors.length === 0, errors }
+}
+
+/**
  * Aprova OS e envia para faturamento
  */
 async function approveConferenceOS() {
@@ -1084,9 +1188,20 @@ async function approveConferenceOS() {
     return
   }
 
+  // Validar dados antes de confirmar
+  const validation = validateConferenceData()
+  if (!validation.valid) {
+    showToast('Corrija os erros:\n• ' + validation.errors.join('\n• '), 'error')
+    return
+  }
+
   if (!confirm(`Confirma a aprovação da OS #${currentConferenceOS.order_number || currentConferenceOS.id}?\n\nEla será enviada para faturamento.`)) {
     return
   }
+
+  // Mostra spinner no botão durante o processamento
+  const btn = document.getElementById('btnApproveConference')
+  const originalText = setButtonLoading(btn, 'Aprovando...')
 
   try {
     // Recalcula todos os valores antes de enviar
@@ -1149,6 +1264,8 @@ async function approveConferenceOS() {
   } catch (error) {
     console.error('Erro ao aprovar OS:', error)
     showToast(error.message || 'Erro ao aprovar OS', 'error')
+    // Restaura botão em caso de erro
+    resetButtonLoading(btn, originalText)
   }
 }
 
@@ -1262,7 +1379,7 @@ function createConferenceModal() {
           </div>
           <div style="display: flex; gap: 1rem;">
             <button class="btn-secondary" onclick="closeConferenceModal()">Fechar</button>
-            <button class="btn-primary" onclick="approveConferenceOS()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+            <button id="btnApproveConference" class="btn-primary" onclick="approveConferenceOS()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 0.5rem;">
                 <polyline points="20 6 9 17 4 12"/>
               </svg>

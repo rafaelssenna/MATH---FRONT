@@ -846,6 +846,18 @@ function handleClientRequest(e) {
   if (e.target.dataset.submitting === 'true') {
     return
   }
+
+  // Valida descrição mínima (pelo menos 20 caracteres)
+  const motivoField = document.getElementById("clientMotivoChamado")
+  const descricao = motivoField ? motivoField.value.trim() : ""
+  const MIN_DESCRICAO = 20
+
+  if (descricao.length < MIN_DESCRICAO) {
+    showToast(`Descreva o problema com pelo menos ${MIN_DESCRICAO} caracteres (atual: ${descricao.length})`, "error")
+    if (motivoField) motivoField.focus()
+    return
+  }
+
   e.target.dataset.submitting = 'true'
 
   // Mostra loading

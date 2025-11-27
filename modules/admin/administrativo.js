@@ -633,6 +633,70 @@ function hideLoadingScreen() {
 }
 
 /**
+ * Mostra spinner inline em um container
+ * @param {string} containerId - ID do container
+ * @param {string} message - Mensagem opcional (default: 'Carregando...')
+ */
+function showInlineSpinner(containerId, message = 'Carregando...') {
+  const container = document.getElementById(containerId)
+  if (!container) return
+
+  container.innerHTML = `
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; gap: 1rem;">
+      <div style="
+        width: 40px;
+        height: 40px;
+        border: 3px solid var(--border-color);
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      "></div>
+      <p style="color: var(--text-secondary); margin: 0;">${message}</p>
+    </div>
+    <style>
+      @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+  `
+}
+
+/**
+ * Desabilita botão e mostra spinner durante operação
+ * @param {HTMLButtonElement} button - Botão a desabilitar
+ * @param {string} loadingText - Texto durante carregamento
+ * @returns {string} Texto original do botão
+ */
+function setButtonLoading(button, loadingText = 'Aguarde...') {
+  if (!button) return ''
+  const originalText = button.innerHTML
+  button.disabled = true
+  button.innerHTML = `
+    <span style="display: inline-flex; align-items: center; gap: 0.5rem;">
+      <span style="
+        width: 16px;
+        height: 16px;
+        border: 2px solid currentColor;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      "></span>
+      ${loadingText}
+    </span>
+  `
+  return originalText
+}
+
+/**
+ * Restaura botão ao estado original
+ * @param {HTMLButtonElement} button - Botão a restaurar
+ * @param {string} originalText - Texto original
+ */
+function resetButtonLoading(button, originalText) {
+  if (!button) return
+  button.disabled = false
+  button.innerHTML = originalText
+}
+
+/**
  * Atualiza logo conforme tema (branco no escuro, normal no claro)
  */
 function updateLogos() {
@@ -1229,6 +1293,44 @@ function formatCNPJ(cnpj) {
   if (d.length !== 14) return cnpj || ""
   return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`
 }
+
+/**
+ * Valida CNPJ usando algoritmo oficial (módulo 11)
+ * @param {string} cnpj - CNPJ com ou sem formatação
+ * @returns {boolean} true se válido
+ */
+function isValidCNPJ(cnpj) {
+  const digits = onlyDigits(cnpj)
+
+  // Deve ter 14 dígitos
+  if (digits.length !== 14) return false
+
+  // Rejeita CNPJs com todos dígitos iguais (ex: 00.000.000/0000-00)
+  if (/^(\d)\1+$/.test(digits)) return false
+
+  // Calcula primeiro dígito verificador
+  let sum = 0
+  let weight = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+  for (let i = 0; i < 12; i++) {
+    sum += parseInt(digits[i]) * weight[i]
+  }
+  let remainder = sum % 11
+  let digit1 = remainder < 2 ? 0 : 11 - remainder
+
+  if (parseInt(digits[12]) !== digit1) return false
+
+  // Calcula segundo dígito verificador
+  sum = 0
+  weight = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+  for (let i = 0; i < 13; i++) {
+    sum += parseInt(digits[i]) * weight[i]
+  }
+  remainder = sum % 11
+  let digit2 = remainder < 2 ? 0 : 11 - remainder
+
+  return parseInt(digits[13]) === digit2
+}
+
 async function resolveClientCNPJByName(name) {
   if (!name) return null
   // 1) tenta cache
@@ -1245,6 +1347,63 @@ async function resolveClientCNPJByName(name) {
     }
   } catch (_e) {}
   return null
+}
+
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                    FUNÇÕES UTILITÁRIAS PADRONIZADAS                           ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
+
+/**
+ * Formata data para padrão brasileiro (DD/MM/YYYY)
+ * @param {string|Date} date - Data a formatar
+ * @returns {string} Data formatada ou 'N/A' se inválida
+ */
+function formatDateBR(date) {
+  if (!date) return 'N/A'
+  try {
+    const d = new Date(date)
+    if (isNaN(d.getTime())) return 'N/A'
+    return d.toLocaleDateString('pt-BR')
+  } catch {
+    return 'N/A'
+  }
+}
+
+/**
+ * Formata data e hora para padrão brasileiro (DD/MM/YYYY HH:mm)
+ * @param {string|Date} date - Data a formatar
+ * @returns {string} Data/hora formatada ou 'N/A' se inválida
+ */
+function formatDateTimeBR(date) {
+  if (!date) return 'N/A'
+  try {
+    const d = new Date(date)
+    if (isNaN(d.getTime())) return 'N/A'
+    return d.toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  } catch {
+    return 'N/A'
+  }
+}
+
+/**
+ * Tratamento padronizado de erros de API
+ * @param {Error} error - Erro capturado
+ * @param {string} defaultMessage - Mensagem padrão se não houver detalhes
+ * @param {boolean} showNotification - Se deve mostrar toast (default: true)
+ */
+function handleApiError(error, defaultMessage = 'Erro na operação', showNotification = true) {
+  console.error(`[API Error] ${defaultMessage}:`, error)
+  const message = error?.message || defaultMessage
+  if (showNotification) {
+    showToast(message, 'error')
+  }
+  return message
 }
 
 // ╔═══════════════════════════════════════════════════════════════════════════════╗
@@ -1783,6 +1942,13 @@ function handleCompanyForm(e) {
   // Validação
   if (!name || !cnpj) {
     showToast("Informe nome e CNPJ da empresa", "error")
+    return
+  }
+
+  // Valida formato do CNPJ
+  if (!isValidCNPJ(cnpj)) {
+    showToast("CNPJ inválido. Verifique os dígitos.", "error")
+    if (cnpjInput) cnpjInput.focus()
     return
   }
 
@@ -7133,6 +7299,9 @@ async function loadBillingData() {
   const year = document.getElementById('billingYear')?.value || ''
   const month = document.getElementById('billingMonth')?.value || ''
 
+  // Mostra spinner enquanto carrega
+  showInlineSpinner('billingOSList', 'Carregando dados de faturamento...')
+
   try {
     // Busca estatísticas
     let statsUrl = `${API_URL}/api/billing/stats?`
@@ -7517,6 +7686,7 @@ function closeInvoiceModal() {
 
 /**
  * Confirma e envia o faturamento com número da nota
+ * Inclui confirmação dupla para evitar faturamento acidental
  */
 async function confirmMarkAsBilled(osId, osNumber) {
   const invoiceInput = document.getElementById('invoiceNumberInput')
@@ -7525,6 +7695,18 @@ async function confirmMarkAsBilled(osId, osNumber) {
   if (!invoiceNumber) {
     showToast('Por favor, digite o número da nota fiscal', 'error')
     invoiceInput?.focus()
+    return
+  }
+
+  // CONFIRMAÇÃO DUPLA - Ação irreversível
+  const confirmMessage = `⚠️ ATENÇÃO: Esta ação é IRREVERSÍVEL!\n\n` +
+    `Você está prestes a faturar:\n` +
+    `• O.S: ${osNumber}\n` +
+    `• Nota Fiscal: ${invoiceNumber}\n\n` +
+    `Após faturada, a OS não poderá ser editada.\n\n` +
+    `Deseja realmente continuar?`
+
+  if (!confirm(confirmMessage)) {
     return
   }
 

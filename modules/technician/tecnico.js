@@ -4107,7 +4107,19 @@ let currentMachineId = null
 let currentMachineName = null
 
 /**
+ * Normaliza texto: remove acentos e converte para minúsculas
+ * Ex: "São Paulo" -> "sao paulo"
+ */
+function normalizeText(text) {
+  return (text || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove diacríticos (acentos)
+}
+
+/**
  * Busca empresas por nome
+ * Busca case-insensitive e accent-insensitive
  */
 async function searchCompanies() {
   const query = document.getElementById('companySearchInput').value.trim()
@@ -4126,9 +4138,10 @@ async function searchCompanies() {
 
     const allCompanies = await response.json()
 
-    // Filtra empresas que contêm o termo buscado
+    // Filtra empresas - busca case-insensitive e accent-insensitive
+    const queryNormalized = normalizeText(query)
     const companies = allCompanies.filter(company =>
-      (company.name || '').toLowerCase().includes(query.toLowerCase())
+      normalizeText(company.name || '').includes(queryNormalized)
     )
 
     if (!companies || companies.length === 0) {
