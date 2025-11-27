@@ -823,29 +823,9 @@
                         <!-- Filtros -->
                         <div class="card" style="margin-bottom: 1.5rem;">
                             <div style="padding: 1rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end;">
-                                <div class="form-group" style="margin: 0; flex: 1; min-width: 150px;">
+                                <div class="form-group" style="margin: 0; flex: 1; min-width: 150px; max-width: 200px;">
                                     <label for="dailyReportDate">Data</label>
                                     <input type="date" id="dailyReportDate" style="width: 100%;">
-                                </div>
-                                <div class="form-group" style="margin: 0; flex: 1; min-width: 150px;">
-                                    <label for="dailyReportFilter">Tipo de Relatório</label>
-                                    <select id="dailyReportFilter" style="width: 100%;">
-                                        <option value="general">Geral</option>
-                                        <option value="by_company">Por Empresa</option>
-                                        <option value="by_technician">Por Técnico</option>
-                                    </select>
-                                </div>
-                                <div class="form-group" style="margin: 0; flex: 1; min-width: 180px; display: none;" id="dailyReportCompanyGroup">
-                                    <label for="dailyReportCompany">Empresa</label>
-                                    <select id="dailyReportCompany" style="width: 100%;">
-                                        <option value="">Selecione...</option>
-                                    </select>
-                                </div>
-                                <div class="form-group" style="margin: 0; flex: 1; min-width: 180px; display: none;" id="dailyReportTechnicianGroup">
-                                    <label for="dailyReportTechnician">Técnico</label>
-                                    <select id="dailyReportTechnician" style="width: 100%;">
-                                        <option value="">Selecione...</option>
-                                    </select>
                                 </div>
                                 <button class="btn-primary" onclick="generateDailyReport()" id="generateReportBtn">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

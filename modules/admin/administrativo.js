@@ -8646,7 +8646,6 @@ initTouchOptimizations()
  */
 function initDailyReport() {
   const dateInput = document.getElementById('dailyReportDate')
-  const filterSelect = document.getElementById('dailyReportFilter')
 
   if (dateInput) {
     // Define data atual como padrão
@@ -8654,66 +8653,8 @@ function initDailyReport() {
     dateInput.value = today
   }
 
-  if (filterSelect) {
-    filterSelect.addEventListener('change', handleDailyReportFilterChange)
-  }
-
-  // Carrega empresas e técnicos para os filtros
-  loadDailyReportFilters()
-
   // Atualiza histórico
   updateDailyReportHistoryUI()
-}
-
-/**
- * Carrega empresas e técnicos para os selects de filtro
- */
-async function loadDailyReportFilters() {
-  try {
-    // Carrega empresas
-    const companiesRes = await fetch(`${API_URL}/api/daily-report/companies`)
-    if (companiesRes.ok) {
-      const companies = await companiesRes.json()
-      const select = document.getElementById('dailyReportCompany')
-      if (select) {
-        select.innerHTML = '<option value="">Todas as empresas</option>'
-        companies.forEach(c => {
-          select.innerHTML += `<option value="${c.id}">${escapeHtml(c.name)}</option>`
-        })
-      }
-    }
-
-    // Carrega técnicos
-    const techRes = await fetch(`${API_URL}/api/daily-report/technicians`)
-    if (techRes.ok) {
-      const technicians = await techRes.json()
-      const select = document.getElementById('dailyReportTechnician')
-      if (select) {
-        select.innerHTML = '<option value="">Todos os técnicos</option>'
-        technicians.forEach(t => {
-          select.innerHTML += `<option value="${t.id}">${escapeHtml(t.username)}</option>`
-        })
-      }
-    }
-  } catch (err) {
-    console.error('Erro ao carregar filtros:', err)
-  }
-}
-
-/**
- * Mostra/esconde campos de filtro baseado na seleção
- */
-function handleDailyReportFilterChange() {
-  const filterSelect = document.getElementById('dailyReportFilter')
-  const companyGroup = document.getElementById('dailyReportCompanyGroup')
-  const technicianGroup = document.getElementById('dailyReportTechnicianGroup')
-
-  if (!filterSelect || !companyGroup || !technicianGroup) return
-
-  const value = filterSelect.value
-
-  companyGroup.style.display = value === 'by_company' ? 'block' : 'none'
-  technicianGroup.style.display = value === 'by_technician' ? 'block' : 'none'
 }
 
 /**
@@ -8721,9 +8662,6 @@ function handleDailyReportFilterChange() {
  */
 async function generateDailyReport() {
   const dateInput = document.getElementById('dailyReportDate')
-  const filterSelect = document.getElementById('dailyReportFilter')
-  const companySelect = document.getElementById('dailyReportCompany')
-  const technicianSelect = document.getElementById('dailyReportTechnician')
   const resultDiv = document.getElementById('dailyReportResult')
   const loadingDiv = document.getElementById('dailyReportLoading')
   const contentDiv = document.getElementById('dailyReportContent')
@@ -8736,9 +8674,7 @@ async function generateDailyReport() {
   }
 
   const date = dateInput.value
-  const filter = filterSelect?.value || 'general'
-  const companyId = filter === 'by_company' ? companySelect?.value : null
-  const technicianId = filter === 'by_technician' ? technicianSelect?.value : null
+  const filter = 'general'
 
   // Mostra loading
   if (resultDiv) resultDiv.style.display = 'none'
@@ -8755,9 +8691,7 @@ async function generateDailyReport() {
 
   try {
     // Primeiro busca as OS do dia
-    let url = `${API_URL}/api/daily-report/os?date=${date}&filter=${filter}`
-    if (companyId) url += `&companyId=${companyId}`
-    if (technicianId) url += `&technicianId=${technicianId}`
+    const url = `${API_URL}/api/daily-report/os?date=${date}&filter=${filter}`
 
     const osRes = await fetch(url)
     if (!osRes.ok) {
@@ -8780,8 +8714,6 @@ async function generateDailyReport() {
       body: JSON.stringify({
         date,
         filter,
-        companyId,
-        technicianId,
         osList: osData.osList,
         stats: osData.stats
       })
@@ -8807,14 +8739,7 @@ async function generateDailyReport() {
     })
 
     if (titleEl) {
-      let title = `Relatório de ${dateFormatted}`
-      if (filter === 'by_company' && companySelect?.selectedOptions[0]?.text) {
-        title += ` - ${companySelect.selectedOptions[0].text}`
-      }
-      if (filter === 'by_technician' && technicianSelect?.selectedOptions[0]?.text) {
-        title += ` - ${technicianSelect.selectedOptions[0].text}`
-      }
-      titleEl.textContent = title
+      titleEl.textContent = `Relatório de ${dateFormatted}`
     }
 
     if (contentDiv) {
@@ -8922,13 +8847,11 @@ function updateDailyReportHistoryUI() {
     let html = '<div style="display: flex; flex-direction: column; gap: 0.5rem;">'
     history.slice(0, 10).forEach(h => {
       const dateFormatted = new Date(h.date + 'T12:00:00').toLocaleDateString('pt-BR')
-      const filterLabel = h.filter === 'general' ? 'Geral' : h.filter === 'by_company' ? 'Por Empresa' : 'Por Técnico'
 
       html += `
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--bg-secondary); border-radius: 8px;">
           <div>
             <strong>${dateFormatted}</strong>
-            <span style="color: var(--text-secondary); font-size: 0.8rem; margin-left: 0.5rem;">${filterLabel}</span>
           </div>
           <div style="font-size: 0.75rem; color: var(--text-secondary);">
             ${h.stats?.totalOS || 0} OS
