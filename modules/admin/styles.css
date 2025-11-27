@@ -1119,6 +1119,124 @@ body {
   transform: scale(1.1);
 }
 
+/* ===== Menu Groups (Áreas) ===== */
+.menu-group {
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+  transition: all var(--transition-speed) ease;
+}
+
+.menu-group-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-weight: 600;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  transition: all var(--transition-speed) ease;
+  position: relative;
+}
+
+.menu-group-header span {
+  flex: 1;
+}
+
+.menu-group-header .menu-chevron {
+  transition: transform var(--transition-speed) ease;
+  opacity: 0.6;
+}
+
+.menu-group.expanded .menu-group-header .menu-chevron {
+  transform: rotate(180deg);
+}
+
+.menu-group-header:hover {
+  background: var(--hover-bg);
+}
+
+/* Sub-itens do grupo */
+.menu-group-items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+}
+
+.menu-group.expanded .menu-group-items {
+  max-height: 500px;
+  padding: 0.5rem 0 0.5rem 0;
+}
+
+.menu-group-items li {
+  padding-left: 2.5rem !important;
+  font-size: 0.9rem !important;
+  border-radius: 8px !important;
+  margin: 0.125rem 0.5rem;
+}
+
+/* Cores das áreas - faixa lateral discreta */
+.menu-group-header::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 3px;
+  border-radius: 3px 0 0 3px;
+  transition: opacity var(--transition-speed) ease;
+}
+
+/* Cliente - Verde */
+.menu-group-client .menu-group-header::before {
+  background: #22c55e;
+}
+.menu-group-client .menu-group-header {
+  border-left: 3px solid #22c55e;
+}
+.menu-group-client.expanded .menu-group-header,
+.menu-group-client .menu-group-header:hover {
+  background: rgba(34, 197, 94, 0.1);
+}
+
+/* Técnico - Azul */
+.menu-group-tech .menu-group-header::before {
+  background: #3b82f6;
+}
+.menu-group-tech .menu-group-header {
+  border-left: 3px solid #3b82f6;
+}
+.menu-group-tech.expanded .menu-group-header,
+.menu-group-tech .menu-group-header:hover {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+/* Administração - Vermelho */
+.menu-group-admin .menu-group-header::before {
+  background: #ef4444;
+}
+.menu-group-admin .menu-group-header {
+  border-left: 3px solid #ef4444;
+}
+.menu-group-admin.expanded .menu-group-header,
+.menu-group-admin .menu-group-header:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* Item ativo dentro do grupo */
+.menu-group-items li.active {
+  background: var(--primary-blue) !important;
+  color: white !important;
+}
+
 .content-area {
   flex: 1;
   padding: 2rem;

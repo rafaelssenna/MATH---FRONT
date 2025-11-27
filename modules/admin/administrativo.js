@@ -185,7 +185,7 @@ function closeSidebar() {
 
 // Fecha sidebar quando um item do menu é clicado (em mobile)
 document.addEventListener('DOMContentLoaded', function() {
-  const menuItems = document.querySelectorAll('.sidebar-menu li')
+  const menuItems = document.querySelectorAll('.sidebar-menu .menu-group-items li')
   menuItems.forEach(item => {
     item.addEventListener('click', function() {
       if (window.innerWidth <= 1024) {
@@ -4182,18 +4182,53 @@ async function generatePDF() {
  * Configura a barra lateral de navegação.
  */
 function setupSidebar() {
-  const menuItems = document.querySelectorAll(".sidebar-menu li")
+  const menuItems = document.querySelectorAll(".sidebar-menu .menu-group-items li")
   const pages = document.querySelectorAll(".admin-page")
+  const menuGroups = document.querySelectorAll(".menu-group")
+
+  // Configura os grupos de menu (expand/collapse)
+  menuGroups.forEach((group) => {
+    if (group.dataset.groupBound) return
+    const header = group.querySelector(".menu-group-header")
+    if (header) {
+      header.addEventListener("click", (e) => {
+        e.stopPropagation()
+        // Toggle do grupo clicado
+        const wasExpanded = group.classList.contains("expanded")
+
+        // Fecha outros grupos (opcional - accordion style)
+        // menuGroups.forEach(g => g.classList.remove("expanded"))
+
+        // Toggle do grupo atual
+        if (wasExpanded) {
+          group.classList.remove("expanded")
+        } else {
+          group.classList.add("expanded")
+        }
+      })
+    }
+    group.dataset.groupBound = "true"
+  })
+
+  // Configura itens de menu dentro dos grupos
   if (!menuItems.length || !pages.length) return
   menuItems.forEach((item) => {
     if (item.dataset.bound) return
-    item.addEventListener("click", () => {
+    item.addEventListener("click", (e) => {
+      e.stopPropagation()
       const section = item.getAttribute("data-section")
       activateSection(section)
     })
     item.dataset.bound = "true"
   })
-  
+
+  // Expande o grupo que contém o item ativo por padrão
+  const activeItem = document.querySelector(".sidebar-menu .menu-group-items li.active")
+  if (activeItem) {
+    const parentGroup = activeItem.closest(".menu-group")
+    if (parentGroup) parentGroup.classList.add("expanded")
+  }
+
   // Restaura estado ao carregar
   restoreAdminState()
 }
@@ -4202,12 +4237,19 @@ function setupSidebar() {
  * Ativa uma seção específica (função exposta globalmente para uso do state manager)
  */
 window.activateSection = function(section) {
-  const menuItems = document.querySelectorAll(".sidebar-menu li")
+  const menuItems = document.querySelectorAll(".sidebar-menu .menu-group-items li")
   const pages = document.querySelectorAll(".admin-page")
-  
+
   menuItems.forEach((i) => i.classList.remove("active"))
   const activeItem = Array.from(menuItems).find(i => i.getAttribute("data-section") === section)
-  if (activeItem) activeItem.classList.add("active")
+  if (activeItem) {
+    activeItem.classList.add("active")
+    // Expande o grupo pai quando um item é ativado
+    const parentGroup = activeItem.closest(".menu-group")
+    if (parentGroup && !parentGroup.classList.contains("expanded")) {
+      parentGroup.classList.add("expanded")
+    }
+  }
   
   pages.forEach((page) => {
     page.style.display = page.id === section ? "block" : "none"
