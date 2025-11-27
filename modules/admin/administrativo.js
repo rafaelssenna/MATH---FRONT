@@ -7601,47 +7601,71 @@ function renderBillingOSList(osList, tab) {
               <div><strong>Concluída:</strong> ${os.finished_at ? new Date(os.finished_at).toLocaleDateString('pt-BR') : 'N/A'}</div>
               ${tab === 'billed' ? `<div><strong>NF:</strong> <span style="color: var(--primary-blue); font-weight: 600;">${os.invoice_number || 'N/A'}</span></div>` : ''}
             </div>
-            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-              <button onclick="viewOSDetails(${os.id})" style="
-                flex: 1 1 0;
-                min-width: 90px;
-                padding: 0.625rem;
-                background: #3498db;
-                color: white;
-                border: none;
-                border-radius: 8px;
-                cursor: pointer;
-                font-size: 0.875rem;
-                font-weight: 500;
-              ">Ver</button>
+            <div style="display: flex; gap: 0.5rem;">
               ${tab === 'pending' ? `
+                <button onclick="viewOSDetails(${os.id})" style="
+                  flex: 1;
+                  padding: 0.625rem 0.5rem;
+                  background: #3498db;
+                  color: white;
+                  border: none;
+                  border-radius: 8px;
+                  cursor: pointer;
+                  font-size: 0.8rem;
+                  font-weight: 600;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  gap: 0.25rem;
+                "><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Ver</button>
                 <button onclick="returnOSToReview(${os.id}, ${os.order_number})" style="
-                  flex: 1 1 0;
-                  min-width: 90px;
-                  padding: 0.625rem;
+                  flex: 1;
+                  padding: 0.625rem 0.5rem;
                   background: #f39c12;
                   color: white;
                   border: none;
                   border-radius: 8px;
                   cursor: pointer;
-                  font-size: 0.875rem;
-                  font-weight: 500;
-                ">Restaurar</button>
+                  font-size: 0.8rem;
+                  font-weight: 600;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  gap: 0.25rem;
+                "><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>Restaurar</button>
                 <button onclick="markOSAsBilled(${os.id}, ${os.order_number})" style="
-                  flex: 1 1 0;
-                  min-width: 90px;
-                  padding: 0.625rem;
+                  flex: 1;
+                  padding: 0.625rem 0.5rem;
                   background: #27ae60;
                   color: white;
                   border: none;
                   border-radius: 8px;
                   cursor: pointer;
-                  font-size: 0.875rem;
-                  font-weight: 500;
-                ">Faturar</button>
+                  font-size: 0.8rem;
+                  font-weight: 600;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  gap: 0.25rem;
+                "><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Faturar</button>
               ` : `
-                <span style="flex: 1; text-align: center; color: var(--success-color); font-weight: 600; padding: 0.625rem;">
-                  ✓ Faturada
+                <button onclick="viewOSDetails(${os.id})" style="
+                  flex: 1;
+                  padding: 0.625rem 0.5rem;
+                  background: #3498db;
+                  color: white;
+                  border: none;
+                  border-radius: 8px;
+                  cursor: pointer;
+                  font-size: 0.8rem;
+                  font-weight: 600;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  gap: 0.25rem;
+                "><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Ver</button>
+                <span style="flex: 1; text-align: center; color: var(--success-color); font-weight: 600; padding: 0.625rem; display: flex; align-items: center; justify-content: center; gap: 0.25rem;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Faturada
                 </span>
               `}
             </div>
