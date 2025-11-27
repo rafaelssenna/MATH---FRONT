@@ -206,6 +206,13 @@
                                     </svg>
                                     Ordens de Serviço
                                 </li>
+                                <li data-section="dailyReportSection">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                                    </svg>
+                                    Diário Técnico
+                                </li>
                             </ul>
                         </li>
 
@@ -795,6 +802,94 @@
                         </div>
                         <div id="scheduleContainer" class="schedule-container">
                             <!-- tabela de programação será injetada via JS -->
+                        </div>
+                    </section>
+
+                    <!-- Seção de Diário Técnico -->
+                    <section id="dailyReportSection" class="admin-page" style="display:none">
+                        <div class="page-header">
+                            <div>
+                                <h1>
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 0.5rem;">
+                                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                                    </svg>
+                                    Diário Técnico
+                                </h1>
+                                <p>Resumo diário das atividades gerado por IA</p>
+                            </div>
+                        </div>
+
+                        <!-- Filtros -->
+                        <div class="card" style="margin-bottom: 1.5rem;">
+                            <div style="padding: 1rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end;">
+                                <div class="form-group" style="margin: 0; flex: 1; min-width: 150px;">
+                                    <label for="dailyReportDate">Data</label>
+                                    <input type="date" id="dailyReportDate" style="width: 100%;">
+                                </div>
+                                <div class="form-group" style="margin: 0; flex: 1; min-width: 150px;">
+                                    <label for="dailyReportFilter">Tipo de Relatório</label>
+                                    <select id="dailyReportFilter" style="width: 100%;">
+                                        <option value="general">Geral</option>
+                                        <option value="by_company">Por Empresa</option>
+                                        <option value="by_technician">Por Técnico</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin: 0; flex: 1; min-width: 180px; display: none;" id="dailyReportCompanyGroup">
+                                    <label for="dailyReportCompany">Empresa</label>
+                                    <select id="dailyReportCompany" style="width: 100%;">
+                                        <option value="">Selecione...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin: 0; flex: 1; min-width: 180px; display: none;" id="dailyReportTechnicianGroup">
+                                    <label for="dailyReportTechnician">Técnico</label>
+                                    <select id="dailyReportTechnician" style="width: 100%;">
+                                        <option value="">Selecione...</option>
+                                    </select>
+                                </div>
+                                <button class="btn-primary" onclick="generateDailyReport()" id="generateReportBtn">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                                    </svg>
+                                    Gerar Relatório
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Resultado do Relatório -->
+                        <div class="card" id="dailyReportResult" style="display: none;">
+                            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                                <h3 id="dailyReportTitle">Relatório do Dia</h3>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button class="btn-secondary" onclick="copyDailyReport()" title="Copiar relatório">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="dailyReportContent" style="padding: 1.5rem; line-height: 1.8;">
+                                <!-- Conteúdo do relatório será injetado aqui -->
+                            </div>
+                        </div>
+
+                        <!-- Estado de Loading -->
+                        <div class="card" id="dailyReportLoading" style="display: none;">
+                            <div style="padding: 3rem; text-align: center;">
+                                <div class="loading-spinner" style="margin: 0 auto 1rem;"></div>
+                                <p style="color: var(--text-secondary);">Analisando dados e gerando relatório com IA...</p>
+                            </div>
+                        </div>
+
+                        <!-- Histórico -->
+                        <div class="card" style="margin-top: 1.5rem;">
+                            <div class="card-header">
+                                <h3>Relatórios Anteriores</h3>
+                            </div>
+                            <div id="dailyReportHistory" style="padding: 1rem;">
+                                <p class="empty-state">Selecione uma data e gere um relatório para começar</p>
+                            </div>
                         </div>
                     </section>
 

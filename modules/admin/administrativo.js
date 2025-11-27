@@ -4311,7 +4311,12 @@ window.activateSection = function(section) {
     }
     loadSchedule()
   }
-  
+
+  // Seção de Diário Técnico
+  if (section === "dailyReportSection") {
+    initDailyReport()
+  }
+
   // Gerenciar botão drag & drop - SEMPRE ocultar, só mostrar na Programação
   const dragBtn = document.getElementById('dragModeToggle')
   if (dragBtn) {
@@ -8633,3 +8638,327 @@ function initTouchOptimizations() {
 }
 
 initTouchOptimizations()
+
+/* ==================== DIÁRIO TÉCNICO ==================== */
+
+/**
+ * Inicializa a seção de Diário Técnico
+ */
+function initDailyReport() {
+  const dateInput = document.getElementById('dailyReportDate')
+  const filterSelect = document.getElementById('dailyReportFilter')
+
+  if (dateInput) {
+    // Define data atual como padrão
+    const today = new Date().toISOString().split('T')[0]
+    dateInput.value = today
+  }
+
+  if (filterSelect) {
+    filterSelect.addEventListener('change', handleDailyReportFilterChange)
+  }
+
+  // Carrega empresas e técnicos para os filtros
+  loadDailyReportFilters()
+
+  // Atualiza histórico
+  updateDailyReportHistoryUI()
+}
+
+/**
+ * Carrega empresas e técnicos para os selects de filtro
+ */
+async function loadDailyReportFilters() {
+  try {
+    // Carrega empresas
+    const companiesRes = await fetch(`${API_URL}/api/daily-report/companies`)
+    if (companiesRes.ok) {
+      const companies = await companiesRes.json()
+      const select = document.getElementById('dailyReportCompany')
+      if (select) {
+        select.innerHTML = '<option value="">Todas as empresas</option>'
+        companies.forEach(c => {
+          select.innerHTML += `<option value="${c.id}">${escapeHtml(c.name)}</option>`
+        })
+      }
+    }
+
+    // Carrega técnicos
+    const techRes = await fetch(`${API_URL}/api/daily-report/technicians`)
+    if (techRes.ok) {
+      const technicians = await techRes.json()
+      const select = document.getElementById('dailyReportTechnician')
+      if (select) {
+        select.innerHTML = '<option value="">Todos os técnicos</option>'
+        technicians.forEach(t => {
+          select.innerHTML += `<option value="${t.id}">${escapeHtml(t.username)}</option>`
+        })
+      }
+    }
+  } catch (err) {
+    console.error('Erro ao carregar filtros:', err)
+  }
+}
+
+/**
+ * Mostra/esconde campos de filtro baseado na seleção
+ */
+function handleDailyReportFilterChange() {
+  const filterSelect = document.getElementById('dailyReportFilter')
+  const companyGroup = document.getElementById('dailyReportCompanyGroup')
+  const technicianGroup = document.getElementById('dailyReportTechnicianGroup')
+
+  if (!filterSelect || !companyGroup || !technicianGroup) return
+
+  const value = filterSelect.value
+
+  companyGroup.style.display = value === 'by_company' ? 'block' : 'none'
+  technicianGroup.style.display = value === 'by_technician' ? 'block' : 'none'
+}
+
+/**
+ * Gera o relatório diário com IA
+ */
+async function generateDailyReport() {
+  const dateInput = document.getElementById('dailyReportDate')
+  const filterSelect = document.getElementById('dailyReportFilter')
+  const companySelect = document.getElementById('dailyReportCompany')
+  const technicianSelect = document.getElementById('dailyReportTechnician')
+  const resultDiv = document.getElementById('dailyReportResult')
+  const loadingDiv = document.getElementById('dailyReportLoading')
+  const contentDiv = document.getElementById('dailyReportContent')
+  const titleEl = document.getElementById('dailyReportTitle')
+  const generateBtn = document.getElementById('generateReportBtn')
+
+  if (!dateInput || !dateInput.value) {
+    showToast('Selecione uma data', 'error')
+    return
+  }
+
+  const date = dateInput.value
+  const filter = filterSelect?.value || 'general'
+  const companyId = filter === 'by_company' ? companySelect?.value : null
+  const technicianId = filter === 'by_technician' ? technicianSelect?.value : null
+
+  // Mostra loading
+  if (resultDiv) resultDiv.style.display = 'none'
+  if (loadingDiv) loadingDiv.style.display = 'block'
+  if (generateBtn) {
+    generateBtn.disabled = true
+    generateBtn.innerHTML = `
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin">
+        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+      </svg>
+      Gerando...
+    `
+  }
+
+  try {
+    // Primeiro busca as OS do dia
+    let url = `${API_URL}/api/daily-report/os?date=${date}&filter=${filter}`
+    if (companyId) url += `&companyId=${companyId}`
+    if (technicianId) url += `&technicianId=${technicianId}`
+
+    const osRes = await fetch(url)
+    if (!osRes.ok) {
+      throw new Error('Erro ao buscar OS')
+    }
+
+    const osData = await osRes.json()
+
+    if (!osData.osList || osData.osList.length === 0) {
+      if (loadingDiv) loadingDiv.style.display = 'none'
+      showToast('Nenhuma OS encontrada para esta data', 'warning')
+      resetGenerateButton()
+      return
+    }
+
+    // Agora gera o relatório com IA
+    const reportRes = await fetch(`${API_URL}/api/daily-report/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        date,
+        filter,
+        companyId,
+        technicianId,
+        osList: osData.osList,
+        stats: osData.stats
+      })
+    })
+
+    if (!reportRes.ok) {
+      const errData = await reportRes.json()
+      throw new Error(errData.message || 'Erro ao gerar relatório')
+    }
+
+    const reportData = await reportRes.json()
+
+    // Exibe o resultado
+    if (loadingDiv) loadingDiv.style.display = 'none'
+    if (resultDiv) resultDiv.style.display = 'block'
+
+    // Formata a data para exibição
+    const dateFormatted = new Date(date + 'T12:00:00').toLocaleDateString('pt-BR', {
+      weekday: 'long',
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    })
+
+    if (titleEl) {
+      let title = `Relatório de ${dateFormatted}`
+      if (filter === 'by_company' && companySelect?.selectedOptions[0]?.text) {
+        title += ` - ${companySelect.selectedOptions[0].text}`
+      }
+      if (filter === 'by_technician' && technicianSelect?.selectedOptions[0]?.text) {
+        title += ` - ${technicianSelect.selectedOptions[0].text}`
+      }
+      titleEl.textContent = title
+    }
+
+    if (contentDiv) {
+      // Converte markdown simples para HTML
+      let htmlReport = reportData.report
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n- /g, '</p><li>')
+        .replace(/\n(\d+)\. /g, '</p><li>')
+
+      // Stats header
+      const statsHtml = `
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">
+          <div style="text-align: center;">
+            <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary-blue);">${osData.stats.totalOS}</div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary);">OS Realizadas</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-size: 1.5rem; font-weight: 700; color: var(--success-green);">${Object.keys(osData.stats.byCompany).length}</div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary);">Empresas</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-size: 1.5rem; font-weight: 700; color: var(--warning-orange);">${Object.keys(osData.stats.byTechnician).length}</div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary);">Técnicos</div>
+          </div>
+        </div>
+      `
+
+      contentDiv.innerHTML = statsHtml + '<div style="white-space: pre-wrap;">' + htmlReport + '</div>'
+    }
+
+    // Salva no histórico local
+    saveDailyReportToHistory(date, filter, reportData.report, osData.stats)
+
+  } catch (err) {
+    console.error('Erro ao gerar relatório:', err)
+    if (loadingDiv) loadingDiv.style.display = 'none'
+    showToast(err.message || 'Erro ao gerar relatório', 'error')
+  } finally {
+    resetGenerateButton()
+  }
+}
+
+/**
+ * Reseta o botão de gerar para estado inicial
+ */
+function resetGenerateButton() {
+  const generateBtn = document.getElementById('generateReportBtn')
+  if (generateBtn) {
+    generateBtn.disabled = false
+    generateBtn.innerHTML = `
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+      </svg>
+      Gerar Relatório
+    `
+  }
+}
+
+/**
+ * Salva relatório no histórico local (localStorage)
+ */
+function saveDailyReportToHistory(date, filter, report, stats) {
+  try {
+    const key = 'dailyReportHistory'
+    let history = JSON.parse(localStorage.getItem(key) || '[]')
+
+    // Remove duplicata se existir
+    history = history.filter(h => h.date !== date || h.filter !== filter)
+
+    // Adiciona novo
+    history.unshift({
+      date,
+      filter,
+      report: report.substring(0, 500) + '...', // Salva apenas resumo
+      stats,
+      generatedAt: new Date().toISOString()
+    })
+
+    // Mantém apenas os últimos 30
+    history = history.slice(0, 30)
+
+    localStorage.setItem(key, JSON.stringify(history))
+    updateDailyReportHistoryUI()
+  } catch (err) {
+    console.error('Erro ao salvar histórico:', err)
+  }
+}
+
+/**
+ * Atualiza a UI do histórico
+ */
+function updateDailyReportHistoryUI() {
+  const historyDiv = document.getElementById('dailyReportHistory')
+  if (!historyDiv) return
+
+  try {
+    const history = JSON.parse(localStorage.getItem('dailyReportHistory') || '[]')
+
+    if (history.length === 0) {
+      historyDiv.innerHTML = '<p class="empty-state">Nenhum relatório gerado ainda</p>'
+      return
+    }
+
+    let html = '<div style="display: flex; flex-direction: column; gap: 0.5rem;">'
+    history.slice(0, 10).forEach(h => {
+      const dateFormatted = new Date(h.date + 'T12:00:00').toLocaleDateString('pt-BR')
+      const filterLabel = h.filter === 'general' ? 'Geral' : h.filter === 'by_company' ? 'Por Empresa' : 'Por Técnico'
+
+      html += `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--bg-secondary); border-radius: 8px;">
+          <div>
+            <strong>${dateFormatted}</strong>
+            <span style="color: var(--text-secondary); font-size: 0.8rem; margin-left: 0.5rem;">${filterLabel}</span>
+          </div>
+          <div style="font-size: 0.75rem; color: var(--text-secondary);">
+            ${h.stats?.totalOS || 0} OS
+          </div>
+        </div>
+      `
+    })
+    html += '</div>'
+
+    historyDiv.innerHTML = html
+  } catch (err) {
+    console.error('Erro ao atualizar histórico:', err)
+  }
+}
+
+/**
+ * Copia o relatório para a área de transferência
+ */
+function copyDailyReport() {
+  const contentDiv = document.getElementById('dailyReportContent')
+  if (!contentDiv) return
+
+  const text = contentDiv.innerText
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('Relatório copiado!', 'success')
+  }).catch(() => {
+    showToast('Erro ao copiar', 'error')
+  })
+}
+
+// Expõe funções globalmente
+window.generateDailyReport = generateDailyReport
+window.copyDailyReport = copyDailyReport
