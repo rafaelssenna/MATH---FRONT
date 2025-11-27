@@ -1120,17 +1120,28 @@ body {
 }
 
 /* ===== Menu Groups (Áreas) ===== */
-.menu-group {
-  display: flex;
-  flex-direction: column;
+.sidebar-menu > .menu-group {
+  display: block;
+  padding: 0 !important;
   margin-bottom: 0.25rem;
+  background: none !important;
+  box-shadow: none !important;
+}
+
+.sidebar-menu > .menu-group::before {
+  display: none !important;
+}
+
+.sidebar-menu > .menu-group:hover {
+  transform: none !important;
+  background: none !important;
 }
 
 .menu-group-header {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem 1rem;
+  padding: 0.875rem 1rem;
   cursor: pointer;
   color: var(--text-secondary);
   font-size: 0.9rem;
@@ -1138,6 +1149,8 @@ body {
   border-radius: 10px;
   transition: all var(--transition-speed) ease;
   border-left: 3px solid transparent;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .menu-group-header > svg:first-child {
