@@ -1123,34 +1123,40 @@ body {
 .menu-group {
   display: flex;
   flex-direction: column;
-  border-radius: 12px;
-  overflow: hidden;
-  margin-bottom: 0.5rem;
-  transition: all var(--transition-speed) ease;
+  margin-bottom: 0.25rem;
 }
 
 .menu-group-header {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.875rem 1rem;
+  padding: 0.75rem 1rem;
   cursor: pointer;
-  color: var(--text-primary);
-  font-size: 0.95rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
   font-weight: 600;
-  background: var(--bg-secondary);
-  border-radius: 12px;
+  border-radius: 10px;
   transition: all var(--transition-speed) ease;
-  position: relative;
+  border-left: 3px solid transparent;
+}
+
+.menu-group-header > svg:first-child {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
 }
 
 .menu-group-header span {
   flex: 1;
+  white-space: nowrap;
 }
 
 .menu-group-header .menu-chevron {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
   transition: transform var(--transition-speed) ease;
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
 .menu-group.expanded .menu-group-header .menu-chevron {
@@ -1158,7 +1164,12 @@ body {
 }
 
 .menu-group-header:hover {
+  color: var(--text-primary);
   background: var(--hover-bg);
+}
+
+.menu-group.expanded .menu-group-header {
+  color: var(--text-primary);
 }
 
 /* Sub-itens do grupo */
@@ -1168,73 +1179,61 @@ body {
   margin: 0;
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.3s ease, padding 0.3s ease;
+  transition: max-height 0.25s ease;
 }
 
 .menu-group.expanded .menu-group-items {
-  max-height: 500px;
-  padding: 0.5rem 0 0.5rem 0;
+  max-height: 400px;
+  padding-top: 0.25rem;
 }
 
 .menu-group-items li {
-  padding-left: 2.5rem !important;
-  font-size: 0.9rem !important;
+  padding: 0.65rem 1rem 0.65rem 2.75rem !important;
+  font-size: 0.875rem !important;
   border-radius: 8px !important;
-  margin: 0.125rem 0.5rem;
+  margin: 2px 0.5rem !important;
+  color: var(--text-secondary);
 }
 
-/* Cores das áreas - faixa lateral discreta */
-.menu-group-header::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  width: 3px;
-  border-radius: 3px 0 0 3px;
-  transition: opacity var(--transition-speed) ease;
+.menu-group-items li:hover {
+  background: var(--hover-bg);
+  color: var(--text-primary);
 }
 
-/* Cliente - Verde */
-.menu-group-client .menu-group-header::before {
-  background: #22c55e;
+.menu-group-items li::before {
+  display: none !important;
 }
+
+/* Cores das áreas */
 .menu-group-client .menu-group-header {
-  border-left: 3px solid #22c55e;
+  border-left-color: #22c55e;
 }
-.menu-group-client.expanded .menu-group-header,
-.menu-group-client .menu-group-header:hover {
-  background: rgba(34, 197, 94, 0.1);
+.menu-group-client.expanded .menu-group-header {
+  background: rgba(34, 197, 94, 0.08);
 }
 
-/* Técnico - Azul */
-.menu-group-tech .menu-group-header::before {
-  background: #3b82f6;
-}
 .menu-group-tech .menu-group-header {
-  border-left: 3px solid #3b82f6;
+  border-left-color: #3b82f6;
 }
-.menu-group-tech.expanded .menu-group-header,
-.menu-group-tech .menu-group-header:hover {
-  background: rgba(59, 130, 246, 0.1);
+.menu-group-tech.expanded .menu-group-header {
+  background: rgba(59, 130, 246, 0.08);
 }
 
-/* Administração - Vermelho */
-.menu-group-admin .menu-group-header::before {
-  background: #ef4444;
-}
 .menu-group-admin .menu-group-header {
-  border-left: 3px solid #ef4444;
+  border-left-color: #ef4444;
 }
-.menu-group-admin.expanded .menu-group-header,
-.menu-group-admin .menu-group-header:hover {
-  background: rgba(239, 68, 68, 0.1);
+.menu-group-admin.expanded .menu-group-header {
+  background: rgba(239, 68, 68, 0.08);
 }
 
 /* Item ativo dentro do grupo */
 .menu-group-items li.active {
   background: var(--primary-blue) !important;
   color: white !important;
+}
+
+.menu-group-items li.active:hover {
+  background: var(--primary-blue) !important;
 }
 
 .content-area {
