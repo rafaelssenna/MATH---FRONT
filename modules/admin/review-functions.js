@@ -100,7 +100,7 @@ function renderConferenceStats(stats) {
       <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">Aprovadas (Faturamento)</div>
       <div style="font-size: 2rem; font-weight: 700;">${stats.completed || 0}</div>
     </div>
-    <div class="stat-card" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 1.5rem; border-radius: 12px;">
+    <div class="stat-card" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 1.5rem; border-radius: 12px; cursor: pointer;" onclick="openArchivedOSModal()">
       <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">Canceladas</div>
       <div style="font-size: 2rem; font-weight: 700;">${stats.archived || 0}</div>
     </div>
@@ -1661,6 +1661,305 @@ async function returnStandbyToReview(osId) {
   } catch (error) {
     console.error('Erro ao retornar OS:', error)
     showToast(error.message || 'Erro ao retornar OS para conferência', 'error')
+  }
+}
+
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                         SEÇÃO: OS ARQUIVADAS (CANCELADAS)                     ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
+
+let archivedOSListCache = []
+
+/**
+ * Abre modal com lista de OS arquivadas (canceladas)
+ */
+async function openArchivedOSModal() {
+  try {
+    // Cria modal se não existir
+    if (!document.getElementById('archivedOSModal')) {
+      createArchivedOSModal()
+    }
+
+    // Mostra modal
+    document.getElementById('archivedOSModal').style.display = 'flex'
+
+    // Carrega dados
+    await loadArchivedOS()
+
+  } catch (error) {
+    console.error('Erro ao abrir modal de OS arquivadas:', error)
+    showToast('Erro ao carregar OS canceladas', 'error')
+  }
+}
+
+/**
+ * Cria modal de OS arquivadas
+ */
+function createArchivedOSModal() {
+  const modalHTML = `
+    <div id="archivedOSModal" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-header" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 1.5rem; border-radius: 12px 12px 0 0;">
+          <h2 style="margin: 0; display: flex; align-items: center; gap: 0.75rem;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="15" y1="9" x2="9" y2="15"/>
+              <line x1="9" y1="9" x2="15" y2="15"/>
+            </svg>
+            OS Canceladas
+          </h2>
+          <button class="modal-close" onclick="closeArchivedOSModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 0.5rem; border-radius: 50%;">&times;</button>
+        </div>
+        <div id="archivedOSModalContent" class="modal-body" style="padding: 1.5rem;">
+          <div style="text-align: center; padding: 2rem;">
+            <div class="spinner"></div>
+            <p>Carregando OS canceladas...</p>
+          </div>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; padding: 1rem 1.5rem; border-top: 1px solid var(--border-color);">
+          <button class="btn-secondary" onclick="closeArchivedOSModal()">Fechar</button>
+        </div>
+      </div>
+    </div>
+  `
+
+  document.body.insertAdjacentHTML('beforeend', modalHTML)
+}
+
+/**
+ * Fecha modal de OS arquivadas
+ */
+function closeArchivedOSModal() {
+  const modal = document.getElementById('archivedOSModal')
+  if (modal) {
+    modal.style.display = 'none'
+  }
+}
+
+/**
+ * Carrega lista de OS arquivadas
+ */
+async function loadArchivedOS() {
+  const container = document.getElementById('archivedOSModalContent')
+  if (!container) return
+
+  try {
+    const response = await fetch(`${API_URL}/api/review/archived`)
+    if (!response.ok) {
+      throw new Error('Erro ao carregar OS arquivadas')
+    }
+
+    const osList = await response.json()
+    archivedOSListCache = osList
+    renderArchivedOSList(osList)
+
+  } catch (error) {
+    console.error('Erro ao carregar OS arquivadas:', error)
+    container.innerHTML = `
+      <div style="text-align: center; padding: 2rem; color: #ef4444;">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-bottom: 1rem;">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <p>Erro ao carregar OS canceladas</p>
+        <button onclick="loadArchivedOS()" class="btn-secondary" style="margin-top: 1rem;">Tentar novamente</button>
+      </div>
+    `
+  }
+}
+
+/**
+ * Renderiza lista de OS arquivadas
+ */
+function renderArchivedOSList(osList) {
+  const container = document.getElementById('archivedOSModalContent')
+  if (!container) return
+
+  if (!osList || osList.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 1rem; opacity: 0.5;">
+          <path d="M21 8v13H3V8"/>
+          <path d="M1 3h22v5H1z"/>
+          <path d="M10 12h4"/>
+        </svg>
+        <p style="font-size: 1.1rem; margin: 0;">Nenhuma OS cancelada</p>
+        <p style="font-size: 0.875rem; margin-top: 0.5rem; opacity: 0.7;">Todas as OS canceladas aparecerão aqui</p>
+      </div>
+    `
+    return
+  }
+
+  // Campo de busca
+  const searchHtml = `
+    <div style="margin-bottom: 1rem;">
+      <input
+        type="text"
+        id="archivedOSSearch"
+        placeholder="Buscar por número da OS, cliente ou técnico..."
+        oninput="filterArchivedOSList()"
+        style="
+          width: 100%;
+          padding: 0.75rem;
+          background: var(--bg-input);
+          border: 1px solid var(--border-color);
+          border-radius: 6px;
+          color: var(--text-primary);
+          font-size: 0.9rem;
+        "
+      />
+    </div>
+  `
+
+  const html = osList.map(os => {
+    // Tenta extrair motivo do cancelamento das observações
+    let cancelReason = 'Não informado'
+    if (os.observations) {
+      const match = os.observations.match(/Arquivado:\s*(.+?)(?:\s*\||$)/)
+      if (match) {
+        cancelReason = match[1].trim()
+      }
+    }
+
+    const finishedDate = os.finished_at ? new Date(os.finished_at).toLocaleDateString('pt-BR') : 'N/A'
+
+    return `
+      <div class="os-card" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; margin-bottom: 0.75rem; border: 2px solid #ef4444; border-radius: 12px; background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.05) 100%);">
+        <div style="flex: 1;">
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+            <span style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary);">OS #${os.order_number || os.id}</span>
+            <span style="background: #ef4444; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">CANCELADA</span>
+          </div>
+          <div style="color: var(--text-secondary); font-size: 0.875rem;">
+            <p style="margin: 0.25rem 0;"><strong>Cliente:</strong> ${escapeHtml(os.company_name || 'Não informado')}</p>
+            <p style="margin: 0.25rem 0;"><strong>Técnico:</strong> ${escapeHtml(os.technician_username || 'Não atribuído')}</p>
+            <p style="margin: 0.25rem 0;"><strong>Data Finalização:</strong> ${finishedDate}</p>
+            <p style="margin: 0.25rem 0; color: #ef4444;"><strong>Motivo:</strong> ${escapeHtml(cancelReason)}</p>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+          <button onclick="restoreArchivedToReview(${os.id})" class="btn-primary" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 0.5rem 1rem; font-size: 0.875rem; display: flex; align-items: center; gap: 0.5rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="1 4 1 10 7 10"/>
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+            </svg>
+            Restaurar
+          </button>
+        </div>
+      </div>
+    `
+  }).join('')
+
+  container.innerHTML = searchHtml + `
+    <div id="archivedOSListContainer">
+      ${html}
+    </div>
+    <div style="margin-top: 1rem; padding: 0.75rem; background: rgba(239, 68, 68, 0.1); border-radius: 8px; font-size: 0.875rem; color: var(--text-secondary);">
+      <strong>Total:</strong> ${osList.length} OS cancelada(s)
+    </div>
+  `
+}
+
+/**
+ * Filtra lista de OS arquivadas
+ */
+function filterArchivedOSList() {
+  const searchInput = document.getElementById('archivedOSSearch')
+  const searchTerm = (searchInput?.value || '').trim().toLowerCase()
+
+  if (!searchTerm) {
+    renderArchivedOSList(archivedOSListCache)
+    return
+  }
+
+  const filtered = archivedOSListCache.filter(os => {
+    const osNumber = String(os.order_number || os.id || '').toLowerCase()
+    const companyName = (os.company_name || '').toLowerCase()
+    const technicianName = (os.technician_username || '').toLowerCase()
+    return osNumber.includes(searchTerm) ||
+           companyName.includes(searchTerm) ||
+           technicianName.includes(searchTerm)
+  })
+
+  // Re-renderiza apenas a lista, mantendo o campo de busca
+  const listContainer = document.getElementById('archivedOSListContainer')
+  if (listContainer && filtered.length > 0) {
+    listContainer.innerHTML = filtered.map(os => {
+      let cancelReason = 'Não informado'
+      if (os.observations) {
+        const match = os.observations.match(/Arquivado:\s*(.+?)(?:\s*\||$)/)
+        if (match) {
+          cancelReason = match[1].trim()
+        }
+      }
+      const finishedDate = os.finished_at ? new Date(os.finished_at).toLocaleDateString('pt-BR') : 'N/A'
+
+      return `
+        <div class="os-card" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; margin-bottom: 0.75rem; border: 2px solid #ef4444; border-radius: 12px; background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.05) 100%);">
+          <div style="flex: 1;">
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+              <span style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary);">OS #${os.order_number || os.id}</span>
+              <span style="background: #ef4444; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">CANCELADA</span>
+            </div>
+            <div style="color: var(--text-secondary); font-size: 0.875rem;">
+              <p style="margin: 0.25rem 0;"><strong>Cliente:</strong> ${escapeHtml(os.company_name || 'Não informado')}</p>
+              <p style="margin: 0.25rem 0;"><strong>Técnico:</strong> ${escapeHtml(os.technician_username || 'Não atribuído')}</p>
+              <p style="margin: 0.25rem 0;"><strong>Data Finalização:</strong> ${finishedDate}</p>
+              <p style="margin: 0.25rem 0; color: #ef4444;"><strong>Motivo:</strong> ${escapeHtml(cancelReason)}</p>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <button onclick="restoreArchivedToReview(${os.id})" class="btn-primary" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 0.5rem 1rem; font-size: 0.875rem; display: flex; align-items: center; gap: 0.5rem;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="1 4 1 10 7 10"/>
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+              </svg>
+              Restaurar
+            </button>
+          </div>
+        </div>
+      `
+    }).join('')
+  } else if (listContainer) {
+    listContainer.innerHTML = `
+      <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+        <p>Nenhuma OS encontrada com esse filtro</p>
+      </div>
+    `
+  }
+}
+
+/**
+ * Restaura uma OS arquivada para conferência
+ */
+async function restoreArchivedToReview(osId) {
+  if (!confirm('Tem certeza que deseja restaurar esta OS para conferência?\n\nEla voltará para a lista de OS aguardando conferência.')) {
+    return
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/api/review/${osId}/restore-from-archived`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.message || 'Erro ao restaurar OS')
+    }
+
+    showToast('OS restaurada para conferência!', 'success')
+
+    // Recarrega a lista de arquivadas
+    await loadArchivedOS()
+
+    // Recarrega os dados da conferência (para atualizar contadores)
+    loadReviewData()
+
+  } catch (error) {
+    console.error('Erro ao restaurar OS:', error)
+    showToast(error.message || 'Erro ao restaurar OS para conferência', 'error')
   }
 }
 
