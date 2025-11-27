@@ -1146,7 +1146,7 @@ body {
   color: var(--text-secondary);
   font-size: 0.9rem;
   font-weight: 600;
-  border-radius: 10px;
+  border-radius: 0;
   transition: all var(--transition-speed) ease;
   border-left: 3px solid transparent;
   width: 100%;
@@ -1203,8 +1203,8 @@ body {
 .menu-group-items li {
   padding: 0.65rem 1rem 0.65rem 2.75rem !important;
   font-size: 0.875rem !important;
-  border-radius: 8px !important;
-  margin: 2px 0.5rem !important;
+  border-radius: 0 !important;
+  margin: 2px 0 !important;
   color: var(--text-secondary);
 }
 
