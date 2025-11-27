@@ -405,13 +405,18 @@
                 <strong style="color: var(--text-secondary);">Telefone:</strong>
                 <p id="companyPhoneInfo" style="margin: 0.25rem 0 0 0; color: var(--text-primary);">-</p>
               </div>
-              <div>
+              <div id="requesterDisplayContainer">
                 <strong style="color: var(--text-secondary);">Solicitante:</strong>
                 <p id="requesterInfo" style="margin: 0.25rem 0 0 0; color: var(--text-primary);">-</p>
               </div>
+              <div id="requesterInputContainer" style="display: none;">
+                <label for="requesterInput" style="color: var(--text-secondary); font-weight: 600;">Responsável pelo Chamado *</label>
+                <input type="text" id="requesterInput" placeholder="Nome do responsável pelo chamado" style="margin-top: 0.25rem; width: 100%; padding: 0.5rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary);" />
+                <small style="color: var(--text-secondary); font-size: 0.75rem;">Informe quem solicitou este atendimento</small>
+              </div>
             </div>
           </div>
-          
+
           <form id="finishForm" class="os-form">
             <input type="hidden" id="finishOsId"/>
 

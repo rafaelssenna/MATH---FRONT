@@ -66,10 +66,23 @@ async function loadCompanyInfo(companyId, requester) {
       }
     }
     
-    // Preenche solicitante
+    // Preenche solicitante ou mostra campo de input
     const requesterEl = document.getElementById('requesterInfo')
-    if (requesterEl) {
-      requesterEl.textContent = requester || '-'
+    const requesterDisplayContainer = document.getElementById('requesterDisplayContainer')
+    const requesterInputContainer = document.getElementById('requesterInputContainer')
+    const requesterInput = document.getElementById('requesterInput')
+
+    if (requester) {
+      // Tem solicitante (veio de solicitação do cliente) - mostra apenas o texto
+      if (requesterDisplayContainer) requesterDisplayContainer.style.display = 'block'
+      if (requesterInputContainer) requesterInputContainer.style.display = 'none'
+      if (requesterEl) requesterEl.textContent = requester
+      if (requesterInput) requesterInput.value = ''
+    } else {
+      // Não tem solicitante (OS aberta pelo técnico) - mostra campo para preencher
+      if (requesterDisplayContainer) requesterDisplayContainer.style.display = 'none'
+      if (requesterInputContainer) requesterInputContainer.style.display = 'block'
+      if (requesterInput) requesterInput.value = ''
     }
   } catch (err) {
     console.error('Erro ao carregar informações da empresa:', err)
@@ -85,7 +98,10 @@ function clearCompanyInfo() {
   const addressEl = document.getElementById('companyAddressInfo')
   const phoneEl = document.getElementById('companyPhoneInfo')
   const requesterEl = document.getElementById('requesterInfo')
-  
+  const requesterDisplayContainer = document.getElementById('requesterDisplayContainer')
+  const requesterInputContainer = document.getElementById('requesterInputContainer')
+  const requesterInput = document.getElementById('requesterInput')
+
   if (companyNameEl) companyNameEl.textContent = '-'
   if (addressEl) {
     addressEl.textContent = '-'
@@ -100,6 +116,10 @@ function clearCompanyInfo() {
     phoneEl.onclick = null
   }
   if (requesterEl) requesterEl.textContent = '-'
+  // Reset requester containers
+  if (requesterDisplayContainer) requesterDisplayContainer.style.display = 'block'
+  if (requesterInputContainer) requesterInputContainer.style.display = 'none'
+  if (requesterInput) requesterInput.value = ''
 }
 
 /**

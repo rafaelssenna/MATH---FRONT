@@ -3183,6 +3183,16 @@ async function handleFinishSubmit(e) {
   if (additionalVal !== null) payload.value_service = additionalVal
   if (additionalNote) payload.additional_service_note = additionalNote
 
+  // Responsável pelo chamado (quando preenchido pelo técnico - OS não veio de solicitação)
+  const requesterInput = document.getElementById('requesterInput')
+  const requesterInputContainer = document.getElementById('requesterInputContainer')
+  if (requesterInputContainer && requesterInputContainer.style.display !== 'none' && requesterInput) {
+    const requesterValue = requesterInput.value.trim()
+    if (requesterValue) {
+      payload.requester = requesterValue
+    }
+  }
+
   try {
     console.log('📤 [FINISH] Enviando finalização para API:', {
       url: `${API_URL}/api/os/${osId}/finish`,

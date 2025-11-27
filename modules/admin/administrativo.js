@@ -1918,6 +1918,7 @@ function handleCompanyForm(e) {
   const addressInput = document.getElementById("companyAddress")
   const phone1Input = document.getElementById("companyPhone1")
   const emailInput = document.getElementById("companyEmail")
+  const billingEmailInput = document.getElementById("companyBillingEmail")
   const observationsInput = document.getElementById("companyObservations")
   const billingRuleInput = document.getElementById("companyBillingRule")
   const isNewInput = document.getElementById("companyIsNew")
@@ -1930,6 +1931,7 @@ function handleCompanyForm(e) {
   const address = addressInput ? addressInput.value.trim() : ""
   const phone1 = phone1Input ? phone1Input.value.trim() : ""
   const email = emailInput ? emailInput.value.trim() : ""
+  const billingEmail = billingEmailInput ? billingEmailInput.value.trim() : ""
   const observations = observationsInput ? observationsInput.value.trim() : ""
   const billingRule = billingRuleInput ? billingRuleInput.value.trim() : ""
   const isNew = isNewInput ? isNewInput.checked : false
@@ -1961,6 +1963,7 @@ function handleCompanyForm(e) {
     address,
     phone1,
     email,
+    billing_email: billingEmail || null,
     observations: observations || null,
     billing_rule: billingRule || null,
     is_new: isNew,
@@ -2095,6 +2098,7 @@ function populateCompanyDetails(company, osList = []) {
   setText('detailsCompanyAddress', fullAddress || '')
   setText('detailsCompanyPhones', phones || '')
   setText('detailsCompanyEmail', company.email || '')
+  setText('detailsCompanyBillingEmail', company.billing_email || 'Não informado')
   setText('detailsCompanyObservations', company.observations || company.info || '')
 
   // Armazena ID da empresa no modal para usar nos botões de ação
@@ -2472,6 +2476,7 @@ async function editCompany(companyId) {
     const addressInput = document.getElementById('companyAddress')
     const phone1Input = document.getElementById('companyPhone1')
     const emailInput = document.getElementById('companyEmail')
+    const billingEmailInput = document.getElementById('companyBillingEmail')
     const observationsInput = document.getElementById('companyObservations')
     const billingRuleInput = document.getElementById('companyBillingRule')
     const isNewInput = document.getElementById('companyIsNew')
@@ -2483,6 +2488,7 @@ async function editCompany(companyId) {
     if (addressInput) addressInput.value = company.address || ''
     if (phone1Input) phone1Input.value = company.phone1 || ''
     if (emailInput) emailInput.value = company.email || ''
+    if (billingEmailInput) billingEmailInput.value = company.billing_email || ''
     if (observationsInput) observationsInput.value = company.observations || ''
     if (billingRuleInput) billingRuleInput.value = company.billing_rule || ''
     if (isNewInput) isNewInput.checked = company.is_new || false
