@@ -1015,13 +1015,7 @@ function applyTranscribedFields(fields, maintenanceType) {
       if (!container.querySelector('.time-entry-row')) container.innerHTML = ''
       fields.worklogs.forEach((w) => {
         if (!w || !w.start_datetime || !w.end_datetime) return
-        addTimeEntryRow()
-        const row = container.lastElementChild
-        if (!row) return
-        const startInput = row.querySelector('.start-time')
-        const endInput = row.querySelector('.end-time')
-        if (startInput) startInput.value = w.start_datetime
-        if (endInput) endInput.value = w.end_datetime
+        addTimeEntryRow({ start_datetime: w.start_datetime, end_datetime: w.end_datetime })
       })
     }
   }
@@ -1707,8 +1701,9 @@ function autoSaveFormData() {
         additionalServiceValue: document.getElementById("finishAdditionalServiceValue")?.value || '',
         additionalServiceNote: document.getElementById("finishAdditionalServiceNote")?.value || '',
 
-        // Períodos de trabalho
+        // Períodos de trabalho (data + hora início + hora fim)
         timeEntries: Array.from(document.querySelectorAll("#timeEntriesContainer .time-entry-row")).map(row => ({
+          date: row.querySelector(".work-date")?.value || '',
           start: row.querySelector(".start-time")?.value || '',
           end: row.querySelector(".end-time")?.value || ''
         })),
@@ -1821,8 +1816,11 @@ function restoreFormData() {
       resetTimeEntries()
       // Adiciona períodos salvos
       savedData.timeEntries.forEach(entry => {
-        if (entry.start || entry.end) {
-          addTimeEntryRow({ start_datetime: entry.start, end_datetime: entry.end })
+        if (entry.date && (entry.start || entry.end)) {
+          // Combina data + hora para criar datetime strings
+          const startDatetime = entry.start ? `${entry.date}T${entry.start}` : ''
+          const endDatetime = entry.end ? `${entry.date}T${entry.end}` : ''
+          addTimeEntryRow({ start_datetime: startDatetime, end_datetime: endDatetime })
         }
       })
     }
@@ -2594,9 +2592,9 @@ function resetTimeEntries() {
 }
 
 /**
- * Adiciona uma nova linha de período de trabalho (início e fim) ao container.
+ * Adiciona uma nova linha de período de trabalho (data + hora início + hora fim) ao container.
  * Aceita opcionalmente valores iniciais para preenchimento (ISO 8601 ou formato aceito pelo input).
- * Cada linha contém dois campos datetime-local e um botão para remover a linha.
+ * Nova versão simplificada: 1 campo de data + 2 campos de hora (início e fim)
  * @param {Object} [init] Valores iniciais para o período
  */
 function addTimeEntryRow(init = {}) {
@@ -2609,12 +2607,76 @@ function addTimeEntryRow(init = {}) {
   row.style.flexWrap = "wrap"
   row.style.gap = "0.5rem"
   row.style.marginTop = "0.5rem"
-  row.style.alignItems = "center"
+  row.style.alignItems = "flex-end"
+  row.style.padding = "0.75rem"
+  row.style.background = "var(--bg-secondary)"
+  row.style.borderRadius = "8px"
+  row.style.border = "1px solid var(--border-color)"
 
-  // Container para input início com label
+  // Extrair data e hora dos valores iniciais (se existirem)
+  let initDate = ""
+  let initStartTime = ""
+  let initEndTime = ""
+  if (init.start_datetime) {
+    try {
+      const d = parseAsLocalTime(init.start_datetime)
+      if (d && !isNaN(d.getTime())) {
+        initDate = d.toISOString().split('T')[0]
+        initStartTime = d.toTimeString().slice(0, 5)
+      }
+    } catch (_e) {}
+  }
+  if (init.end_datetime) {
+    try {
+      const d = parseAsLocalTime(init.end_datetime)
+      if (d && !isNaN(d.getTime())) {
+        if (!initDate) initDate = d.toISOString().split('T')[0]
+        initEndTime = d.toTimeString().slice(0, 5)
+      }
+    } catch (_e) {}
+  }
+
+  // Container para input de data
+  const dateContainer = document.createElement("div")
+  dateContainer.style.flex = "1"
+  dateContainer.style.minWidth = "140px"
+  dateContainer.style.display = "flex"
+  dateContainer.style.flexDirection = "column"
+  dateContainer.style.gap = "0.25rem"
+
+  const dateLabel = document.createElement("label")
+  dateLabel.innerHTML = `
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+      <line x1="16" y1="2" x2="16" y2="6"/>
+      <line x1="8" y1="2" x2="8" y2="6"/>
+      <line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
+    Data
+  `
+  dateLabel.style.fontSize = "0.75rem"
+  dateLabel.style.fontWeight = "500"
+  dateLabel.style.color = "var(--text-secondary)"
+  dateLabel.style.display = "flex"
+  dateLabel.style.alignItems = "center"
+
+  const dateInput = document.createElement("input")
+  dateInput.type = "date"
+  dateInput.className = "work-date"
+  dateInput.required = true
+  dateInput.style.padding = "0.5rem"
+  dateInput.style.background = "var(--bg-input)"
+  dateInput.style.border = "1px solid var(--border-color)"
+  dateInput.style.borderRadius = "6px"
+  dateInput.style.color = "var(--text-primary)"
+  dateInput.value = initDate || new Date().toISOString().split('T')[0]
+
+  dateContainer.appendChild(dateLabel)
+  dateContainer.appendChild(dateInput)
+
+  // Container para hora de início
   const startContainer = document.createElement("div")
-  startContainer.style.flex = "1"
-  startContainer.style.minWidth = "180px"
+  startContainer.style.flex = "0 0 100px"
   startContainer.style.display = "flex"
   startContainer.style.flexDirection = "column"
   startContainer.style.gap = "0.25rem"
@@ -2622,10 +2684,8 @@ function addTimeEntryRow(init = {}) {
   const startLabel = document.createElement("label")
   startLabel.innerHTML = `
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;">
-      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-      <line x1="16" y1="2" x2="16" y2="6"/>
-      <line x1="8" y1="2" x2="8" y2="6"/>
-      <line x1="3" y1="10" x2="21" y2="10"/>
+      <circle cx="12" cy="12" r="10"/>
+      <polyline points="12 6 12 12 16 14"/>
     </svg>
     Início
   `
@@ -2636,7 +2696,7 @@ function addTimeEntryRow(init = {}) {
   startLabel.style.alignItems = "center"
 
   const startInput = document.createElement("input")
-  startInput.type = "datetime-local"
+  startInput.type = "time"
   startInput.className = "start-time"
   startInput.required = true
   startInput.style.padding = "0.5rem"
@@ -2644,22 +2704,14 @@ function addTimeEntryRow(init = {}) {
   startInput.style.border = "1px solid var(--border-color)"
   startInput.style.borderRadius = "6px"
   startInput.style.color = "var(--text-primary)"
-  if (init.start_datetime) {
-    try {
-      const d = parseAsLocalTime(init.start_datetime)
-      if (d && !isNaN(d.getTime())) {
-        startInput.value = formatForDatetimeLocal(d)
-      }
-    } catch (_e) {}
-  }
+  startInput.value = initStartTime
 
   startContainer.appendChild(startLabel)
   startContainer.appendChild(startInput)
 
-  // Container para input fim com label
+  // Container para hora de fim
   const endContainer = document.createElement("div")
-  endContainer.style.flex = "1"
-  endContainer.style.minWidth = "180px"
+  endContainer.style.flex = "0 0 100px"
   endContainer.style.display = "flex"
   endContainer.style.flexDirection = "column"
   endContainer.style.gap = "0.25rem"
@@ -2679,7 +2731,7 @@ function addTimeEntryRow(init = {}) {
   endLabel.style.alignItems = "center"
 
   const endInput = document.createElement("input")
-  endInput.type = "datetime-local"
+  endInput.type = "time"
   endInput.className = "end-time"
   endInput.required = true
   endInput.style.padding = "0.5rem"
@@ -2687,14 +2739,7 @@ function addTimeEntryRow(init = {}) {
   endInput.style.border = "1px solid var(--border-color)"
   endInput.style.borderRadius = "6px"
   endInput.style.color = "var(--text-primary)"
-  if (init.end_datetime) {
-    try {
-      const d = parseAsLocalTime(init.end_datetime)
-      if (d && !isNaN(d.getTime())) {
-        endInput.value = formatForDatetimeLocal(d)
-      }
-    } catch (_e) {}
-  }
+  endInput.value = initEndTime
 
   endContainer.appendChild(endLabel)
   endContainer.appendChild(endInput)
@@ -2707,21 +2752,24 @@ function addTimeEntryRow(init = {}) {
   removeBtn.style.background = "var(--error)"
   removeBtn.style.color = "white"
   removeBtn.style.border = "none"
-  removeBtn.style.padding = "0 0.5rem"
+  removeBtn.style.width = "32px"
+  removeBtn.style.height = "32px"
   removeBtn.style.borderRadius = "6px"
-  removeBtn.style.marginTop = "1.25rem"
-  removeBtn.style.fontSize = "1.5rem"
+  removeBtn.style.fontSize = "1.25rem"
   removeBtn.style.lineHeight = "1"
   removeBtn.style.cursor = "pointer"
+  removeBtn.style.flexShrink = "0"
   removeBtn.addEventListener("click", () => {
     row.remove()
     autoSaveFormData()
   })
 
   // Adiciona listeners de auto-save nos inputs
+  dateInput.addEventListener('change', autoSaveFormData)
   startInput.addEventListener('change', autoSaveFormData)
   endInput.addEventListener('change', autoSaveFormData)
 
+  row.appendChild(dateContainer)
   row.appendChild(startContainer)
   row.appendChild(endContainer)
   row.appendChild(removeBtn)
@@ -3070,20 +3118,25 @@ async function handleFinishSubmit(e) {
     return
   }
   for (const row of timeRows) {
+    const dateInput = row.querySelector(".work-date")
     const startInput = row.querySelector(".start-time")
     const endInput = row.querySelector(".end-time")
-    const sv = startInput ? startInput.value : ""
-    const ev = endInput ? endInput.value : ""
-    if (!sv || !ev) {
-      showToast("Preencha todas as datas e horas de início e fim.", "error")
+    const dateVal = dateInput ? dateInput.value : ""
+    const startTimeVal = startInput ? startInput.value : ""
+    const endTimeVal = endInput ? endInput.value : ""
+    if (!dateVal || !startTimeVal || !endTimeVal) {
+      showToast("Preencha a data e os horários de início e fim.", "error")
       isSubmittingFinish = false
       hideLoadingOverlay()
       return
     }
+    // Combina data + hora para criar datetime completo
+    const sv = `${dateVal}T${startTimeVal}`
+    const ev = `${dateVal}T${endTimeVal}`
     const sDate = new Date(sv)
     const eDate = new Date(ev)
     if (Number.isNaN(sDate.getTime()) || Number.isNaN(eDate.getTime()) || eDate < sDate) {
-      showToast("Verifique os períodos de trabalho: as datas/hora de início devem ser anteriores às de término.", "error")
+      showToast("Verifique os períodos de trabalho: o horário de início deve ser anterior ao de término.", "error")
       isSubmittingFinish = false
       hideLoadingOverlay()
       return
