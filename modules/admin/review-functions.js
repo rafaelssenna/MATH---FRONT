@@ -1270,6 +1270,80 @@ async function approveConferenceOS() {
 }
 
 /**
+ * Salva alterações da conferência SEM aprovar (OS continua em conferência)
+ */
+async function saveConferenceChanges() {
+  if (!currentConferenceOS) {
+    showToast('Nenhuma OS selecionada', 'error')
+    return
+  }
+
+  const btn = document.getElementById('btnSaveConference')
+  const originalText = setButtonLoading(btn, 'Salvando...')
+
+  try {
+    // Recalcula todos os valores antes de enviar
+    const totalMaterials = conferenceMaterials.reduce((sum, m) => {
+      return sum + ((parseFloat(m.quantity) || 0) * (parseFloat(m.unit_price) || 0))
+    }, 0)
+
+    const isNewClient = currentConferenceOS.is_new_client || false
+    const displacementCost = conferenceDisplacements.reduce((sum, d) => {
+      return sum + calculateDisplacementCost(d, isNewClient)
+    }, 0)
+
+    const totalHours = calculateTotalHours()
+    const defaultRate = isNewClient ? 175 : 150
+    const hourlyRate = customHourlyRate !== null ? customHourlyRate : defaultRate
+    const hoursCost = totalHours * hourlyRate
+
+    const totalAdditionalServices = conferenceAdditionalServices.reduce((sum, s) => {
+      return sum + (parseFloat(s.value) || 0)
+    }, 0)
+
+    const totalServiceCost = hoursCost + displacementCost
+    const grandTotal = hoursCost + displacementCost + totalMaterials + totalAdditionalServices
+
+    const selectedCompanyId = parseInt(document.getElementById('conferenceCompanySelect')?.value)
+    const selectedMachineId = parseInt(document.getElementById('conferenceMachineSelect')?.value)
+    const selectedMaintenanceType = document.getElementById('conferenceMaintenanceType')?.value || null
+
+    const response = await fetch(`${API_URL}/api/review/${currentConferenceOS.id}/save`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        company_id: selectedCompanyId,
+        machine_id: selectedMachineId,
+        maintenance_type: selectedMaintenanceType,
+        service_description: document.getElementById('conferenceServiceDesc').value,
+        is_new_client: isNewClient,
+        effective_hourly_rate: hourlyRate,
+        value_service: totalAdditionalServices,
+        total_service_cost: totalServiceCost,
+        total_material_cost: totalMaterials,
+        grand_total: grandTotal,
+        materials: conferenceMaterials,
+        worklogs: conferenceWorklogs,
+        displacements: conferenceDisplacements,
+        additional_services: conferenceAdditionalServices
+      })
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.message || 'Erro ao salvar alterações')
+    }
+
+    showToast(`Alterações da OS #${currentConferenceOS.order_number || currentConferenceOS.id} salvas!`, 'success')
+    resetButtonLoading(btn, originalText)
+  } catch (error) {
+    console.error('Erro ao salvar alterações:', error)
+    showToast(error.message || 'Erro ao salvar alterações', 'error')
+    resetButtonLoading(btn, originalText)
+  }
+}
+
+/**
  * Cancela OS (antiga função de arquivar)
  */
 async function cancelConferenceOS() {
@@ -1379,6 +1453,14 @@ function createConferenceModal() {
           </div>
           <div style="display: flex; gap: 1rem;">
             <button class="btn-secondary" onclick="closeConferenceModal()">Fechar</button>
+            <button id="btnSaveConference" class="btn-primary" onclick="saveConferenceChanges()" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 0.5rem;">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                <polyline points="17 21 17 13 7 13 7 21"/>
+                <polyline points="7 3 7 8 15 8"/>
+              </svg>
+              Salvar Alterações
+            </button>
             <button id="btnApproveConference" class="btn-primary" onclick="approveConferenceOS()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 0.5rem;">
                 <polyline points="20 6 9 17 4 12"/>
