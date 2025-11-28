@@ -8652,9 +8652,6 @@ function initDailyReport() {
     const today = new Date().toISOString().split('T')[0]
     dateInput.value = today
   }
-
-  // Atualiza histórico
-  updateDailyReportHistoryUI()
 }
 
 /**
@@ -8771,9 +8768,6 @@ async function generateDailyReport() {
       contentDiv.innerHTML = statsHtml + '<div style="white-space: pre-wrap;">' + htmlReport + '</div>'
     }
 
-    // Salva no histórico local
-    saveDailyReportToHistory(date, filter, reportData.report, osData.stats)
-
   } catch (err) {
     console.error('Erro ao gerar relatório:', err)
     if (loadingDiv) loadingDiv.style.display = 'none'
@@ -8796,74 +8790,6 @@ function resetGenerateButton() {
       </svg>
       Gerar Relatório
     `
-  }
-}
-
-/**
- * Salva relatório no histórico local (localStorage)
- */
-function saveDailyReportToHistory(date, filter, report, stats) {
-  try {
-    const key = 'dailyReportHistory'
-    let history = JSON.parse(localStorage.getItem(key) || '[]')
-
-    // Remove duplicata se existir
-    history = history.filter(h => h.date !== date || h.filter !== filter)
-
-    // Adiciona novo
-    history.unshift({
-      date,
-      filter,
-      report: report.substring(0, 500) + '...', // Salva apenas resumo
-      stats,
-      generatedAt: new Date().toISOString()
-    })
-
-    // Mantém apenas os últimos 30
-    history = history.slice(0, 30)
-
-    localStorage.setItem(key, JSON.stringify(history))
-    updateDailyReportHistoryUI()
-  } catch (err) {
-    console.error('Erro ao salvar histórico:', err)
-  }
-}
-
-/**
- * Atualiza a UI do histórico
- */
-function updateDailyReportHistoryUI() {
-  const historyDiv = document.getElementById('dailyReportHistory')
-  if (!historyDiv) return
-
-  try {
-    const history = JSON.parse(localStorage.getItem('dailyReportHistory') || '[]')
-
-    if (history.length === 0) {
-      historyDiv.innerHTML = '<p class="empty-state">Nenhum relatório gerado ainda</p>'
-      return
-    }
-
-    let html = '<div style="display: flex; flex-direction: column; gap: 0.5rem;">'
-    history.slice(0, 10).forEach(h => {
-      const dateFormatted = new Date(h.date + 'T12:00:00').toLocaleDateString('pt-BR')
-
-      html += `
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--bg-secondary); border-radius: 8px;">
-          <div>
-            <strong>${dateFormatted}</strong>
-          </div>
-          <div style="font-size: 0.75rem; color: var(--text-secondary);">
-            ${h.stats?.totalOS || 0} OS
-          </div>
-        </div>
-      `
-    })
-    html += '</div>'
-
-    historyDiv.innerHTML = html
-  } catch (err) {
-    console.error('Erro ao atualizar histórico:', err)
   }
 }
 
