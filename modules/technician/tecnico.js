@@ -112,6 +112,67 @@ function formatForDatetimeLocal(date) {
   return `${year}-${month}-${day}T${hours}:${minutes}`
 }
 
+/**
+ * Cria um select de hora com intervalos de 30 minutos (00:00, 00:30, 01:00, ..., 23:30)
+ * Retorna um elemento <select> estilizado para mobile (scroll picker)
+ * @param {string} className - Classe CSS do select
+ * @param {string} initialValue - Valor inicial no formato "HH:MM" (ex: "08:30")
+ * @returns {HTMLSelectElement}
+ */
+function createTimeSelect(className, initialValue = '') {
+  const select = document.createElement("select")
+  select.className = className
+  select.required = true
+  select.style.padding = "0.5rem"
+  select.style.background = "var(--bg-input)"
+  select.style.border = "1px solid var(--border-color)"
+  select.style.borderRadius = "6px"
+  select.style.color = "var(--text-primary)"
+  select.style.fontSize = "1rem"
+  select.style.minWidth = "90px"
+  select.style.cursor = "pointer"
+  select.style.appearance = "none"
+  select.style.webkitAppearance = "none"
+  select.style.backgroundImage = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")"
+  select.style.backgroundRepeat = "no-repeat"
+  select.style.backgroundPosition = "right 8px center"
+  select.style.paddingRight = "28px"
+
+  // Opção vazia
+  const emptyOpt = document.createElement("option")
+  emptyOpt.value = ""
+  emptyOpt.textContent = "--:--"
+  select.appendChild(emptyOpt)
+
+  // Gera opções de 00:00 a 23:30 (de 30 em 30 min)
+  for (let h = 0; h < 24; h++) {
+    for (let m = 0; m < 60; m += 30) {
+      const hStr = String(h).padStart(2, '0')
+      const mStr = String(m).padStart(2, '0')
+      const timeValue = `${hStr}:${mStr}`
+
+      const opt = document.createElement("option")
+      opt.value = timeValue
+      opt.textContent = timeValue
+      select.appendChild(opt)
+    }
+  }
+
+  // Define valor inicial (arredonda para 30 min mais próximo se necessário)
+  if (initialValue) {
+    const [hh, mm] = initialValue.split(':').map(Number)
+    if (!isNaN(hh) && !isNaN(mm)) {
+      // Arredonda minutos para 0 ou 30
+      const roundedMin = mm < 15 ? 0 : (mm < 45 ? 30 : 0)
+      const roundedHour = mm >= 45 ? (hh + 1) % 24 : hh
+      const roundedValue = `${String(roundedHour).padStart(2, '0')}:${String(roundedMin).padStart(2, '0')}`
+      select.value = roundedValue
+    }
+  }
+
+  return select
+}
+
 // ╔═══════════════════════════════════════════════════════════════════════════════╗
 // ║                    SEÇÃO 2: WEBSOCKET E AUTO-REFRESH                          ║
 // ╚═══════════════════════════════════════════════════════════════════════════════╝
@@ -2698,16 +2759,8 @@ function addTimeEntryRow(init = {}) {
   startLabel.style.display = "flex"
   startLabel.style.alignItems = "center"
 
-  const startInput = document.createElement("input")
-  startInput.type = "time"
-  startInput.className = "start-time"
-  startInput.required = true
-  startInput.style.padding = "0.5rem"
-  startInput.style.background = "var(--bg-input)"
-  startInput.style.border = "1px solid var(--border-color)"
-  startInput.style.borderRadius = "6px"
-  startInput.style.color = "var(--text-primary)"
-  startInput.value = initStartTime
+  // Usa select com horas de 30 em 30 minutos (scroll picker)
+  const startInput = createTimeSelect("start-time", initStartTime)
 
   startContainer.appendChild(startLabel)
   startContainer.appendChild(startInput)
@@ -2733,16 +2786,8 @@ function addTimeEntryRow(init = {}) {
   endLabel.style.display = "flex"
   endLabel.style.alignItems = "center"
 
-  const endInput = document.createElement("input")
-  endInput.type = "time"
-  endInput.className = "end-time"
-  endInput.required = true
-  endInput.style.padding = "0.5rem"
-  endInput.style.background = "var(--bg-input)"
-  endInput.style.border = "1px solid var(--border-color)"
-  endInput.style.borderRadius = "6px"
-  endInput.style.color = "var(--text-primary)"
-  endInput.value = initEndTime
+  // Usa select com horas de 30 em 30 minutos (scroll picker)
+  const endInput = createTimeSelect("end-time", initEndTime)
 
   endContainer.appendChild(endLabel)
   endContainer.appendChild(endInput)
