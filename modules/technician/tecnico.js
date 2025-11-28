@@ -73,15 +73,13 @@ function setStoredTechnicianId(id) {
   if (id) localStorage.setItem("technicianId", id)
 }
 
+// Assinatura NÃO é mais salva em cache - se sair da página, perde
 function getStoredTechnicianSignature() {
-  const id = getStoredTechnicianId()
-  if (!id) return null
-  return localStorage.getItem(`technicianSignature:${id}`)
+  return null // Desabilitado - assinatura não fica em cache
 }
 
 function setStoredTechnicianSignature(sig) {
-  const id = getStoredTechnicianId()
-  if (id && sig) localStorage.setItem(`technicianSignature:${id}`, sig)
+  // Não faz nada - assinatura não deve ser salva em cache
 }
 
 /**
@@ -215,6 +213,11 @@ function showToast(message, type = "success") {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Limpa assinaturas antigas do cache (não devem mais ser salvas)
+  Object.keys(localStorage)
+    .filter(key => key.startsWith('technicianSignature:'))
+    .forEach(key => localStorage.removeItem(key))
+
   const loginForm = document.getElementById("technicianLoginForm")
   if (loginForm) {
     console.log("[INIT] Form de login encontrado, vinculando evento...")
