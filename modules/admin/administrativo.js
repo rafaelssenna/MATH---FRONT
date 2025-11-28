@@ -8154,21 +8154,21 @@ function showBillingActions(event, osId, orderNumber) {
   }
 
   menu.innerHTML = `
-    <button class="billing-menu-item" onclick="closeBillingMenu(); viewOSDetails(${osId})">
+    <button class="billing-menu-item" style="border-left: 3px solid #3498db;" onclick="closeBillingMenu(); viewOSDetails(${osId})">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3498db" stroke-width="2">
         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
         <circle cx="12" cy="12" r="3"/>
       </svg>
       <span style="color: #3498db; font-weight: 500;">Ver Detalhes</span>
     </button>
-    <button class="billing-menu-item" onclick="closeBillingMenu(); returnOSToReview(${osId})">
+    <button class="billing-menu-item" style="border-left: 3px solid #f39c12;" onclick="closeBillingMenu(); returnOSToReview(${osId})">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f39c12" stroke-width="2">
         <polyline points="1 4 1 10 7 10"/>
         <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
       </svg>
       <span style="color: #f39c12; font-weight: 500;">Restaurar</span>
     </button>
-    <button class="billing-menu-item" onclick="closeBillingMenu(); markOSAsBilled(${osId}, ${orderNumber})">
+    <button class="billing-menu-item" style="border-left: 3px solid #27ae60;" onclick="closeBillingMenu(); markOSAsBilled(${osId}, ${orderNumber})">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#27ae60" stroke-width="2">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
         <polyline points="14 2 14 8 20 8"/>
