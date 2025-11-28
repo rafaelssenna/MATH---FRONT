@@ -5681,6 +5681,7 @@ function getStatusColor(status) {
     'pending_review': '#10b981', // Verde - Finalizada (aguardando conferência)
     'approved': '#10b981',       // Verde - Aprovada
     'billed': '#10b981',         // Verde - Faturada
+    'completed': '#10b981',      // Verde - Concluída
     'finished': '#10b981',       // Verde - Finalizada
     'standby': '#f59e0b',        // Laranja - Em Standby
     'archived': '#6b7280',       // Cinza - Arquivada
