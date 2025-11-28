@@ -7660,70 +7660,38 @@ function renderBillingOSList(osList, tab) {
               <div><strong>Concluída:</strong> ${os.finished_at ? new Date(os.finished_at).toLocaleDateString('pt-BR') : 'N/A'}</div>
               ${tab === 'billed' ? `<div><strong>NF:</strong> <span style="color: var(--primary-blue); font-weight: 600;">${os.invoice_number || 'N/A'}</span></div>` : ''}
             </div>
-            <div style="display: flex; gap: 0.5rem;">
+            <div style="display: flex; gap: 0.5rem; justify-content: center;">
               ${tab === 'pending' ? `
-                <button onclick="viewOSDetails(${os.id})" style="
-                  flex: 1;
-                  padding: 0.625rem 0.5rem;
-                  background: #3498db;
+                <button onclick="showBillingActions(event, ${os.id}, ${os.order_number})" style="
+                  padding: 0.625rem 1rem;
+                  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
                   color: white;
                   border: none;
                   border-radius: 8px;
                   cursor: pointer;
-                  font-size: 0.8rem;
+                  font-size: 0.85rem;
                   font-weight: 600;
                   display: flex;
                   align-items: center;
                   justify-content: center;
-                  gap: 0.25rem;
-                "><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Ver</button>
-                <button onclick="returnOSToReview(${os.id}, ${os.order_number})" style="
-                  flex: 1;
-                  padding: 0.625rem 0.5rem;
-                  background: #f39c12;
-                  color: white;
-                  border: none;
-                  border-radius: 8px;
-                  cursor: pointer;
-                  font-size: 0.8rem;
-                  font-weight: 600;
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  gap: 0.25rem;
-                "><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>Restaurar</button>
-                <button onclick="markOSAsBilled(${os.id}, ${os.order_number})" style="
-                  flex: 1;
-                  padding: 0.625rem 0.5rem;
-                  background: #27ae60;
-                  color: white;
-                  border: none;
-                  border-radius: 8px;
-                  cursor: pointer;
-                  font-size: 0.8rem;
-                  font-weight: 600;
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  gap: 0.25rem;
-                "><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Faturar</button>
+                  gap: 0.4rem;
+                "><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>Ações</button>
               ` : `
                 <button onclick="viewOSDetails(${os.id})" style="
-                  flex: 1;
-                  padding: 0.625rem 0.5rem;
+                  padding: 0.625rem 1rem;
                   background: #3498db;
                   color: white;
                   border: none;
                   border-radius: 8px;
                   cursor: pointer;
-                  font-size: 0.8rem;
+                  font-size: 0.85rem;
                   font-weight: 600;
                   display: flex;
                   align-items: center;
                   justify-content: center;
                   gap: 0.25rem;
                 "><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Ver</button>
-                <span style="flex: 1; text-align: center; color: var(--success-color); font-weight: 600; padding: 0.625rem; display: flex; align-items: center; justify-content: center; gap: 0.25rem;">
+                <span style="text-align: center; color: var(--success-color); font-weight: 600; padding: 0.625rem; display: flex; align-items: center; justify-content: center; gap: 0.25rem;">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Faturada
                 </span>
               `}
@@ -7759,33 +7727,33 @@ function renderBillingOSList(osList, tab) {
             ${tab === 'billed' ? `<td style="padding: 0.75rem; font-weight: 600; color: var(--primary);">NF: ${os.invoice_number || 'N/A'}</td>` : ''}
             <td style="padding: 0.75rem; text-align: right; font-weight: 600;">${formatter.format(os.grand_total || 0)}</td>
             <td style="padding: 0.75rem; text-align: center;">
-              <button onclick="viewOSDetails(${os.id})" title="Ver detalhes" style="
-                padding: 0.5rem 0.75rem;
-                background: #3498db;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                cursor: pointer;
-                font-size: 0.875rem;
-                font-weight: 500;
-                display: inline-flex;
-                align-items: center;
-                gap: 0.35rem;
-                margin-right: 0.5rem;
-                min-width: 100px;
-                justify-content: center;
-                transition: all 0.2s;
-              " onmouseover="this.style.background='#2980b9'" onmouseout="this.style.background='#3498db'">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                  <circle cx="12" cy="12" r="3"/>
-                </svg>
-                Ver
-              </button>
               ${tab === 'pending' ? `
-                <button onclick="returnOSToReview(${os.id}, ${os.order_number})" title="Voltar para revisão" style="
+                <button onclick="showBillingActions(event, ${os.id}, ${os.order_number})" title="Ações" style="
+                  padding: 0.5rem 1rem;
+                  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+                  color: white;
+                  border: none;
+                  border-radius: 6px;
+                  cursor: pointer;
+                  font-size: 0.875rem;
+                  font-weight: 500;
+                  display: inline-flex;
+                  align-items: center;
+                  gap: 0.35rem;
+                  justify-content: center;
+                  transition: all 0.2s;
+                " onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="1"/>
+                    <circle cx="19" cy="12" r="1"/>
+                    <circle cx="5" cy="12" r="1"/>
+                  </svg>
+                  Ações
+                </button>
+              ` : `
+                <button onclick="viewOSDetails(${os.id})" title="Ver detalhes" style="
                   padding: 0.5rem 0.75rem;
-                  background: #f39c12;
+                  background: #3498db;
                   color: white;
                   border: none;
                   border-radius: 6px;
@@ -7796,38 +7764,14 @@ function renderBillingOSList(osList, tab) {
                   align-items: center;
                   gap: 0.35rem;
                   margin-right: 0.5rem;
-                  min-width: 100px;
                   justify-content: center;
-                  transition: all 0.2s;
-                " onmouseover="this.style.background='#e67e22'" onmouseout="this.style.background='#f39c12'">
+                " onmouseover="this.style.background='#2980b9'" onmouseout="this.style.background='#3498db'">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 7v6h6"/>
-                    <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
                   </svg>
-                  Restaurar
+                  Ver
                 </button>
-                <button onclick="markOSAsBilled(${os.id}, ${os.order_number})" title="Marcar como faturada" style="
-                  padding: 0.5rem 0.75rem;
-                  background: #27ae60;
-                  color: white;
-                  border: none;
-                  border-radius: 6px;
-                  cursor: pointer;
-                  font-size: 0.875rem;
-                  font-weight: 500;
-                  display: inline-flex;
-                  align-items: center;
-                  gap: 0.35rem;
-                  min-width: 100px;
-                  justify-content: center;
-                  transition: all 0.2s;
-                " onmouseover="this.style.background='#229954'" onmouseout="this.style.background='#27ae60'">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                  Faturar
-                </button>
-              ` : `
                 <span style="color: var(--success-color); font-weight: 600;">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: middle;">
                     <polyline points="20 6 9 17 4 12"/>
@@ -7841,6 +7785,131 @@ function renderBillingOSList(osList, tab) {
       </tbody>
     </table>
   `
+}
+
+/**
+ * Mostra popup com ações de faturamento (Ver, Restaurar, Faturar)
+ */
+function showBillingActions(event, osId, orderNumber) {
+  event.stopPropagation()
+
+  // Remove popup anterior se existir
+  const existingPopup = document.getElementById('billingActionsPopup')
+  if (existingPopup) existingPopup.remove()
+
+  // Cria o popup
+  const popup = document.createElement('div')
+  popup.id = 'billingActionsPopup'
+  popup.innerHTML = `
+    <div style="
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 9998;
+    " onclick="document.getElementById('billingActionsPopup').remove()"></div>
+    <div style="
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--bg-primary);
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      z-index: 9999;
+      min-width: 250px;
+      border: 1px solid var(--border-color);
+    ">
+      <div style="margin-bottom: 1rem; text-align: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
+        <span style="font-weight: 700; color: var(--primary-blue);">OS #${orderNumber}</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <button onclick="document.getElementById('billingActionsPopup').remove(); viewOSDetails(${osId})" style="
+          width: 100%;
+          padding: 0.75rem 1rem;
+          background: #3498db;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 0.95rem;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
+          transition: all 0.2s;
+        " onmouseover="this.style.background='#2980b9'" onmouseout="this.style.background='#3498db'">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          Ver Detalhes
+        </button>
+        <button onclick="document.getElementById('billingActionsPopup').remove(); returnOSToReview(${osId})" style="
+          width: 100%;
+          padding: 0.75rem 1rem;
+          background: #f39c12;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 0.95rem;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
+          transition: all 0.2s;
+        " onmouseover="this.style.background='#d68910'" onmouseout="this.style.background='#f39c12'">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="1 4 1 10 7 10"/>
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+          </svg>
+          Restaurar
+        </button>
+        <button onclick="document.getElementById('billingActionsPopup').remove(); markOSAsBilled(${osId}, ${orderNumber})" style="
+          width: 100%;
+          padding: 0.75rem 1rem;
+          background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%);
+          color: white;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 0.95rem;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
+          transition: all 0.2s;
+        " onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+          Faturar
+        </button>
+      </div>
+    </div>
+  `
+
+  document.body.appendChild(popup)
+
+  // Fecha o popup ao pressionar ESC
+  const handleEsc = (e) => {
+    if (e.key === 'Escape') {
+      popup.remove()
+      document.removeEventListener('keydown', handleEsc)
+    }
+  }
+  document.addEventListener('keydown', handleEsc)
 }
 
 /**
