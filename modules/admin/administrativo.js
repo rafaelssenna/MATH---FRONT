@@ -4225,23 +4225,18 @@ async function generateAndOpenOSPDF() {
   drawSignatures()
   drawFooter()
 
-  // Gera o PDF e força o download (não abre em nova aba)
+  // Gera o PDF e abre em nova aba (preview antes de baixar)
   try {
     const pdfBlob = doc.output('blob')
     const pdfUrl = URL.createObjectURL(pdfBlob)
 
-    // Força o download do PDF
-    const link = document.createElement('a')
-    link.href = pdfUrl
-    link.download = `OS${currentOS.osNumber}.pdf`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    // Abre o PDF em nova aba para preview
+    window.open(pdfUrl, '_blank')
 
-    showToast("PDF baixado com sucesso!", "success")
+    showToast("PDF aberto em nova aba!", "success")
 
-    // Limpa a URL do objeto após o download
-    setTimeout(() => URL.revokeObjectURL(pdfUrl), 100)
+    // Limpa a URL do objeto após um tempo (para dar tempo de carregar)
+    setTimeout(() => URL.revokeObjectURL(pdfUrl), 60000)
   } catch (error) {
     console.error("Erro ao gerar PDF:", error)
     showToast("Erro ao gerar PDF: " + error.message, "error")
