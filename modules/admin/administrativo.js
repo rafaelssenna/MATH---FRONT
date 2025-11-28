@@ -8648,9 +8648,12 @@ function initDailyReport() {
   const dateInput = document.getElementById('dailyReportDate')
 
   if (dateInput) {
-    // Define data atual como padrão
-    const today = new Date().toISOString().split('T')[0]
-    dateInput.value = today
+    // Define data atual como padrão (usando timezone local, não UTC)
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    dateInput.value = `${year}-${month}-${day}`
   }
 }
 
