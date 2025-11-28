@@ -73,13 +73,16 @@ function setStoredTechnicianId(id) {
   if (id) localStorage.setItem("technicianId", id)
 }
 
-// Assinatura NÃO é mais salva em cache - se sair da página, perde
+// Assinatura fica apenas em memória da sessão - se sair da página, perde
+// (não usa localStorage para não persistir entre sessões)
+let _technicianSignatureInMemory = null
+
 function getStoredTechnicianSignature() {
-  return null // Desabilitado - assinatura não fica em cache
+  return _technicianSignatureInMemory
 }
 
 function setStoredTechnicianSignature(sig) {
-  // Não faz nada - assinatura não deve ser salva em cache
+  _technicianSignatureInMemory = sig
 }
 
 /**
