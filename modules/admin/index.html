@@ -303,12 +303,20 @@
                                 Nova OS
                             </button>
                         </div>
-                        <div class="search-bar">
-                            <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="11" cy="11" r="8" />
-                                <path d="m21 21-4.35-4.35" />
-                            </svg>
-                            <input type="text" id="adminSearch" placeholder="Buscar por número da OS, cliente ou técnico...">
+                        <div class="search-bar" style="flex-wrap: wrap; gap: 0.75rem;">
+                            <div style="display: flex; align-items: center; flex: 1; min-width: 200px;">
+                                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="11" cy="11" r="8" />
+                                    <path d="m21 21-4.35-4.35" />
+                                </svg>
+                                <input type="text" id="adminSearch" placeholder="Buscar por número da OS, cliente..." style="flex: 1;">
+                            </div>
+                            <select id="osFilterTechnician" onchange="applyOSFilters()" style="padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary); min-width: 150px;">
+                                <option value="">Todos os Técnicos</option>
+                            </select>
+                            <select id="osFilterMachine" onchange="applyOSFilters()" style="padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary); min-width: 150px;">
+                                <option value="">Todas as Máquinas</option>
+                            </select>
                             <button class="btn-secondary" onclick="searchOS()">Buscar</button>
                         </div>
                         

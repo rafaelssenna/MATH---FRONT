@@ -1606,6 +1606,82 @@ function handleAdminLogin(e) {
 // ║                    SEÇÃO 8: ORDENS DE SERVIÇO (OS)                            ║
 // ╚═══════════════════════════════════════════════════════════════════════════════╝
 
+// Variáveis para filtros de OS
+let osFilterTechnicianId = null
+let osFilterMachineSerial = null
+
+/**
+ * Carrega técnicos no select de filtro
+ */
+async function loadOSFilterTechnicians() {
+  const select = document.getElementById('osFilterTechnician')
+  if (!select) return
+
+  try {
+    const response = await fetch(`${API_URL}/api/technicians`)
+    if (!response.ok) return
+
+    const technicians = await response.json()
+    const currentValue = select.value
+
+    select.innerHTML = '<option value="">Todos os Técnicos</option>'
+    technicians.forEach(tech => {
+      select.innerHTML += `<option value="${tech.id}">${tech.username}</option>`
+    })
+
+    // Restaura valor anterior se existir
+    if (currentValue) select.value = currentValue
+  } catch (err) {
+    console.error('Erro ao carregar técnicos para filtro:', err)
+  }
+}
+
+/**
+ * Carrega máquinas no select de filtro (baseado nas OS existentes)
+ */
+async function loadOSFilterMachines() {
+  const select = document.getElementById('osFilterMachine')
+  if (!select) return
+
+  try {
+    const response = await fetch(`${API_URL}/api/machines`)
+    if (!response.ok) return
+
+    const machines = await response.json()
+    const currentValue = select.value
+
+    select.innerHTML = '<option value="">Todas as Máquinas</option>'
+    // Ordena por modelo/serial e adiciona
+    machines
+      .filter(m => m.serial_number)
+      .sort((a, b) => (a.model || '').localeCompare(b.model || ''))
+      .forEach(m => {
+        const label = m.model ? `${m.model} - ${m.serial_number}` : m.serial_number
+        select.innerHTML += `<option value="${m.serial_number}">${label}</option>`
+      })
+
+    // Restaura valor anterior se existir
+    if (currentValue) select.value = currentValue
+  } catch (err) {
+    console.error('Erro ao carregar máquinas para filtro:', err)
+  }
+}
+
+/**
+ * Aplica filtros de técnico e máquina
+ */
+function applyOSFilters() {
+  const techSelect = document.getElementById('osFilterTechnician')
+  const machineSelect = document.getElementById('osFilterMachine')
+
+  osFilterTechnicianId = techSelect?.value || null
+  osFilterMachineSerial = machineSelect?.value || null
+
+  // Reseta para página 1 ao filtrar
+  osPagination.page = 1
+  loadOSList()
+}
+
 /**
  * Carrega a lista de ordens de serviço do localStorage e exibe
  * no painel administrativo.
@@ -1613,7 +1689,11 @@ function handleAdminLogin(e) {
 function loadOSList() {
   const container = document.getElementById("osList")
   if (!container) return
-  const url = `${API_URL}/api/os?limit=${osPagination.limit}&page=${osPagination.page}&only_with_order_number=true`
+
+  // Monta URL com filtros
+  let url = `${API_URL}/api/os?limit=${osPagination.limit}&page=${osPagination.page}&only_with_order_number=true`
+  if (osFilterTechnicianId) url += `&technician_id=${osFilterTechnicianId}`
+  if (osFilterMachineSerial) url += `&machine_serial=${encodeURIComponent(osFilterMachineSerial)}`
   fetch(url)
     .then(async (res) => {
       if (!res.ok) {
@@ -4283,6 +4363,8 @@ window.activateSection = function(section) {
     document.getElementById('machinesSearchResults').innerHTML = '<p class="empty-state">Digite o modelo ou número de série para buscar</p>'
   }
   if (section === "osSection") {
+    loadOSFilterTechnicians()
+    loadOSFilterMachines()
     loadOSList()
   }
   if (section === "usersSection") {
