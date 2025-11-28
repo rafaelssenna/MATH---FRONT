@@ -8010,128 +8010,131 @@ function renderBillingOSList(osList, tab) {
 }
 
 /**
- * Mostra popup com ações de faturamento (Ver, Restaurar, Faturar)
+ * Mostra menu dropdown com ações de faturamento (Ver, Restaurar, Faturar)
  */
 function showBillingActions(event, osId, orderNumber) {
   event.stopPropagation()
 
-  // Remove popup anterior se existir
-  const existingPopup = document.getElementById('billingActionsPopup')
-  if (existingPopup) existingPopup.remove()
+  // Remove menu anterior se existir
+  const existingMenu = document.getElementById('billingActionsMenu')
+  if (existingMenu) existingMenu.remove()
 
-  // Cria o popup
-  const popup = document.createElement('div')
-  popup.id = 'billingActionsPopup'
-  popup.innerHTML = `
-    <div style="
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 9998;
-    " onclick="document.getElementById('billingActionsPopup').remove()"></div>
-    <div style="
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: var(--bg-primary);
-      border-radius: 12px;
-      padding: 1.5rem;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-      z-index: 9999;
-      min-width: 250px;
-      border: 1px solid var(--border-color);
-    ">
-      <div style="margin-bottom: 1rem; text-align: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
-        <span style="font-weight: 700; color: var(--primary-blue);">OS #${orderNumber}</span>
-      </div>
-      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-        <button onclick="document.getElementById('billingActionsPopup').remove(); viewOSDetails(${osId})" style="
-          width: 100%;
-          padding: 0.75rem 1rem;
-          background: #3498db;
-          color: white;
-          border: none;
-          border-radius: 8px;
-          cursor: pointer;
-          font-size: 0.95rem;
-          font-weight: 600;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 0.5rem;
-          transition: all 0.2s;
-        " onmouseover="this.style.background='#2980b9'" onmouseout="this.style.background='#3498db'">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-            <circle cx="12" cy="12" r="3"/>
-          </svg>
-          Ver Detalhes
-        </button>
-        <button onclick="document.getElementById('billingActionsPopup').remove(); returnOSToReview(${osId})" style="
-          width: 100%;
-          padding: 0.75rem 1rem;
-          background: #f39c12;
-          color: white;
-          border: none;
-          border-radius: 8px;
-          cursor: pointer;
-          font-size: 0.95rem;
-          font-weight: 600;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 0.5rem;
-          transition: all 0.2s;
-        " onmouseover="this.style.background='#d68910'" onmouseout="this.style.background='#f39c12'">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="1 4 1 10 7 10"/>
-            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
-          </svg>
-          Restaurar
-        </button>
-        <button onclick="document.getElementById('billingActionsPopup').remove(); markOSAsBilled(${osId}, ${orderNumber})" style="
-          width: 100%;
-          padding: 0.75rem 1rem;
-          background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%);
-          color: white;
-          border: none;
-          border-radius: 8px;
-          cursor: pointer;
-          font-size: 0.95rem;
-          font-weight: 600;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 0.5rem;
-          transition: all 0.2s;
-        " onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14 2 14 8 20 8"/>
-            <line x1="16" y1="13" x2="8" y2="13"/>
-            <line x1="16" y1="17" x2="8" y2="17"/>
-            <polyline points="10 9 9 9 8 9"/>
-          </svg>
-          Faturar
-        </button>
-      </div>
-    </div>
+  // Pega posição do botão clicado
+  const button = event.currentTarget
+  const rect = button.getBoundingClientRect()
+
+  // Cria o menu dropdown
+  const menu = document.createElement('div')
+  menu.id = 'billingActionsMenu'
+  menu.style.cssText = `
+    position: fixed;
+    top: ${rect.bottom + 4}px;
+    left: ${rect.left}px;
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    z-index: 9999;
+    min-width: 180px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    animation: menuSlideIn 0.15s ease-out;
   `
 
-  document.body.appendChild(popup)
+  // Adiciona animação CSS se não existir
+  if (!document.getElementById('billingMenuStyles')) {
+    const style = document.createElement('style')
+    style.id = 'billingMenuStyles'
+    style.textContent = `
+      @keyframes menuSlideIn {
+        from { opacity: 0; transform: translateY(-8px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .billing-menu-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        cursor: pointer;
+        transition: background 0.15s;
+        border: none;
+        background: transparent;
+        width: 100%;
+        text-align: left;
+        font-size: 0.9rem;
+        color: var(--text-primary);
+      }
+      .billing-menu-item:hover {
+        background: var(--bg-primary);
+      }
+      .billing-menu-item svg {
+        flex-shrink: 0;
+      }
+    `
+    document.head.appendChild(style)
+  }
 
-  // Fecha o popup ao pressionar ESC
+  menu.innerHTML = `
+    <button class="billing-menu-item" onclick="closeBillingMenu(); viewOSDetails(${osId})">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3498db" stroke-width="2">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+        <circle cx="12" cy="12" r="3"/>
+      </svg>
+      <span style="color: #3498db; font-weight: 500;">Ver Detalhes</span>
+    </button>
+    <button class="billing-menu-item" onclick="closeBillingMenu(); returnOSToReview(${osId})">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f39c12" stroke-width="2">
+        <polyline points="1 4 1 10 7 10"/>
+        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+      </svg>
+      <span style="color: #f39c12; font-weight: 500;">Restaurar</span>
+    </button>
+    <button class="billing-menu-item" onclick="closeBillingMenu(); markOSAsBilled(${osId}, ${orderNumber})">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#27ae60" stroke-width="2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="16" y1="13" x2="8" y2="13"/>
+        <line x1="16" y1="17" x2="8" y2="17"/>
+      </svg>
+      <span style="color: #27ae60; font-weight: 500;">Faturar</span>
+    </button>
+  `
+
+  document.body.appendChild(menu)
+
+  // Ajusta posição se sair da tela
+  const menuRect = menu.getBoundingClientRect()
+  if (menuRect.right > window.innerWidth) {
+    menu.style.left = `${rect.right - menuRect.width}px`
+  }
+  if (menuRect.bottom > window.innerHeight) {
+    menu.style.top = `${rect.top - menuRect.height - 4}px`
+  }
+
+  // Fecha ao clicar fora
+  const closeOnClickOutside = (e) => {
+    if (!menu.contains(e.target) && e.target !== button) {
+      closeBillingMenu()
+      document.removeEventListener('click', closeOnClickOutside)
+    }
+  }
+  setTimeout(() => document.addEventListener('click', closeOnClickOutside), 10)
+
+  // Fecha ao pressionar ESC
   const handleEsc = (e) => {
     if (e.key === 'Escape') {
-      popup.remove()
+      closeBillingMenu()
       document.removeEventListener('keydown', handleEsc)
     }
   }
   document.addEventListener('keydown', handleEsc)
+}
+
+/**
+ * Fecha o menu de ações de faturamento
+ */
+function closeBillingMenu() {
+  const menu = document.getElementById('billingActionsMenu')
+  if (menu) menu.remove()
 }
 
 /**
