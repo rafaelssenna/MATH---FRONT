@@ -1308,6 +1308,20 @@ async function saveConferenceChanges() {
     const selectedMachineId = parseInt(document.getElementById('conferenceMachineSelect')?.value)
     const selectedMaintenanceType = document.getElementById('conferenceMaintenanceType')?.value || null
 
+    // Pega observações do campo se existir, senão usa o valor atual
+    const observationsField = document.getElementById('conferenceObservations')
+    const observations = observationsField ? observationsField.value : (currentConferenceOS.observations || null)
+
+    console.log('[SAVE] Enviando dados para salvar:', {
+      os_id: currentConferenceOS.id,
+      company_id: selectedCompanyId,
+      machine_id: selectedMachineId,
+      grandTotal,
+      materials: conferenceMaterials.length,
+      worklogs: conferenceWorklogs.length,
+      displacements: conferenceDisplacements.length
+    })
+
     const response = await fetch(`${API_URL}/api/review/${currentConferenceOS.id}/save`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1315,7 +1329,8 @@ async function saveConferenceChanges() {
         company_id: selectedCompanyId,
         machine_id: selectedMachineId,
         maintenance_type: selectedMaintenanceType,
-        service_description: document.getElementById('conferenceServiceDesc').value,
+        service_description: document.getElementById('conferenceServiceDesc')?.value || null,
+        observations: observations,
         is_new_client: isNewClient,
         effective_hourly_rate: hourlyRate,
         value_service: totalAdditionalServices,
