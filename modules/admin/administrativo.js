@@ -253,6 +253,15 @@ function formatHours(decimalHours) {
 }
 
 /**
+ * Formata quantidade de material - mostra inteiro se não tiver decimais
+ * Ex: 1.00 → "1", 1.50 → "1.5", 2.75 → "2.75"
+ */
+function formatQuantity(qty) {
+  const num = parseFloat(qty) || 0
+  return num % 1 === 0 ? String(Math.floor(num)) : String(num)
+}
+
+/**
  * Retorna feriados nacionais brasileiros para um ano específico
  * @param {number} year - Ano
  * @returns {Set<string>} - Set com datas no formato 'YYYY-MM-DD'
@@ -3101,7 +3110,7 @@ async function viewOSDetails(id) {
           </div>
           <div class="detail-field">
             <label>Qtde</label>
-            <span>${m.quantity}</span>
+            <span>${formatQuantity(m.quantity)}</span>
           </div>
           <div class="detail-field">
             <label>Valor Unitário</label>
@@ -4072,7 +4081,7 @@ async function generateAndOpenOSPDF() {
     currentOS.materiais.forEach((m) => {
       drawCells([
         { label: "Material", value: m.name || "", width: 0.35 },
-        { label: "Qtde", value: String(m.quantity || ""), width: 0.1 },
+        { label: "Qtde", value: formatQuantity(m.quantity), width: 0.1 },
         { label: "Val. Unit.", value: fmtBRL(m.unit_price), width: 0.27 },
         { label: "Total", value: fmtBRL(m.line_total), width: 0.28 },
       ])

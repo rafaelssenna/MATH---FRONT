@@ -37,6 +37,15 @@ let conferenceOSListCache = [] // Cache para filtro de busca
 let customHourlyRate = null // Valor da hora customizado (null = usar padrão)
 
 /**
+ * Formata quantidade de material - mostra inteiro se não tiver decimais
+ * Ex: 1.00 → "1", 1.50 → "1.5", 2.75 → "2.75"
+ */
+function formatQuantity(qty) {
+  const num = parseFloat(qty) || 0
+  return num % 1 === 0 ? String(Math.floor(num)) : String(num)
+}
+
+/**
  * Carrega dados de conferência (chamado ao abrir a seção)
  */
 async function loadReviewData() {
@@ -444,7 +453,7 @@ function renderConferenceMaterials() {
       </div>
       <div>
         <label style="font-size: 0.75rem; color: var(--text-secondary);">Quantidade</label>
-        <input type="number" value="${m.quantity || 0}" onchange="updateMaterialQuantity(${idx}, this.value)" step="0.01" style="width: 100%; padding: 0.5rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary);" />
+        <input type="number" value="${formatQuantity(m.quantity)}" onchange="updateMaterialQuantity(${idx}, this.value)" step="0.01" min="0" style="width: 100%; padding: 0.5rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary);" />
       </div>
       <div>
         <label style="font-size: 0.75rem; color: var(--text-secondary);">Preço Unit. (R$)</label>
@@ -1246,6 +1255,7 @@ async function approveConferenceOS() {
         total_service_cost: totalServiceCost,
         total_material_cost: totalMaterials,
         grand_total: grandTotal,
+        total_hours: totalHours, // Total de horas alteradas na conferência
         materials: conferenceMaterials,
         worklogs: conferenceWorklogs,
         displacements: conferenceDisplacements,
@@ -1337,6 +1347,7 @@ async function saveConferenceChanges() {
         total_service_cost: totalServiceCost,
         total_material_cost: totalMaterials,
         grand_total: grandTotal,
+        total_hours: totalHours,
         materials: conferenceMaterials,
         worklogs: conferenceWorklogs,
         displacements: conferenceDisplacements,
