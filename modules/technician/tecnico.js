@@ -2669,9 +2669,10 @@ function addTimeEntryRow(init = {}) {
   row.className = "time-entry-row"
   row.style.display = "flex"
   row.style.flexWrap = "wrap"
-  row.style.gap = "0.5rem"
+  row.style.gap = "0.75rem"
   row.style.marginTop = "0.5rem"
   row.style.alignItems = "flex-end"
+  row.style.justifyContent = "center"
   row.style.padding = "0.75rem"
   row.style.background = "var(--bg-secondary)"
   row.style.borderRadius = "8px"
@@ -2704,6 +2705,7 @@ function addTimeEntryRow(init = {}) {
   const dateContainer = document.createElement("div")
   dateContainer.style.flex = "1"
   dateContainer.style.minWidth = "140px"
+  dateContainer.style.maxWidth = "180px"
   dateContainer.style.display = "flex"
   dateContainer.style.flexDirection = "column"
   dateContainer.style.gap = "0.25rem"
@@ -2740,10 +2742,12 @@ function addTimeEntryRow(init = {}) {
 
   // Container para hora de início
   const startContainer = document.createElement("div")
-  startContainer.style.flex = "0 0 100px"
+  startContainer.style.flex = "0 0 auto"
+  startContainer.style.minWidth = "100px"
   startContainer.style.display = "flex"
   startContainer.style.flexDirection = "column"
   startContainer.style.gap = "0.25rem"
+  startContainer.style.alignItems = "center"
 
   const startLabel = document.createElement("label")
   startLabel.innerHTML = `
@@ -2767,10 +2771,12 @@ function addTimeEntryRow(init = {}) {
 
   // Container para hora de fim
   const endContainer = document.createElement("div")
-  endContainer.style.flex = "0 0 100px"
+  endContainer.style.flex = "0 0 auto"
+  endContainer.style.minWidth = "100px"
   endContainer.style.display = "flex"
   endContainer.style.flexDirection = "column"
   endContainer.style.gap = "0.25rem"
+  endContainer.style.alignItems = "center"
 
   const endLabel = document.createElement("label")
   endLabel.innerHTML = `
