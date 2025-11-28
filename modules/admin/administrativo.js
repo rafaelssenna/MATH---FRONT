@@ -3142,6 +3142,36 @@ async function viewOSDetails(id) {
       `
     }
 
+    // Ocorrência
+    if (currentOS.ocorrencia) {
+      html += `
+        <div style="margin-top: 1rem;">
+          <div style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600; margin-bottom: 0.5rem;">OCORRÊNCIA</div>
+          <div style="background: var(--bg-primary); padding: 1rem; border-radius: 8px; line-height: 1.5;">${currentOS.ocorrencia}</div>
+        </div>
+      `
+    }
+
+    // Causa
+    if (currentOS.causa) {
+      html += `
+        <div style="margin-top: 1rem;">
+          <div style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600; margin-bottom: 0.5rem;">CAUSA</div>
+          <div style="background: var(--bg-primary); padding: 1rem; border-radius: 8px; line-height: 1.5;">${currentOS.causa}</div>
+        </div>
+      `
+    }
+
+    // Observações
+    if (currentOS.observacoes) {
+      html += `
+        <div style="margin-top: 1rem;">
+          <div style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600; margin-bottom: 0.5rem;">OBSERVAÇÕES</div>
+          <div style="background: #fef3c7; padding: 1rem; border-radius: 8px; line-height: 1.5; color: #78350f; border-left: 4px solid #f59e0b;">${currentOS.observacoes}</div>
+        </div>
+      `
+    }
+
     html += `</div>` // Fecha fechamento técnico
 
     // DESLOCAMENTOS
@@ -3211,6 +3241,56 @@ async function viewOSDetails(id) {
           <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding-top: 1rem; border-top: 2px solid var(--border-color);">
             <span style="font-weight: 600;">Total de Quilometragem</span>
             <span style="font-weight: 700; font-size: 1.1rem; color: #f59e0b;">${totalKmGeral} km</span>
+          </div>
+        </div>
+      `
+    } else if (currentOS.deslocamentoKm || currentOS.carroUtilizado) {
+      // Fallback para formato antigo (sem array de deslocamentos)
+      const plate = resolvePlate(currentOS.carroUtilizado)
+      html += `
+        <div style="
+          background: var(--bg-secondary);
+          border-radius: 12px;
+          padding: 1.25rem;
+          border: 1px solid var(--border-color);
+          margin-bottom: 1.5rem;
+        ">
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+            <div style="
+              width: 40px;
+              height: 40px;
+              background: linear-gradient(135deg, #f59e0b, #d97706);
+              border-radius: 10px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            ">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
+              </svg>
+            </div>
+            <span style="font-weight: 600; font-size: 1rem;">Deslocamento</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+            ${currentOS.deslocamentoKm ? `
+            <div style="background: var(--bg-primary); padding: 0.75rem; border-radius: 8px;">
+              <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase;">Quilometragem</div>
+              <div style="font-weight: 600; margin-top: 0.25rem; color: #f59e0b;">${currentOS.deslocamentoKm} km</div>
+            </div>
+            ` : ''}
+            ${plate ? `
+            <div style="background: var(--bg-primary); padding: 0.75rem; border-radius: 8px;">
+              <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase;">Veículo</div>
+              <div style="font-weight: 600; margin-top: 0.25rem;">${plate}</div>
+            </div>
+            ` : ''}
+            ${currentOS.causaDeslocamento ? `
+            <div style="background: var(--bg-primary); padding: 0.75rem; border-radius: 8px;">
+              <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase;">Motivo</div>
+              <div style="font-weight: 500; margin-top: 0.25rem;">${currentOS.causaDeslocamento}</div>
+            </div>
+            ` : ''}
           </div>
         </div>
       `
