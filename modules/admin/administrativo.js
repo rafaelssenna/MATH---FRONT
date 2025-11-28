@@ -2856,9 +2856,6 @@ async function viewOSDetails(id) {
       clienteCnpj: resolvedCnpj || "",
       numeroSerie: row.machine_serial || "",
       modelo: row.machine_model || "",
-      // Responsável: pessoa que abriu o chamado. Para que o PDF mostre o solicitante
-      // corretamente, usamos o campo requester (solicitante) da OS. O técnico
-      // associado é armazenado em assistenteTecnico. Não incluímos numeração.
       responsavel: row.requester || "",
       assistenteTecnico: row.technician_username || "",
       maintenanceType: row.maintenance_type || "",
@@ -2894,429 +2891,632 @@ async function viewOSDetails(id) {
       isNewClient: !!row.is_new_client,
       worklogs: Array.isArray(row.worklogs) ? row.worklogs : [],
       additionalServices: Array.isArray(row.additional_services) ? row.additional_services : [],
+      status: row.status || "",
     }
 
-    // Render do modal (informativo)
-    let html = ""
-    // Períodos de trabalho: grid duplicando campos (Início/Fim/Horas por período)
-    let periodsHtml = ""
-    try {
-      if (currentOS.worklogs && currentOS.worklogs.length > 0) {
-        const blocks = currentOS.worklogs
-          .map((wl, idx) => {
-            const s = wl && wl.start_datetime ? parseAsLocalTime(wl.start_datetime) : null
-            const e = wl && wl.end_datetime ? parseAsLocalTime(wl.end_datetime) : null
-            const sDate = s ? s.toLocaleDateString("pt-BR") : ""
-            const sTime = s ? s.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : ""
-            const eDate = e ? e.toLocaleDateString("pt-BR") : ""
-            const eTime = e ? e.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : ""
-            const hours =
-              wl && wl.hours != null
-                ? Number(wl.hours) || 0
-                : s && e
-                ? Math.max((e - s) / 36e5, 0)
-                : 0
-            return `
-              <div class="detail-field">
-                <label>Início</label>
-                <span>${s ? `${sDate} ${sTime}` : ""}</span>
-              </div>
-              <div class="detail-field">
-                <label>Fim</label>
-                <span>${e ? `${eDate} ${eTime}` : ""}</span>
-              </div>
-              <div class="detail-field">
-                <label>Horas</label>
-                <span>${hours.toFixed(2)} h</span>
-              </div>
-            `
-          })
-          .join("")
-        periodsHtml = `<div class="detail-grid" style="margin-top: .75rem">${blocks}</div>`
-      }
-    } catch (_err) {
-      periodsHtml = ""
+    // Formatter para moeda
+    const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
+
+    // Status badge color
+    const statusColors = {
+      'finished': { bg: '#dcfce7', color: '#166534', label: 'Finalizada' },
+      'pending_review': { bg: '#fef3c7', color: '#92400e', label: 'Em Conferência' },
+      'approved': { bg: '#dbeafe', color: '#1e40af', label: 'Aprovada' },
+      'billed': { bg: '#f3e8ff', color: '#6b21a8', label: 'Faturada' },
+      'in_progress': { bg: '#fef3c7', color: '#92400e', label: 'Em Andamento' },
+      'assigned': { bg: '#e0e7ff', color: '#3730a3', label: 'Atribuída' },
+      'accepted': { bg: '#d1fae5', color: '#065f46', label: 'Aceita' },
     }
+    const statusInfo = statusColors[currentOS.status] || { bg: '#f3f4f6', color: '#374151', label: currentOS.status || 'N/A' }
 
-    html += `
-      <div class="detail-section">
-          <h3>Informações Básicas (Relatório do Chamado)</h3>
-          <div class="detail-grid">
-              <div class="detail-field">
-                  <label>Número da OS</label>
-                  <span>${currentOS.osNumber}</span>
-              </div>
-              <div class="detail-field">
-                  <label>Data Programada</label>
-                  <span>${new Date(currentOS.dataProgramada).toLocaleDateString("pt-BR")}</span>
-              </div>
-              <div class="detail-field">
-                  <label>Cliente</label>
-                  <span>${currentOS.cliente}${currentOS.clienteCnpj ? " — CNPJ: " + formatCNPJ(currentOS.clienteCnpj) : ""}</span>
-              </div>
-              <div class="detail-field">
-                  <label>Número de Série</label>
-                  <span>${currentOS.numeroSerie}</span>
-              </div>
-              ${
-                currentOS.modelo
-                  ? `
-              <div class="detail-field">
-                  <label>Modelo</label>
-                  <span>${currentOS.modelo}</span>
-              </div>`
-                  : ""
-              }
-              <div class="detail-field">
-                  <label>Responsável</label>
-                  <span>${currentOS.responsavel}</span>
-              </div>
-              <div class="detail-field">
-                  <label>Motivo do Chamado</label>
-                  <span>${currentOS.motivoChamado || ""}</span>
-              </div>
+    // HTML modernizado
+    let html = `
+      <!-- HEADER COM OS E TOTAL -->
+      <div style="
+        background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        color: white;
+      ">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <div style="font-size: 0.85rem; opacity: 0.8; margin-bottom: 0.25rem;">Ordem de Serviço</div>
+            <div style="font-size: 2rem; font-weight: 700;">#${currentOS.osNumber}</div>
+            <div style="margin-top: 0.5rem;">
+              <span style="
+                background: ${statusInfo.bg};
+                color: ${statusInfo.color};
+                padding: 0.25rem 0.75rem;
+                border-radius: 9999px;
+                font-size: 0.8rem;
+                font-weight: 600;
+              ">${statusInfo.label}</span>
+            </div>
           </div>
+          <div style="text-align: right;">
+            <div style="font-size: 0.85rem; opacity: 0.8; margin-bottom: 0.25rem;">Valor Total</div>
+            <div style="font-size: 1.75rem; font-weight: 700;">${fmt.format(currentOS.totalGeral || 0)}</div>
+            <div style="font-size: 0.85rem; opacity: 0.8; margin-top: 0.25rem;">
+              ${new Date(currentOS.dataProgramada).toLocaleDateString("pt-BR")}
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="detail-section">
-          <h3>Fechamento Técnico</h3>
-          <div class="detail-grid">
-              <div class="detail-field">
-                  <label>Assistente Técnico</label>
-                  <span>${currentOS.assistenteTecnico}</span>
-              </div>
-              <div class="detail-field">
-                  <label>Data/Hora Início (Agregado)</label>
-                  <span>${
-                    currentOS.dataHoraInicio
-                      ? parseAsLocalTime(currentOS.dataHoraInicio).toLocaleString("pt-BR", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "numeric",
-                        })
-                      : ""
-                  }</span>
-              </div>
-              <div class="detail-field">
-                  <label>Data/Hora Fim (Agregado)</label>
-                  <span>${
-                    currentOS.dataHoraFim
-                      ? parseAsLocalTime(currentOS.dataHoraFim).toLocaleString("pt-BR", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "numeric",
-                        })
-                      : ""
-                  }</span>
-              </div>
-              <div class="detail-field">
-                  <label>Total de Horas (Geral)</label>
-                  <span>${currentOS.totalHoras}</span>
-              </div>
-              ${
-                currentOS.maintenanceType
-                  ? `
-              <div class="detail-field">
-                  <label>Tipo de Manutenção</label>
-                  <span>${currentOS.maintenanceType}</span>
-              </div>`
-                  : ""
-              }
+      <!-- GRID DE 2 COLUNAS PARA INFO PRINCIPAL -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+
+        <!-- CLIENTE -->
+        <div style="
+          background: var(--bg-secondary);
+          border-radius: 12px;
+          padding: 1.25rem;
+          border: 1px solid var(--border-color);
+        ">
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+            <div style="
+              width: 40px;
+              height: 40px;
+              background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+              border-radius: 10px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            ">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <path d="M9 17v-2a4 4 0 0 1 8 0v2"/>
+                <circle cx="13" cy="9" r="2"/>
+              </svg>
+            </div>
+            <span style="font-weight: 600; font-size: 1rem;">Cliente</span>
           </div>
-          ${periodsHtml}
-          <div class="detail-field" style="margin-top: 1rem;">
-              <label>Descrição do Serviço</label>
-              <span>${currentOS.descricao}</span>
+          <div style="display: grid; gap: 0.75rem;">
+            <div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Nome</div>
+              <div style="font-weight: 500; margin-top: 0.25rem;">${currentOS.cliente || 'N/A'}</div>
+            </div>
+            ${currentOS.clienteCnpj ? `
+            <div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">CNPJ</div>
+              <div style="font-weight: 500; margin-top: 0.25rem;">${formatCNPJ(currentOS.clienteCnpj)}</div>
+            </div>` : ''}
+            <div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Solicitante</div>
+              <div style="font-weight: 500; margin-top: 0.25rem;">${currentOS.responsavel || 'N/A'}</div>
+            </div>
           </div>
+        </div>
+
+        <!-- EQUIPAMENTO -->
+        <div style="
+          background: var(--bg-secondary);
+          border-radius: 12px;
+          padding: 1.25rem;
+          border: 1px solid var(--border-color);
+        ">
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+            <div style="
+              width: 40px;
+              height: 40px;
+              background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+              border-radius: 10px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            ">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                <line x1="8" y1="21" x2="16" y2="21"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
+              </svg>
+            </div>
+            <span style="font-weight: 600; font-size: 1rem;">Equipamento</span>
+          </div>
+          <div style="display: grid; gap: 0.75rem;">
+            <div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Número de Série</div>
+              <div style="font-weight: 500; margin-top: 0.25rem; font-family: monospace;">${currentOS.numeroSerie || 'N/A'}</div>
+            </div>
+            ${currentOS.modelo ? `
+            <div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Modelo</div>
+              <div style="font-weight: 500; margin-top: 0.25rem;">${currentOS.modelo}</div>
+            </div>` : ''}
+            ${currentOS.maintenanceType ? `
+            <div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Tipo de Manutenção</div>
+              <div style="font-weight: 500; margin-top: 0.25rem;">${currentOS.maintenanceType}</div>
+            </div>` : ''}
+          </div>
+        </div>
       </div>
+
+      <!-- MOTIVO DO CHAMADO -->
+      ${currentOS.motivoChamado ? `
+      <div style="
+        background: #fef3c7;
+        border-left: 4px solid #f59e0b;
+        border-radius: 0 8px 8px 0;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.5rem;
+      ">
+        <div style="font-size: 0.8rem; color: #92400e; font-weight: 600; margin-bottom: 0.25rem;">MOTIVO DO CHAMADO</div>
+        <div style="color: #78350f;">${currentOS.motivoChamado}</div>
+      </div>` : ''}
+
+      <!-- FECHAMENTO TÉCNICO -->
+      <div style="
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        padding: 1.25rem;
+        border: 1px solid var(--border-color);
+        margin-bottom: 1.5rem;
+      ">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+          <div style="
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          ">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+            </svg>
+          </div>
+          <span style="font-weight: 600; font-size: 1rem;">Fechamento Técnico</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+          <div style="background: var(--bg-primary); padding: 0.75rem; border-radius: 8px;">
+            <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase;">Técnico</div>
+            <div style="font-weight: 600; margin-top: 0.25rem;">${currentOS.assistenteTecnico || 'N/A'}</div>
+          </div>
+          <div style="background: var(--bg-primary); padding: 0.75rem; border-radius: 8px;">
+            <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase;">Total Horas</div>
+            <div style="font-weight: 600; margin-top: 0.25rem; color: #059669;">${currentOS.totalHoras || '0.00 horas'}</div>
+          </div>
+          <div style="background: var(--bg-primary); padding: 0.75rem; border-radius: 8px;">
+            <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase;">Início</div>
+            <div style="font-weight: 500; margin-top: 0.25rem; font-size: 0.9rem;">${
+              currentOS.dataHoraInicio
+                ? parseAsLocalTime(currentOS.dataHoraInicio).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
+                : 'N/A'
+            }</div>
+          </div>
+          <div style="background: var(--bg-primary); padding: 0.75rem; border-radius: 8px;">
+            <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase;">Fim</div>
+            <div style="font-weight: 500; margin-top: 0.25rem; font-size: 0.9rem;">${
+              currentOS.dataHoraFim
+                ? parseAsLocalTime(currentOS.dataHoraFim).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
+                : 'N/A'
+            }</div>
+          </div>
+        </div>
     `
 
-    // Deslocamentos (informativo)
-    if (currentOS.displacements && currentOS.displacements.length > 0) {
-      html += `<div class="detail-section"><h3>Deslocamentos</h3>`
-      let totalKm = 0
-      currentOS.displacements.forEach((d, idx) => {
-        const kmLabel = d.km_option ? d.km_option : ""
-        let kmTotal = ""
-        let kmVal = 0
+    // Períodos de trabalho (worklogs)
+    if (currentOS.worklogs && currentOS.worklogs.length > 0) {
+      html += `
+        <div style="margin-top: 1rem;">
+          <div style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600; margin-bottom: 0.5rem;">PERÍODOS DE TRABALHO</div>
+          <div style="background: var(--bg-primary); border-radius: 8px; overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+              <thead>
+                <tr style="background: var(--bg-secondary);">
+                  <th style="padding: 0.5rem; text-align: left; font-weight: 600;">#</th>
+                  <th style="padding: 0.5rem; text-align: left; font-weight: 600;">Início</th>
+                  <th style="padding: 0.5rem; text-align: left; font-weight: 600;">Fim</th>
+                  <th style="padding: 0.5rem; text-align: right; font-weight: 600;">Horas</th>
+                </tr>
+              </thead>
+              <tbody>
+      `
+      currentOS.worklogs.forEach((wl, idx) => {
+        const s = wl && wl.start_datetime ? parseAsLocalTime(wl.start_datetime) : null
+        const e = wl && wl.end_datetime ? parseAsLocalTime(wl.end_datetime) : null
+        const hours = wl && wl.hours != null ? Number(wl.hours) || 0 : s && e ? Math.max((e - s) / 36e5, 0) : 0
+        html += `
+          <tr style="border-top: 1px solid var(--border-color);">
+            <td style="padding: 0.5rem;">${idx + 1}</td>
+            <td style="padding: 0.5rem;">${s ? s.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : '-'}</td>
+            <td style="padding: 0.5rem;">${e ? e.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : '-'}</td>
+            <td style="padding: 0.5rem; text-align: right; font-weight: 500;">${hours.toFixed(2)}h</td>
+          </tr>
+        `
+      })
+      html += `</tbody></table></div></div>`
+    }
 
-        // Verifica se é "sem deslocamento"
+    // Descrição do serviço
+    if (currentOS.descricao) {
+      html += `
+        <div style="margin-top: 1rem;">
+          <div style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600; margin-bottom: 0.5rem;">DESCRIÇÃO DO SERVIÇO</div>
+          <div style="background: var(--bg-primary); padding: 1rem; border-radius: 8px; line-height: 1.5;">${currentOS.descricao}</div>
+        </div>
+      `
+    }
+
+    html += `</div>` // Fecha fechamento técnico
+
+    // DESLOCAMENTOS
+    let totalKmGeral = 0
+    if (currentOS.displacements && currentOS.displacements.length > 0) {
+      html += `
+        <div style="
+          background: var(--bg-secondary);
+          border-radius: 12px;
+          padding: 1.25rem;
+          border: 1px solid var(--border-color);
+          margin-bottom: 1.5rem;
+        ">
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+            <div style="
+              width: 40px;
+              height: 40px;
+              background: linear-gradient(135deg, #f59e0b, #d97706);
+              border-radius: 10px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            ">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
+              </svg>
+            </div>
+            <span style="font-weight: 600; font-size: 1rem;">Deslocamentos</span>
+          </div>
+          <div style="display: grid; gap: 0.5rem;">
+      `
+      currentOS.displacements.forEach((d, idx) => {
+        let kmVal = 0
         const isSemDeslocamento = d.km_option && (
           String(d.km_option).toLowerCase() === 'nenhum' ||
           String(d.km_option).toLowerCase() === 'sem_deslocamento' ||
           String(d.km_option).toLowerCase() === 'sem deslocamento' ||
           String(d.km_option).toLowerCase() === 'none'
         )
-
         if (d.km_total !== null && d.km_total !== undefined) {
           kmVal = Number(d.km_total) || 0
-          kmTotal = ` - ${kmVal} km`
         } else if (d.km_option && !isSemDeslocamento) {
           const opt = String(d.km_option).toLowerCase()
           if (opt.includes("50")) kmVal = 50
           else if (opt.includes("100")) kmVal = 100
-          if (kmVal > 0) kmTotal = ` - ${kmVal} km`
         }
-        totalKm += kmVal
-
-        // Só mostra placa se NÃO for "sem deslocamento"
-        let plateInfo = ""
+        totalKmGeral += kmVal
+        let plate = ""
         if (!isSemDeslocamento) {
-          let plate =
-            resolvePlate(d && d.vehicle) ||
-            resolvePlate(d && d.vehicle_plate) ||
-            resolvePlate(d && d.plate) ||
-            resolvePlate(d && d.vehiclePlate) ||
-            currentOS.carroUtilizado ||
-            ""
-          plateInfo = plate ? " | Veículo: " + plate : ""
+          plate = resolvePlate(d && d.vehicle) || resolvePlate(d && d.vehicle_plate) || currentOS.carroUtilizado || ""
         }
-
-        html += `<p>Deslocamento ${idx + 1}: ${kmLabel}${kmTotal}${plateInfo}</p>`
+        html += `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--bg-primary); border-radius: 8px;">
+            <div>
+              <span style="font-weight: 500;">Deslocamento ${idx + 1}</span>
+              ${plate ? `<span style="color: var(--text-secondary); font-size: 0.85rem;"> - ${plate}</span>` : ''}
+            </div>
+            <span style="font-weight: 600; color: ${isSemDeslocamento ? 'var(--text-secondary)' : '#f59e0b'};">
+              ${isSemDeslocamento ? 'Sem deslocamento' : kmVal + ' km'}
+            </span>
+          </div>
+        `
       })
-      html += `<p><strong>Quilometragem Total:</strong> ${totalKm} km</p>`
-      html += `</div>`
-    } else if (currentOS.deslocamentoKm || currentOS.carroUtilizado) {
-      const plate = resolvePlate(currentOS.carroUtilizado)
       html += `
-      <div class="detail-section">
-          <h3>Deslocamento</h3>
-          <p>Km: ${currentOS.deslocamentoKm || ""}${plate ? " | Veículo: " + plate : ""}</p>
-      </div>`
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding-top: 1rem; border-top: 2px solid var(--border-color);">
+            <span style="font-weight: 600;">Total de Quilometragem</span>
+            <span style="font-weight: 700; font-size: 1.1rem; color: #f59e0b;">${totalKmGeral} km</span>
+          </div>
+        </div>
+      `
     }
 
-    // Materiais (informativo)
+    // MATERIAIS
     if (currentOS.materiais && currentOS.materiais.length > 0) {
-      html += `<div class="detail-section"><h3>Materiais Utilizados</h3>`
-      html += '<div class="detail-grid">'
+      html += `
+        <div style="
+          background: var(--bg-secondary);
+          border-radius: 12px;
+          padding: 1.25rem;
+          border: 1px solid var(--border-color);
+          margin-bottom: 1.5rem;
+        ">
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+            <div style="
+              width: 40px;
+              height: 40px;
+              background: linear-gradient(135deg, #ec4899, #be185d);
+              border-radius: 10px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            ">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+              </svg>
+            </div>
+            <span style="font-weight: 600; font-size: 1rem;">Materiais Utilizados</span>
+          </div>
+          <div style="background: var(--bg-primary); border-radius: 8px; overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+              <thead>
+                <tr style="background: var(--bg-secondary);">
+                  <th style="padding: 0.6rem; text-align: left; font-weight: 600;">Material</th>
+                  <th style="padding: 0.6rem; text-align: center; font-weight: 600;">Qtde</th>
+                  <th style="padding: 0.6rem; text-align: right; font-weight: 600;">Unitário</th>
+                  <th style="padding: 0.6rem; text-align: right; font-weight: 600;">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+      `
       currentOS.materiais.forEach((m) => {
         html += `
-          <div class="detail-field">
-            <label>Material</label>
-            <span>${m.name}</span>
-          </div>
-          <div class="detail-field">
-            <label>Qtde</label>
-            <span>${m.quantity}</span>
-          </div>
-          <div class="detail-field">
-            <label>Valor Unitário</label>
-            <span>R$ ${Number(m.unit_price).toFixed(2)}</span>
-          </div>
-          <div class="detail-field">
-            <label>Total</label>
-            <span>R$ ${Number(m.line_total).toFixed(2)}</span>
-          </div>
+          <tr style="border-top: 1px solid var(--border-color);">
+            <td style="padding: 0.6rem;">${m.name}</td>
+            <td style="padding: 0.6rem; text-align: center;">${m.quantity}</td>
+            <td style="padding: 0.6rem; text-align: right;">${fmt.format(m.unit_price)}</td>
+            <td style="padding: 0.6rem; text-align: right; font-weight: 500;">${fmt.format(m.line_total)}</td>
+          </tr>
         `
       })
-      html += "</div>"
-      html += `<p style="margin-top:0.5rem"><strong>Custo Total de Materiais:</strong> R$ ${
-        currentOS.custoMateriais !== undefined && currentOS.custoMateriais !== null
-          ? Number(currentOS.custoMateriais).toFixed(2)
-          : "0.00"
-      }</p>`
-      html += "</div>"
+      html += `
+              </tbody>
+            </table>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding-top: 1rem; border-top: 2px solid var(--border-color);">
+            <span style="font-weight: 600;">Total de Materiais</span>
+            <span style="font-weight: 700; font-size: 1.1rem; color: #ec4899;">${fmt.format(currentOS.custoMateriais || 0)}</span>
+          </div>
+        </div>
+      `
     }
 
-    // Fechamento Financeiro (informativo) - espelha os campos do PDF
-    if (
-      currentOS.valorServico !== undefined ||
-      currentOS.custoServico !== undefined ||
-      currentOS.custoMateriais !== undefined ||
-      currentOS.totalGeral !== undefined
-    ) {
-      // Calcula valores financeiros (igual ao PDF)
-      const totalHorasNum = Number(currentOS.totalHorasNum || 0)
-      const isNew = !!currentOS.isNewClient
-      let valorHoraNum = 0
-      if (currentOS.valorHoraTecnico !== undefined && currentOS.valorHoraTecnico !== null && Number(currentOS.valorHoraTecnico) > 0) {
-        valorHoraNum = Number(currentOS.valorHoraTecnico)
-      } else {
-        valorHoraNum = isNew ? 175 : 150
-      }
-      const custoHorasTrabalhadas = valorHoraNum * totalHorasNum
+    // DADOS FINANCEIROS
+    const isNew = !!currentOS.isNewClient
+    let valorHoraNum = 0
+    if (currentOS.valorHoraTecnico !== undefined && currentOS.valorHoraTecnico !== null && Number(currentOS.valorHoraTecnico) > 0) {
+      valorHoraNum = Number(currentOS.valorHoraTecnico)
+    } else {
+      valorHoraNum = isNew ? 175 : 150
+    }
+    const custoHorasTrabalhadas = valorHoraNum * totalHorasNum
 
-      // Calcula custo de deslocamento (igual ao PDF)
-      const perKm = isNew ? 2.57 : 2.2
-      let totalKm = 0
-      let deslocCost = 0
-      if (Array.isArray(currentOS.displacements) && currentOS.displacements.length > 0) {
-        currentOS.displacements.forEach((d) => {
-          let km = 0
-          if (d && d.km_total !== undefined && d.km_total !== null && String(d.km_total).trim() !== "") {
-            const parsed = Number(d.km_total)
-            if (!isNaN(parsed) && parsed > 0) km = parsed
-          } else if (d && d.km_option) {
-            const opt = String(d.km_option).toLowerCase()
-            if (opt.includes("50")) km = 50
-            else if (opt.includes("100")) km = 100
-          }
-          if (km > 0) {
-            totalKm += km
-            if (km <= 50) deslocCost += isNew ? 95 : 80
-            else if (km <= 100) deslocCost += isNew ? 170 : 150
-            else deslocCost += Math.round(km * perKm * 100) / 100
-          }
-        })
-      } else {
-        const kmVal = Number(currentOS.deslocamentoKm || 0)
-        if (kmVal > 0) {
-          totalKm = kmVal
-          if (kmVal <= 50) deslocCost = isNew ? 95 : 80
-          else if (kmVal <= 100) deslocCost = isNew ? 170 : 150
-          else deslocCost = Math.round(kmVal * perKm * 100) / 100
+    // Calcula custo de deslocamento
+    const perKm = isNew ? 2.57 : 2.2
+    let totalKm = 0
+    let deslocCost = 0
+    if (Array.isArray(currentOS.displacements) && currentOS.displacements.length > 0) {
+      currentOS.displacements.forEach((d) => {
+        let km = 0
+        if (d && d.km_total !== undefined && d.km_total !== null && String(d.km_total).trim() !== "") {
+          const parsed = Number(d.km_total)
+          if (!isNaN(parsed) && parsed > 0) km = parsed
+        } else if (d && d.km_option) {
+          const opt = String(d.km_option).toLowerCase()
+          if (opt.includes("50")) km = 50
+          else if (opt.includes("100")) km = 100
         }
+        if (km > 0) {
+          totalKm += km
+          if (km <= 50) deslocCost += isNew ? 95 : 80
+          else if (km <= 100) deslocCost += isNew ? 170 : 150
+          else deslocCost += Math.round(km * perKm * 100) / 100
+        }
+      })
+    } else {
+      const kmVal = Number(currentOS.deslocamentoKm || 0)
+      if (kmVal > 0) {
+        totalKm = kmVal
+        if (kmVal <= 50) deslocCost = isNew ? 95 : 80
+        else if (kmVal <= 100) deslocCost = isNew ? 170 : 150
+        else deslocCost = Math.round(kmVal * perKm * 100) / 100
       }
-
-      html += `<div class="detail-section"><h3>Dados Financeiros</h3>`
-
-      // Custo de Mão de Obra (Horas)
-      html += `
-        <div class="detail-grid" style="margin-bottom: 1rem; padding: 0.75rem; background: var(--bg-input); border-radius: 8px;">
-          <div class="detail-field">
-            <label>Horas Trabalhadas</label>
-            <span>${currentOS.totalHoras || "0.00 horas"}</span>
-          </div>
-          <div class="detail-field">
-            <label>Valor/Hora</label>
-            <span>R$ ${valorHoraNum.toFixed(2)}</span>
-          </div>
-          <div class="detail-field">
-            <label>Custo de Mão de Obra</label>
-            <span style="font-weight: 600;">R$ ${custoHorasTrabalhadas.toFixed(2)}</span>
-          </div>
-        </div>
-      `
-
-      // Calcula vencimento para preview - usa regra customizada se empresa tiver
-      const totalValueForDuePreview = Number(currentOS.totalGeral) || 0
-      const baseDateForDuePreview = currentOS.dataProgramada ? new Date(currentOS.dataProgramada) : new Date()
-      const dueDatesPreviewCalc = await calculateDueDatesWithCustomRule(totalValueForDuePreview, baseDateForDuePreview, currentOS.cliente)
-      let vencimentoPreviewText = ""
-      if (dueDatesPreviewCalc.length === 1) {
-        vencimentoPreviewText = dueDatesPreviewCalc[0].dateStr
-      } else {
-        vencimentoPreviewText = dueDatesPreviewCalc.map(d => d.dateStr).join(" / ")
-      }
-      const vencimentoLabelPreview = `Vencimento${dueDatesPreviewCalc.length > 1 ? ` (${dueDatesPreviewCalc.length}x)` : ''}`
-
-      // Deslocamento + Vencimento (na mesma linha)
-      if (totalKm > 0) {
-        html += `
-          <div class="detail-grid" style="margin-bottom: 1rem; padding: 0.75rem; background: var(--bg-input); border-radius: 8px;">
-            <div class="detail-field">
-              <label>Deslocamento (${totalKm} km)</label>
-              <span style="font-weight: 600;">R$ ${deslocCost.toFixed(2)}</span>
-            </div>
-            <div class="detail-field">
-              <label>${vencimentoLabelPreview}</label>
-              <span style="font-weight: 600;">${vencimentoPreviewText}</span>
-            </div>
-          </div>
-        `
-      } else {
-        // Só vencimento se não tiver deslocamento
-        html += `
-          <div class="detail-grid" style="margin-bottom: 1rem; padding: 0.75rem; background: var(--bg-input); border-radius: 8px;">
-            <div class="detail-field">
-              <label>${vencimentoLabelPreview}</label>
-              <span style="font-weight: 600;">${vencimentoPreviewText}</span>
-            </div>
-          </div>
-        `
-      }
-
-      // Serviços Adicionais
-      if (Array.isArray(currentOS.additionalServices) && currentOS.additionalServices.length > 0) {
-        html += `<p style="font-weight: 600; margin-bottom: 0.5rem; color: var(--text-secondary); font-size: 0.85rem;">SERVIÇOS ADICIONAIS</p>`
-        html += `<div style="margin-bottom: 1rem; padding: 0.75rem; background: var(--bg-input); border-radius: 8px;">`
-        currentOS.additionalServices.forEach((s) => {
-          const serviceValue = Number(s.value || 0)
-          html += `
-            <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; border-bottom: 1px solid var(--border-color);">
-              <span>${s.description || "Serviço"}</span>
-              <span style="font-weight: 500;">R$ ${serviceValue.toFixed(2)}</span>
-            </div>
-          `
-        })
-        html += `
-          <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; font-weight: 600;">
-            <span>Total Serviços Adicionais</span>
-            <span>R$ ${Number(currentOS.valorServico || 0).toFixed(2)}</span>
-          </div>
-        `
-        html += `</div>`
-      } else if (currentOS.valorServico !== null && currentOS.valorServico !== undefined && Number(currentOS.valorServico) > 0) {
-        html += `
-          <div class="detail-grid" style="margin-bottom: 1rem; padding: 0.75rem; background: var(--bg-input); border-radius: 8px;">
-            <div class="detail-field">
-              <label>Serviço Adicional</label>
-              <span>R$ ${Number(currentOS.valorServico).toFixed(2)}</span>
-            </div>
-            ${currentOS.observacoes ? `
-            <div class="detail-field">
-              <label>Observação</label>
-              <span>${currentOS.observacoes}</span>
-            </div>
-            ` : ""}
-          </div>
-        `
-      }
-
-      // Custo de Materiais (se houver)
-      if (currentOS.custoMateriais !== null && currentOS.custoMateriais !== undefined && Number(currentOS.custoMateriais) > 0) {
-        html += `
-          <div class="detail-grid" style="margin-bottom: 1rem; padding: 0.75rem; background: var(--bg-input); border-radius: 8px;">
-            <div class="detail-field">
-              <label>Custo Total de Materiais</label>
-              <span style="font-weight: 600;">R$ ${Number(currentOS.custoMateriais).toFixed(2)}</span>
-            </div>
-          </div>
-        `
-      }
-
-      // Total Geral (destaque)
-      html += `
-        <div style="margin-top: 1rem; padding: 1rem; background: linear-gradient(135deg, var(--primary-blue), #3b82f6); border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
-          <span style="color: white; font-weight: 600; font-size: 1.1rem;">TOTAL GERAL DA O.S.</span>
-          <span style="color: white; font-weight: 700; font-size: 1.25rem;">R$ ${
-            currentOS.totalGeral !== null && currentOS.totalGeral !== undefined
-              ? Number(currentOS.totalGeral).toFixed(2)
-              : "0.00"
-          }</span>
-        </div>
-      `
-
-      html += "</div>"
     }
 
-    // Assinaturas
+    // Calcula vencimento
+    const totalValueForDuePreview = Number(currentOS.totalGeral) || 0
+    const baseDateForDuePreview = currentOS.dataProgramada ? new Date(currentOS.dataProgramada) : new Date()
+    const dueDatesPreviewCalc = await calculateDueDatesWithCustomRule(totalValueForDuePreview, baseDateForDuePreview, currentOS.cliente)
+    let vencimentoPreviewText = ""
+    if (dueDatesPreviewCalc.length === 1) {
+      vencimentoPreviewText = dueDatesPreviewCalc[0].dateStr
+    } else {
+      vencimentoPreviewText = dueDatesPreviewCalc.map(d => d.dateStr).join(" / ")
+    }
+    const vencimentoLabelPreview = `Vencimento${dueDatesPreviewCalc.length > 1 ? ` (${dueDatesPreviewCalc.length}x)` : ''}`
+
+    // SEÇÃO FINANCEIRA MODERNIZADA
     html += `
-      <div class="detail-section">
-          <h3>Assinaturas</h3>
-          <div class="signature-display">
-              <div>
-                  <label>Técnico</label>
-                  <img src="${currentOS.signatureTecnico}" alt="Assinatura Técnico">
-              </div>
-              <div>
-                  <label>Cliente</label>
-                  <img src="${currentOS.signatureCliente}" alt="Assinatura Cliente">
-              </div>
+      <div style="
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        padding: 1.25rem;
+        border: 1px solid var(--border-color);
+        margin-bottom: 1.5rem;
+      ">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+          <div style="
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          ">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+              <line x1="12" y1="1" x2="12" y2="23"/>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
           </div>
+          <span style="font-weight: 600; font-size: 1rem;">Resumo Financeiro</span>
+        </div>
+
+        <!-- Grid de valores -->
+        <div style="display: grid; gap: 0.75rem; margin-bottom: 1rem;">
+          <!-- Mão de obra -->
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--bg-primary); border-radius: 8px;">
+            <div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary);">Mão de Obra</div>
+              <div style="font-size: 0.8rem; color: var(--text-secondary);">${currentOS.totalHoras || '0.00 horas'} x ${fmt.format(valorHoraNum)}</div>
+            </div>
+            <span style="font-weight: 600; font-size: 1rem;">${fmt.format(custoHorasTrabalhadas)}</span>
+          </div>
+
+          ${totalKm > 0 ? `
+          <!-- Deslocamento -->
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--bg-primary); border-radius: 8px;">
+            <div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary);">Deslocamento</div>
+              <div style="font-size: 0.8rem; color: var(--text-secondary);">${totalKm} km</div>
+            </div>
+            <span style="font-weight: 600; font-size: 1rem;">${fmt.format(deslocCost)}</span>
+          </div>
+          ` : ''}
+
+          ${currentOS.custoMateriais && Number(currentOS.custoMateriais) > 0 ? `
+          <!-- Materiais -->
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--bg-primary); border-radius: 8px;">
+            <div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary);">Materiais</div>
+              <div style="font-size: 0.8rem; color: var(--text-secondary);">${currentOS.materiais ? currentOS.materiais.length : 0} itens</div>
+            </div>
+            <span style="font-weight: 600; font-size: 1rem;">${fmt.format(currentOS.custoMateriais)}</span>
+          </div>
+          ` : ''}
+    `
+
+    // Serviços Adicionais
+    if (Array.isArray(currentOS.additionalServices) && currentOS.additionalServices.length > 0) {
+      html += `
+          <!-- Serviços Adicionais -->
+          <div style="padding: 0.75rem; background: var(--bg-primary); border-radius: 8px;">
+            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Serviços Adicionais</div>
+      `
+      currentOS.additionalServices.forEach((s) => {
+        const serviceValue = Number(s.value || 0)
+        html += `
+            <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; font-size: 0.9rem;">
+              <span>${s.description || "Serviço"}</span>
+              <span style="font-weight: 500;">${fmt.format(serviceValue)}</span>
+            </div>
+        `
+      })
+      html += `
+            <div style="display: flex; justify-content: space-between; padding-top: 0.5rem; border-top: 1px solid var(--border-color); margin-top: 0.5rem; font-weight: 600;">
+              <span>Subtotal</span>
+              <span>${fmt.format(currentOS.valorServico || 0)}</span>
+            </div>
+          </div>
+      `
+    } else if (currentOS.valorServico !== null && currentOS.valorServico !== undefined && Number(currentOS.valorServico) > 0) {
+      html += `
+          <!-- Serviço Adicional -->
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--bg-primary); border-radius: 8px;">
+            <div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary);">Serviço Adicional</div>
+              ${currentOS.observacoes ? `<div style="font-size: 0.8rem; color: var(--text-secondary);">${currentOS.observacoes}</div>` : ''}
+            </div>
+            <span style="font-weight: 600; font-size: 1rem;">${fmt.format(currentOS.valorServico)}</span>
+          </div>
+      `
+    }
+
+    html += `
+        </div>
+
+        <!-- Vencimento -->
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: #fef3c7; border-radius: 8px; margin-bottom: 1rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#92400e" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            <span style="color: #92400e; font-weight: 500;">${vencimentoLabelPreview}</span>
+          </div>
+          <span style="color: #78350f; font-weight: 600;">${vencimentoPreviewText}</span>
+        </div>
+
+        <!-- Total Final -->
+        <div style="
+          background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+          border-radius: 12px;
+          padding: 1.25rem;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        ">
+          <div style="color: white;">
+            <div style="font-size: 0.85rem; opacity: 0.9;">Total da OS</div>
+            <div style="font-size: 0.75rem; opacity: 0.7; margin-top: 0.25rem;">Todos os valores inclusos</div>
+          </div>
+          <div style="color: white; font-size: 1.75rem; font-weight: 700;">${fmt.format(currentOS.totalGeral || 0)}</div>
+        </div>
       </div>
     `
-    
-    // Se a OS não estiver finalizada, permite transferir para outro técnico.
-    // Status que permitem transferência: assigned, accepted, in_progress
+
+    // ASSINATURAS
+    if (currentOS.signatureTecnico || currentOS.signatureCliente) {
+      html += `
+        <div style="
+          background: var(--bg-secondary);
+          border-radius: 12px;
+          padding: 1.25rem;
+          border: 1px solid var(--border-color);
+          margin-bottom: 1.5rem;
+        ">
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+            <div style="
+              width: 40px;
+              height: 40px;
+              background: linear-gradient(135deg, #6366f1, #4f46e5);
+              border-radius: 10px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            ">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+            <span style="font-weight: 600; font-size: 1rem;">Assinaturas</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+            ${currentOS.signatureTecnico ? `
+            <div style="text-align: center;">
+              <div style="background: white; border-radius: 8px; padding: 1rem; border: 1px solid var(--border-color); margin-bottom: 0.5rem;">
+                <img src="${currentOS.signatureTecnico}" alt="Assinatura Técnico" style="max-width: 100%; max-height: 100px; object-fit: contain;">
+              </div>
+              <div style="font-size: 0.85rem; color: var(--text-secondary);">Técnico</div>
+              <div style="font-weight: 500;">${currentOS.assistenteTecnico || 'N/A'}</div>
+            </div>
+            ` : ''}
+            ${currentOS.signatureCliente ? `
+            <div style="text-align: center;">
+              <div style="background: white; border-radius: 8px; padding: 1rem; border: 1px solid var(--border-color); margin-bottom: 0.5rem;">
+                <img src="${currentOS.signatureCliente}" alt="Assinatura Cliente" style="max-width: 100%; max-height: 100px; object-fit: contain;">
+              </div>
+              <div style="font-size: 0.85rem; color: var(--text-secondary);">Cliente</div>
+              <div style="font-weight: 500;">${currentOS.cliente || 'N/A'}</div>
+            </div>
+            ` : ''}
+          </div>
+        </div>
+      `
+    }
+
+    // TRANSFERIR OS (se não estiver finalizada)
     const statusLower = String(row.status || '').toLowerCase()
     if (['assigned', 'accepted', 'in_progress'].includes(statusLower)) {
       try {
-        // Garante que a lista de técnicos esteja carregada
         if (!cachedTechnicians || cachedTechnicians.length === 0) {
           await loadTechniciansForTransfer()
         }
@@ -3324,10 +3524,32 @@ async function viewOSDetails(id) {
           .map((t) => `<option value="${t.id}">${t.username}</option>`)
           .join('')
         html += `
-        <div class="detail-section">
-          <h3>Transferir OS</h3>
-          <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; margin-top:0.5rem">
-            <select id="transferTechSelect" style="flex:1; min-width:180px; padding: 0.5rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary);">
+        <div style="
+          background: var(--bg-secondary);
+          border-radius: 12px;
+          padding: 1.25rem;
+          border: 1px solid var(--border-color);
+        ">
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+            <div style="
+              width: 40px;
+              height: 40px;
+              background: linear-gradient(135deg, #f59e0b, #d97706);
+              border-radius: 10px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            ">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="8.5" cy="7" r="4"/>
+                <polyline points="17 11 19 13 23 9"/>
+              </svg>
+            </div>
+            <span style="font-weight: 600; font-size: 1rem;">Transferir OS</span>
+          </div>
+          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <select id="transferTechSelect" style="flex: 1; min-width: 180px; padding: 0.75rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 0.95rem;">
               <option value="">Selecione o técnico</option>
               ${options}
             </select>
