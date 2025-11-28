@@ -5675,11 +5675,16 @@ function formatDay(date) {
  */
 function getStatusColor(status) {
   const colors = {
-    'assigned': '#f59e0b',    // Laranja - Atribuída
-    'accepted': '#2563eb',    // Azul - Aceita
-    'in_progress': '#8b5cf6', // Roxo - Em progresso
-    'finished': '#10b981',    // Verde - Finalizada
-    'pending': '#6b7280'      // Cinza - Pendente
+    'assigned': '#f59e0b',       // Laranja - Atribuída
+    'accepted': '#2563eb',       // Azul - Aceita
+    'in_progress': '#8b5cf6',    // Roxo - Em progresso
+    'pending_review': '#10b981', // Verde - Finalizada (aguardando conferência)
+    'approved': '#10b981',       // Verde - Aprovada
+    'billed': '#10b981',         // Verde - Faturada
+    'finished': '#10b981',       // Verde - Finalizada
+    'standby': '#f59e0b',        // Laranja - Em Standby
+    'archived': '#6b7280',       // Cinza - Arquivada
+    'pending': '#6b7280'         // Cinza - Pendente
   }
   return colors[status] || colors['pending']
 }
