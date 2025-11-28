@@ -8110,12 +8110,12 @@ function showBillingActions(event, osId, orderNumber) {
     position: fixed;
     top: ${rect.bottom + 4}px;
     left: ${rect.left}px;
-    background: var(--bg-secondary);
+    background: #1e293b;
     border-radius: 10px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
     z-index: 9999;
     min-width: 180px;
-    border: 1px solid var(--border-color);
+    border: 1px solid #334155;
     overflow: hidden;
     animation: menuSlideIn 0.15s ease-out;
   `
@@ -8141,10 +8141,10 @@ function showBillingActions(event, osId, orderNumber) {
         width: 100%;
         text-align: left;
         font-size: 0.9rem;
-        color: var(--text-primary);
+        color: #e2e8f0;
       }
       .billing-menu-item:hover {
-        background: var(--bg-primary);
+        background: #334155;
       }
       .billing-menu-item svg {
         flex-shrink: 0;
