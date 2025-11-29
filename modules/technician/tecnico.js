@@ -1306,12 +1306,6 @@ async function loadOSList() {
 
     const allOs = await res.json()
 
-    // DEBUG: Log para verificar o que está vindo do backend
-    console.log('🔍 DEBUG loadOSList:', {
-      username,
-      totalOS: allOs.length,
-      primeiraOS: allOs[0],
-      camposTecnico: allOs[0] ? Object.keys(allOs[0]).filter(k => k.toLowerCase().includes('tech')) : []
     })
 
     // Filtra por technician_username OU technician_name (fallback)
@@ -1321,7 +1315,6 @@ async function loadOSList() {
       os.assigned_technician === username
     ) : []
 
-    console.log('📋 OS filtradas para', username + ':', osList.length)
 
     listEl.innerHTML = ""
     if (osList.length === 0) {

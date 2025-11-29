@@ -69,10 +69,10 @@ async function getCompanyProfiles() {
     try {
       const res = await fetch(`${API_URL}/api/companies/${companyId}/profiles`)
       if (res.ok) return await res.json()
-    } catch (_) {}
+    } catch (err) { console.warn("[Cliente] Erro:", err.message) }
   }
   // Fallback local
-  try { return JSON.parse(localStorage.getItem(getProfilesKey()) || "[]") } catch (_) { return [] }
+  try { return JSON.parse(localStorage.getItem(getProfilesKey()) || "[]") } catch (err) { console.warn('[Cliente] Erro:', err.message); return [] }
 }
 function saveCompanyProfilesLocal(list) {
   localStorage.setItem(getProfilesKey(), JSON.stringify(list || []))
@@ -87,7 +87,7 @@ async function createCompanyProfile(name) {
         body: JSON.stringify({ full_name: name })
       })
       if (res.ok) return await res.json()
-    } catch (_) {}
+    } catch (err) { console.warn("[Cliente] Erro:", err.message) }
   }
   // Fallback local
   const list = await getCompanyProfiles()

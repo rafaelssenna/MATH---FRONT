@@ -2120,38 +2120,29 @@ function handleCompanyForm(e) {
  */
 async function showCompanyDetails(companyId) {
   if (!companyId) return
-  
+
   try {
-    console.log(`[DEBUG] Carregando detalhes da empresa ID: ${companyId}`)
-    
     // Busca dados da empresa
     const companyRes = await fetch(`${API_URL}/api/companies/${companyId}`)
-    console.log(`[DEBUG] Status da empresa: ${companyRes.status}`)
-    
+
     if (!companyRes.ok) {
       const data = await companyRes.json()
       throw new Error(data.message || 'Erro ao buscar empresa')
     }
     const company = await companyRes.json()
-    console.log(`[DEBUG] Empresa carregada: ${company.name}`)
-    
+
     // Busca OS da empresa
     const osURL = `${API_URL}/api/os?company_id=${companyId}`
-    console.log(`[DEBUG] Buscando OS: ${osURL}`)
-    
     const osRes = await fetch(osURL)
-    console.log(`[DEBUG] Status das OS: ${osRes.status}`)
-    
     const osList = await osRes.json()
-    console.log(`[DEBUG] OS encontradas: ${Array.isArray(osList) ? osList.length : 0}`)
-    
+
     // Popula modal com dados e OS
     populateCompanyDetails(company, osList)
-    
+
     const modal = document.getElementById('companyDetailsModal')
     if (modal) modal.classList.add('active')
   } catch (err) {
-    console.error('[DEBUG] Erro:', err)
+    console.error('[Admin] Erro ao carregar empresa:', err)
     showToast(err.message || 'Erro ao carregar detalhes da empresa', 'error')
   }
 }
@@ -2223,14 +2214,11 @@ function populateCompanyDetails(company, osList = []) {
   
   // Preenche lista de OS da empresa
   const osContainer = document.getElementById('detailsCompanyOS')
-  console.log(`[DEBUG] Populando OS - Container existe: ${!!osContainer}, Total OS: ${osList.length}`)
-  
+
   if (osContainer) {
     if (!Array.isArray(osList) || osList.length === 0) {
-      console.log('[DEBUG] Nenhuma OS para exibir')
       osContainer.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-secondary);">Nenhuma OS encontrada para esta empresa</p>'
     } else {
-      console.log(`[DEBUG] Exibindo ${osList.length} OS`)
       
       // Gera HTML das OS
       const osHTML = osList.map(os => {
@@ -2262,7 +2250,7 @@ function populateCompanyDetails(company, osList = []) {
             </div>
           `
         } catch (err) {
-          console.error('[DEBUG] Erro ao renderizar OS:', err, os)
+          console.warn('[Admin] Erro ao renderizar OS:', err.message)
           return ''
         }
       }).join('')
@@ -2358,11 +2346,11 @@ function renderCompanyOSList(osList, container) {
         </div>
       `
     } catch (err) {
-      console.error('[DEBUG] Erro ao renderizar OS:', err, os)
+      console.warn('[Admin] Erro ao renderizar OS:', err.message)
       return ''
     }
   }).join('')
-  
+
   container.innerHTML = osHTML
 }
 
@@ -6899,14 +6887,8 @@ function removeEditMaterial(index) {
   loadEditMaterials()
 }
 
-/**
- * Função auxiliar para escapar HTML
- */
-function escapeHtml(text) {
-  const div = document.createElement('div')
-  div.textContent = text
-  return div.innerHTML
-}
+// NOTA: escapeHtml já está definida no início do arquivo (linha ~201)
+// Removida duplicata para evitar conflitos
 
 /**
  * Recalcula os totais da OS (custo materiais, custo serviço, total geral)
