@@ -1306,7 +1306,6 @@ async function loadOSList() {
 
     const allOs = await res.json()
 
-    })
 
     // Filtra por technician_username OU technician_name (fallback)
     const osList = Array.isArray(allOs) ? allOs.filter((os) =>
