@@ -552,17 +552,19 @@ function normalizeKmOption(kmOption) {
   const opt = String(kmOption).toLowerCase().trim()
 
   // Mapeamento de valores do técnico → formato padrão
+  // IMPORTANTE: A verificação de "acima_100km" deve vir ANTES de "ate_100km"
+  // porque "acima_100km" contém "100" e seria capturado incorretamente
   if (opt === 'nenhum' || opt === 'none' || opt === 'sem_deslocamento' || opt === 'sem deslocamento') {
     return 'sem_deslocamento'
+  }
+  if (opt === 'maior' || opt === 'acima_100km' || opt.includes('acima') || opt.includes('maior')) {
+    return 'acima_100km'
   }
   if (opt === '50' || opt === 'ate_50km' || opt.includes('50')) {
     return 'ate_50km'
   }
   if (opt === '100' || opt === 'ate_100km' || opt.includes('100')) {
     return 'ate_100km'
-  }
-  if (opt === 'maior' || opt === 'acima_100km' || opt.includes('acima') || opt.includes('maior')) {
-    return 'acima_100km'
   }
 
   return 'sem_deslocamento'
