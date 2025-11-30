@@ -1141,6 +1141,27 @@ function closeConferenceModal() {
 }
 
 /**
+ * Toggle do menu dropdown no mobile
+ */
+function toggleConferenceMenu() {
+  const dropdown = document.getElementById('conferenceDropdown')
+  if (dropdown) {
+    dropdown.classList.toggle('open')
+  }
+}
+
+// Fecha dropdown se clicar fora dele
+document.addEventListener('click', function(e) {
+  const dropdown = document.getElementById('conferenceDropdown')
+  const toggleBtn = document.querySelector('.btn-menu-toggle')
+  if (dropdown && dropdown.classList.contains('open')) {
+    if (!dropdown.contains(e.target) && !toggleBtn.contains(e.target)) {
+      dropdown.classList.remove('open')
+    }
+  }
+})
+
+/**
  * Valida dados antes de aprovar OS
  * Retorna { valid: boolean, errors: string[] }
  */
@@ -1461,7 +1482,45 @@ function createConferenceModal() {
         </div>
         <div id="conferenceModalContent" class="modal-body"></div>
         <div class="modal-footer conference-footer">
-          <div class="conference-btn-group-left">
+          <!-- Menu dropdown para mobile -->
+          <div class="conference-mobile-menu">
+            <button class="btn-conference btn-menu-toggle" onclick="toggleConferenceMenu()" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="5" r="1"/>
+                <circle cx="12" cy="12" r="1"/>
+                <circle cx="12" cy="19" r="1"/>
+              </svg>
+              <span>Mais</span>
+            </button>
+            <div class="conference-dropdown" id="conferenceDropdown">
+              <button class="dropdown-item btn-danger" onclick="cancelConferenceOS(); toggleConferenceMenu();">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="15" y1="9" x2="9" y2="15"/>
+                  <line x1="9" y1="9" x2="15" y2="15"/>
+                </svg>
+                Cancelar OS
+              </button>
+              <button class="dropdown-item btn-warning" onclick="standbyConferenceOS(); toggleConferenceMenu();">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                Standby
+              </button>
+              <button class="dropdown-item" onclick="closeConferenceModal(); toggleConferenceMenu();">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+                Fechar
+              </button>
+            </div>
+          </div>
+
+          <!-- Botões visíveis em desktop -->
+          <div class="conference-btn-group-left conference-desktop-only">
             <button class="btn-conference btn-danger" onclick="cancelConferenceOS()">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"/>
@@ -1479,8 +1538,10 @@ function createConferenceModal() {
               <span>Standby</span>
             </button>
           </div>
+
+          <!-- Botões principais (sempre visíveis) -->
           <div class="conference-btn-group-right">
-            <button class="btn-conference btn-secondary" onclick="closeConferenceModal()">
+            <button class="btn-conference btn-secondary conference-desktop-only" onclick="closeConferenceModal()">
               <span>Fechar</span>
             </button>
             <button id="btnSaveConference" class="btn-conference btn-save" onclick="saveConferenceChanges()">
