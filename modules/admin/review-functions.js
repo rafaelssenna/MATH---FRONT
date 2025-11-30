@@ -1460,40 +1460,42 @@ function createConferenceModal() {
           <button class="modal-close" onclick="closeConferenceModal()">&times;</button>
         </div>
         <div id="conferenceModalContent" class="modal-body"></div>
-        <div class="modal-footer" style="display: flex; gap: 1rem; justify-content: space-between;">
-          <div style="display: flex; gap: 0.5rem;">
-            <button class="btn-danger" onclick="cancelConferenceOS()" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; padding: 0.75rem 1rem; border-radius: 8px; font-weight: 600; cursor: pointer;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 0.5rem;">
+        <div class="modal-footer conference-footer">
+          <div class="conference-btn-group-left">
+            <button class="btn-conference btn-danger" onclick="cancelConferenceOS()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"/>
                 <line x1="15" y1="9" x2="9" y2="15"/>
                 <line x1="9" y1="9" x2="15" y2="15"/>
               </svg>
-              Cancelar OS
+              <span>Cancelar</span>
             </button>
-            <button class="btn-warning" onclick="standbyConferenceOS()" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; border: none; padding: 0.75rem 1rem; border-radius: 8px; font-weight: 600; cursor: pointer;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 0.5rem;">
+            <button class="btn-conference btn-warning" onclick="standbyConferenceOS()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"/>
                 <line x1="12" y1="8" x2="12" y2="12"/>
                 <line x1="12" y1="16" x2="12.01" y2="16"/>
               </svg>
-              Standby
+              <span>Standby</span>
             </button>
           </div>
-          <div style="display: flex; gap: 1rem;">
-            <button class="btn-secondary" onclick="closeConferenceModal()">Fechar</button>
-            <button id="btnSaveConference" class="btn-primary" onclick="saveConferenceChanges()" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 0.5rem;">
+          <div class="conference-btn-group-right">
+            <button class="btn-conference btn-secondary" onclick="closeConferenceModal()">
+              <span>Fechar</span>
+            </button>
+            <button id="btnSaveConference" class="btn-conference btn-save" onclick="saveConferenceChanges()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
                 <polyline points="17 21 17 13 7 13 7 21"/>
                 <polyline points="7 3 7 8 15 8"/>
               </svg>
-              Salvar Alterações
+              <span>Salvar</span>
             </button>
-            <button id="btnApproveConference" class="btn-primary" onclick="approveConferenceOS()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 0.5rem;">
+            <button id="btnApproveConference" class="btn-conference btn-approve" onclick="approveConferenceOS()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="20 6 9 17 4 12"/>
               </svg>
-              Aprovar e Enviar para Faturamento
+              <span>Aprovar</span>
             </button>
           </div>
         </div>

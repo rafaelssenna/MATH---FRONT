@@ -2833,3 +2833,173 @@ label:has(input[name="hasAdditionalService"]:checked) {
   background: transparent;
 }
 
+
+/* Custom scrollbar styling - Global */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-input);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Firefox */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) var(--bg-input);
+}
+
+/* ========================================
+   SKELETON LOADING
+   ======================================== */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-input) 50%, var(--bg-card) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+.skeleton-text {
+  height: 1rem;
+  margin-bottom: 0.5rem;
+  border-radius: 4px;
+}
+
+.skeleton-text.short { width: 40%; }
+.skeleton-text.medium { width: 70%; }
+
+.skeleton-title {
+  height: 1.5rem;
+  width: 50%;
+  margin-bottom: 1rem;
+  border-radius: 4px;
+}
+
+.skeleton-card {
+  background: var(--bg-card);
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  margin-bottom: 1rem;
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ========================================
+   MOBILE - MODAL DE FINALIZAÇÃO TÉCNICO
+   ======================================== */
+
+/* Radio boxes responsivos no mobile */
+@media (max-width: 480px) {
+  /* Container flex dos radio boxes */
+  .form-group > div[style*="display: flex"] {
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+  }
+
+  /* Radio boxes individuais */
+  .radio-box {
+    width: 100% !important;
+    justify-content: flex-start !important;
+    padding: 1rem !important;
+    min-height: 52px !important;
+  }
+
+  /* Form actions - botão de finalizar */
+  .form-actions {
+    padding: 1rem 0;
+    position: sticky;
+    bottom: 0;
+    background: var(--bg-card);
+  }
+
+  .form-actions .btn-primary {
+    width: 100%;
+    min-height: 52px;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  /* Seções de materiais e serviço adicional */
+  #materialsSection,
+  #additionalServiceSection {
+    padding: 0.75rem !important;
+  }
+
+  #materialsSection h4,
+  #additionalServiceSection label {
+    font-size: 0.95rem !important;
+  }
+
+  /* Canvas de assinatura no modal de finalização */
+  #clientSignatureCanvas {
+    height: 180px !important;
+    max-height: 180px !important;
+  }
+
+  /* Botão de limpar assinatura */
+  #clearClientSignatureBtn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  /* Seleção de equipamento */
+  #finishMachineSelect {
+    font-size: 16px !important;
+    padding: 0.875rem !important;
+  }
+
+  /* Selects gerais no modal */
+  #finishModal select,
+  #finishModal input,
+  #finishModal textarea {
+    font-size: 16px !important;
+  }
+
+  /* Botões de adicionar período/deslocamento/material */
+  #addTimeEntryBtn,
+  #addDisplacementBtn,
+  #addMaterialBtn {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+  }
+
+  /* Títulos das seções */
+  #finishModal h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+  }
+}
+
+/* Landscape mode - assinatura maior */
+@media (max-width: 768px) and (orientation: landscape) {
+  #finishModal #clientSignatureCanvas {
+    height: 150px !important;
+  }
+}
+
+/* Touch feedback para radio boxes */
+@media (hover: none) and (pointer: coarse) {
+  .radio-box {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .radio-box:active {
+    transform: scale(0.98);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+}
