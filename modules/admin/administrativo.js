@@ -4404,6 +4404,12 @@ window.activateSection = function(section) {
     loadWarrantyOS()
   }
 
+  // Seção de pedidos de compra
+  if (section === "purchaseOrdersSection") {
+    loadPurchaseOrdersStats()
+    loadPendingOrders()
+  }
+
   // Seção de faturamento
   if (section === "billingSection") {
     console.log('📊 Abrindo seção de faturamento...')
@@ -8989,3 +8995,285 @@ function copyDailyReport() {
 // Expõe funções globalmente
 window.generateDailyReport = generateDailyReport
 window.copyDailyReport = copyDailyReport
+
+// =============================================
+// PEDIDOS DE COMPRA
+// =============================================
+
+/**
+ * Carrega estatísticas de pedidos de compra
+ */
+async function loadPurchaseOrdersStats() {
+  try {
+    const response = await fetch(`${API_URL}/api/purchase-orders/stats`)
+    if (!response.ok) throw new Error('Erro ao buscar estatísticas')
+    const stats = await response.json()
+
+    // Atualiza badges
+    const pendingBadge = document.getElementById('pendingOrdersBadge')
+    const approvedBadge = document.getElementById('approvedOrdersBadge')
+    const menuBadge = document.getElementById('purchaseOrdersPendingCount')
+
+    if (pendingBadge) pendingBadge.textContent = stats.pending || 0
+    if (approvedBadge) approvedBadge.textContent = stats.approved || 0
+    if (menuBadge) menuBadge.textContent = stats.pending || 0
+  } catch (err) {
+    console.error('[loadPurchaseOrdersStats] Erro:', err)
+  }
+}
+
+/**
+ * Carrega pedidos pendentes
+ */
+async function loadPendingOrders() {
+  const container = document.getElementById('pendingOrdersList')
+  if (!container) return
+
+  try {
+    container.innerHTML = '<p style="text-align: center; padding: 2rem;"><span class="loading-spinner"></span> Carregando...</p>'
+
+    const response = await fetch(`${API_URL}/api/purchase-orders/pending`)
+    if (!response.ok) throw new Error('Erro ao buscar pedidos pendentes')
+    const orders = await response.json()
+
+    if (!orders || orders.length === 0) {
+      container.innerHTML = '<p class="empty-state">Nenhum pedido pendente</p>'
+      return
+    }
+
+    container.innerHTML = orders.map(order => `
+      <div class="os-card" style="margin-bottom: 1rem; border-left: 4px solid #f97316;">
+        <div class="os-card-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div>
+            <h4 style="margin: 0; font-size: 1rem;">${escapeHtml(order.material_name)}</h4>
+            <p style="margin: 0.25rem 0 0; font-size: 0.875rem; opacity: 0.7;">
+              Quantidade: ${order.quantity || 1}
+              ${order.technician_username ? ` | Solicitado por: <strong>${escapeHtml(order.technician_username)}</strong>` : ''}
+            </p>
+            ${order.observations ? `<p style="margin: 0.5rem 0 0; font-size: 0.75rem; opacity: 0.6;">${escapeHtml(order.observations)}</p>` : ''}
+            <p style="margin: 0.5rem 0 0; font-size: 0.75rem; opacity: 0.5;">
+              Criado em: ${formatDate(order.created_at)}
+            </p>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn-success" style="padding: 0.5rem 1rem; font-size: 0.875rem;" onclick="approvePurchaseOrder(${order.id})">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              Aprovar
+            </button>
+            <button class="btn-danger" style="padding: 0.5rem 1rem; font-size: 0.875rem;" onclick="rejectPurchaseOrder(${order.id})">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+              Rejeitar
+            </button>
+          </div>
+        </div>
+      </div>
+    `).join('')
+
+  } catch (err) {
+    console.error('[loadPendingOrders] Erro:', err)
+    container.innerHTML = '<p class="empty-state" style="color: #ef4444;">Erro ao carregar pedidos</p>'
+  }
+}
+
+/**
+ * Carrega pedidos aprovados
+ */
+async function loadApprovedOrders() {
+  const container = document.getElementById('approvedOrdersList')
+  if (!container) return
+
+  try {
+    container.innerHTML = '<p style="text-align: center; padding: 2rem;"><span class="loading-spinner"></span> Carregando...</p>'
+
+    const response = await fetch(`${API_URL}/api/purchase-orders/approved`)
+    if (!response.ok) throw new Error('Erro ao buscar pedidos aprovados')
+    const orders = await response.json()
+
+    if (!orders || orders.length === 0) {
+      container.innerHTML = '<p class="empty-state">Nenhum pedido aprovado</p>'
+      return
+    }
+
+    container.innerHTML = orders.map(order => `
+      <div class="os-card" style="margin-bottom: 1rem; border-left: 4px solid #22c55e;">
+        <div class="os-card-header">
+          <div>
+            <h4 style="margin: 0; font-size: 1rem;">${escapeHtml(order.material_name)}</h4>
+            <p style="margin: 0.25rem 0 0; font-size: 0.875rem; opacity: 0.7;">
+              Quantidade: ${order.quantity || 1}
+              ${order.technician_username ? ` | Solicitado por: ${escapeHtml(order.technician_username)}` : ''}
+              ${order.created_by_admin ? ' | <span style="color: #3b82f6;">Criado pelo Admin</span>' : ''}
+            </p>
+            ${order.observations ? `<p style="margin: 0.5rem 0 0; font-size: 0.75rem; opacity: 0.6;">${escapeHtml(order.observations)}</p>` : ''}
+            <p style="margin: 0.5rem 0 0; font-size: 0.75rem; opacity: 0.5;">
+              Aprovado em: ${formatDate(order.approved_at)} ${order.approved_by ? `por ${order.approved_by}` : ''}
+            </p>
+          </div>
+        </div>
+      </div>
+    `).join('')
+
+  } catch (err) {
+    console.error('[loadApprovedOrders] Erro:', err)
+    container.innerHTML = '<p class="empty-state" style="color: #ef4444;">Erro ao carregar pedidos</p>'
+  }
+}
+
+/**
+ * Alterna entre abas de pedidos
+ */
+function switchPurchaseOrderTab(tab) {
+  // Atualiza botões
+  document.querySelectorAll('[data-purchase-tab]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.purchaseTab === tab)
+  })
+
+  // Mostra/oculta conteúdo
+  document.getElementById('pendingOrdersTab').style.display = tab === 'pending' ? 'block' : 'none'
+  document.getElementById('approvedOrdersTab').style.display = tab === 'approved' ? 'block' : 'none'
+
+  // Carrega dados
+  if (tab === 'pending') {
+    loadPendingOrders()
+  } else {
+    loadApprovedOrders()
+  }
+}
+
+/**
+ * Abre modal de novo pedido
+ */
+function openNewPurchaseOrderModal() {
+  const modal = document.getElementById('newPurchaseOrderModal')
+  if (modal) {
+    modal.classList.add('active')
+    document.getElementById('purchaseOrderMaterial').value = ''
+    document.getElementById('purchaseOrderQuantity').value = '1'
+    document.getElementById('purchaseOrderObservations').value = ''
+  }
+}
+
+/**
+ * Fecha modal de novo pedido
+ */
+function closeNewPurchaseOrderModal() {
+  const modal = document.getElementById('newPurchaseOrderModal')
+  if (modal) modal.classList.remove('active')
+}
+
+/**
+ * Cria novo pedido (admin - já aprovado)
+ */
+async function createPurchaseOrderByAdmin(e) {
+  e.preventDefault()
+
+  const material = document.getElementById('purchaseOrderMaterial').value.trim()
+  const quantity = parseInt(document.getElementById('purchaseOrderQuantity').value) || 1
+  const observations = document.getElementById('purchaseOrderObservations').value.trim()
+
+  if (!material) {
+    showToast('Nome do material é obrigatório', 'error')
+    return
+  }
+
+  try {
+    const adminName = localStorage.getItem('admin_name') || 'Admin'
+    const response = await fetch(`${API_URL}/api/purchase-orders/admin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        material_name: material,
+        quantity,
+        observations,
+        admin_name: adminName
+      })
+    })
+
+    const result = await response.json()
+    if (!response.ok) throw new Error(result.message || 'Erro ao criar pedido')
+
+    showToast('Pedido criado e aprovado!', 'success')
+    closeNewPurchaseOrderModal()
+    loadPurchaseOrdersStats()
+    loadApprovedOrders()
+    switchPurchaseOrderTab('approved')
+  } catch (err) {
+    console.error('[createPurchaseOrderByAdmin] Erro:', err)
+    showToast(err.message || 'Erro ao criar pedido', 'error')
+  }
+}
+
+/**
+ * Aprova um pedido
+ */
+async function approvePurchaseOrder(orderId) {
+  if (!confirm('Aprovar este pedido de compra?')) return
+
+  try {
+    const adminName = localStorage.getItem('admin_name') || 'Admin'
+    const response = await fetch(`${API_URL}/api/purchase-orders/${orderId}/approve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ admin_name: adminName })
+    })
+
+    const result = await response.json()
+    if (!response.ok) throw new Error(result.message || 'Erro ao aprovar')
+
+    showToast('Pedido aprovado!', 'success')
+    loadPurchaseOrdersStats()
+    loadPendingOrders()
+  } catch (err) {
+    console.error('[approvePurchaseOrder] Erro:', err)
+    showToast(err.message || 'Erro ao aprovar pedido', 'error')
+  }
+}
+
+/**
+ * Rejeita um pedido
+ */
+async function rejectPurchaseOrder(orderId) {
+  const reason = prompt('Motivo da rejeição (opcional):')
+  if (reason === null) return // Cancelou
+
+  try {
+    const response = await fetch(`${API_URL}/api/purchase-orders/${orderId}/reject`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason })
+    })
+
+    const result = await response.json()
+    if (!response.ok) throw new Error(result.message || 'Erro ao rejeitar')
+
+    showToast('Pedido rejeitado', 'success')
+    loadPurchaseOrdersStats()
+    loadPendingOrders()
+  } catch (err) {
+    console.error('[rejectPurchaseOrder] Erro:', err)
+    showToast(err.message || 'Erro ao rejeitar pedido', 'error')
+  }
+}
+
+// Inicializa form de novo pedido
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('newPurchaseOrderForm')
+  if (form) {
+    form.addEventListener('submit', createPurchaseOrderByAdmin)
+  }
+})
+
+// Expõe funções de pedidos de compra globalmente
+window.loadPurchaseOrdersStats = loadPurchaseOrdersStats
+window.loadPendingOrders = loadPendingOrders
+window.loadApprovedOrders = loadApprovedOrders
+window.switchPurchaseOrderTab = switchPurchaseOrderTab
+window.openNewPurchaseOrderModal = openNewPurchaseOrderModal
+window.closeNewPurchaseOrderModal = closeNewPurchaseOrderModal
+window.approvePurchaseOrder = approvePurchaseOrder
+window.rejectPurchaseOrder = rejectPurchaseOrder

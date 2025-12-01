@@ -292,6 +292,32 @@
                                 </li>
                             </ul>
                         </li>
+
+                        <!-- ÁREA: GESTÃO DE PRODUTOS (laranja) -->
+                        <li class="menu-group menu-group-products" data-group="products">
+                            <div class="menu-group-header">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                                    <line x1="3" y1="6" x2="21" y2="6"/>
+                                    <path d="M16 10a4 4 0 0 1-8 0"/>
+                                </svg>
+                                <span>Gestão de Produtos</span>
+                                <svg class="menu-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6 9 12 15 18 9"/>
+                                </svg>
+                            </div>
+                            <ul class="menu-group-items">
+                                <li data-section="purchaseOrdersSection" id="purchaseOrdersNavItem">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+                                        <rect x="9" y="3" width="6" height="4" rx="1"/>
+                                        <path d="M9 14l2 2 4-4"/>
+                                    </svg>
+                                    Pedidos de Compra
+                                    <span class="menu-badge" id="purchaseOrdersPendingCount" style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);">0</span>
+                                </li>
+                            </ul>
+                        </li>
                     </ul>
                 </aside>
                 <div class="content-area">
@@ -992,6 +1018,93 @@
                             </div>
                         </div>
                     </section>
+
+                    <!-- Seção de Pedidos de Compra -->
+                    <section id="purchaseOrdersSection" class="admin-page" style="display:none">
+                        <div class="page-header">
+                            <div>
+                                <h1>
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 0.5rem;">
+                                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                                        <line x1="3" y1="6" x2="21" y2="6"/>
+                                        <path d="M16 10a4 4 0 0 1-8 0"/>
+                                    </svg>
+                                    Pedidos de Compra
+                                </h1>
+                                <p>Gerencie solicitações de compra de materiais</p>
+                            </div>
+                            <button class="btn-primary" onclick="openNewPurchaseOrderModal()">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 5v14M5 12h14"/>
+                                </svg>
+                                Novo Pedido
+                            </button>
+                        </div>
+
+                        <!-- Sub-navegação -->
+                        <div class="sub-nav" style="margin-bottom: 1.5rem;">
+                            <button class="sub-nav-btn active" data-purchase-tab="pending" onclick="switchPurchaseOrderTab('pending')">
+                                Pedidos Pendentes
+                                <span class="menu-badge" id="pendingOrdersBadge" style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); margin-left: 0.5rem;">0</span>
+                            </button>
+                            <button class="sub-nav-btn" data-purchase-tab="approved" onclick="switchPurchaseOrderTab('approved')">
+                                Pedidos Aprovados
+                                <span class="menu-badge" id="approvedOrdersBadge" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); margin-left: 0.5rem;">0</span>
+                            </button>
+                        </div>
+
+                        <!-- Tab: Pedidos Pendentes -->
+                        <div id="pendingOrdersTab" class="purchase-tab-content">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3>Solicitações Pendentes de Aprovação</h3>
+                                </div>
+                                <div id="pendingOrdersList" style="padding: 1rem;">
+                                    <p class="empty-state">Nenhum pedido pendente</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab: Pedidos Aprovados -->
+                        <div id="approvedOrdersTab" class="purchase-tab-content" style="display: none;">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3>Pedidos Aprovados</h3>
+                                </div>
+                                <div id="approvedOrdersList" style="padding: 1rem;">
+                                    <p class="empty-state">Nenhum pedido aprovado</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Modal de Novo Pedido de Compra -->
+                    <div id="newPurchaseOrderModal" class="modal">
+                        <div class="modal-content" style="max-width: 500px;">
+                            <div class="modal-header">
+                                <h2>Novo Pedido de Compra</h2>
+                                <button class="modal-close" onclick="closeNewPurchaseOrderModal()">&times;</button>
+                            </div>
+                            <form id="newPurchaseOrderForm" class="modal-body">
+                                <div class="form-group">
+                                    <label for="purchaseOrderMaterial">Nome do Material/Peça *</label>
+                                    <input type="text" id="purchaseOrderMaterial" required placeholder="Ex: Rolamento 6205, Filtro de óleo...">
+                                </div>
+                                <div class="form-group">
+                                    <label for="purchaseOrderQuantity">Quantidade</label>
+                                    <input type="number" id="purchaseOrderQuantity" value="1" min="1" placeholder="1">
+                                </div>
+                                <div class="form-group">
+                                    <label for="purchaseOrderObservations">Observações</label>
+                                    <textarea id="purchaseOrderObservations" rows="3" placeholder="Observações adicionais..."></textarea>
+                                </div>
+                                <div class="form-actions" style="display: flex; gap: 1rem; justify-content: flex-end;">
+                                    <button type="button" class="btn-secondary" onclick="closeNewPurchaseOrderModal()">Cancelar</button>
+                                    <button type="submit" class="btn-primary">Criar Pedido (Aprovado)</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
 
                     <!-- Seção de Faturamento -->
                     <section id="billingSection" class="admin-page" style="display:none">

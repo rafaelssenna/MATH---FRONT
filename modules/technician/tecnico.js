@@ -3892,6 +3892,8 @@ function switchTechTab(tabName) {
       loadAllOSForTech()
     } else if (tabName === 'companies') {
       // Empresas são buscadas sob demanda
+    } else if (tabName === 'purchaseRequest') {
+      loadMyPurchaseRequests()
     }
   }
 }
@@ -4781,3 +4783,125 @@ async function submitCreateOwnOS(event) {
     submitBtn.textContent = originalText
   }
 }
+
+// =============================================
+// SOLICITAÇÃO DE COMPRA
+// =============================================
+
+/**
+ * Carrega as solicitações de compra do técnico
+ */
+async function loadMyPurchaseRequests() {
+  const container = document.getElementById('myPurchaseRequestsList')
+  if (!container) return
+
+  const techId = localStorage.getItem('technician_id')
+  if (!techId) {
+    container.innerHTML = '<p class="empty-state">Faça login para ver suas solicitações</p>'
+    return
+  }
+
+  try {
+    container.innerHTML = '<p style="text-align: center; padding: 1rem;">Carregando...</p>'
+
+    const response = await fetch(`${API_URL}/api/purchase-orders/technician/${techId}`)
+    if (!response.ok) throw new Error('Erro ao buscar solicitações')
+    const orders = await response.json()
+
+    if (!orders || orders.length === 0) {
+      container.innerHTML = '<p class="empty-state">Nenhuma solicitação realizada</p>'
+      return
+    }
+
+    container.innerHTML = orders.map(order => {
+      const statusColor = order.status === 'approved' ? '#22c55e' : order.status === 'rejected' ? '#ef4444' : '#f97316'
+      const statusText = order.status === 'approved' ? 'Aprovado' : order.status === 'rejected' ? 'Rejeitado' : 'Pendente'
+
+      return `
+        <div style="padding: 1rem; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 0.75rem; border-left: 4px solid ${statusColor};">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <h4 style="margin: 0; font-size: 1rem;">${escapeHtml(order.material_name)}</h4>
+              ${order.observations ? `<p style="margin: 0.25rem 0 0; font-size: 0.875rem; opacity: 0.7;">${escapeHtml(order.observations)}</p>` : ''}
+              <p style="margin: 0.5rem 0 0; font-size: 0.75rem; opacity: 0.5;">
+                Solicitado em: ${formatDate(order.created_at)}
+              </p>
+            </div>
+            <span style="background: ${statusColor}; color: white; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600;">
+              ${statusText}
+            </span>
+          </div>
+          ${order.status === 'approved' && order.approved_at ? `
+            <p style="margin: 0.5rem 0 0; font-size: 0.75rem; color: #22c55e;">
+              Aprovado em ${formatDate(order.approved_at)} ${order.approved_by ? `por ${order.approved_by}` : ''}
+            </p>
+          ` : ''}
+        </div>
+      `
+    }).join('')
+
+  } catch (err) {
+    console.error('[loadMyPurchaseRequests] Erro:', err)
+    container.innerHTML = '<p class="empty-state" style="color: #ef4444;">Erro ao carregar solicitações</p>'
+  }
+}
+
+/**
+ * Envia solicitação de compra
+ */
+async function submitPurchaseRequest(e) {
+  e.preventDefault()
+
+  const materialName = document.getElementById('requestMaterialName').value.trim()
+  const observations = document.getElementById('requestObservations').value.trim()
+
+  if (!materialName) {
+    showToast('Nome do material é obrigatório', 'error')
+    return
+  }
+
+  const techId = localStorage.getItem('technician_id')
+  if (!techId) {
+    showToast('Faça login para enviar solicitações', 'error')
+    return
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/api/purchase-orders/technician`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        material_name: materialName,
+        observations,
+        technician_id: parseInt(techId)
+      })
+    })
+
+    const result = await response.json()
+    if (!response.ok) throw new Error(result.message || 'Erro ao enviar solicitação')
+
+    showToast('Solicitação enviada com sucesso!', 'success')
+
+    // Limpa o formulário
+    document.getElementById('requestMaterialName').value = ''
+    document.getElementById('requestObservations').value = ''
+
+    // Recarrega a lista
+    loadMyPurchaseRequests()
+  } catch (err) {
+    console.error('[submitPurchaseRequest] Erro:', err)
+    showToast(err.message || 'Erro ao enviar solicitação', 'error')
+  }
+}
+
+// Inicializa o formulário de solicitação
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('purchaseRequestForm')
+  if (form) {
+    form.addEventListener('submit', submitPurchaseRequest)
+  }
+})
+
+// Expõe funções globalmente
+window.loadMyPurchaseRequests = loadMyPurchaseRequests
+window.submitPurchaseRequest = submitPurchaseRequest

@@ -1239,6 +1239,14 @@ body {
   background: rgba(239, 68, 68, 0.08);
 }
 
+/* Gestão de Produtos - laranja */
+.menu-group-products .menu-group-header {
+  border-left-color: #f97316;
+}
+.menu-group-products.expanded .menu-group-header {
+  background: rgba(249, 115, 22, 0.08);
+}
+
 /* Item ativo dentro do grupo */
 .menu-group-items li.active {
   background: var(--primary-blue) !important;

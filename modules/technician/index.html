@@ -144,6 +144,14 @@
             </svg>
             Todas as OS
           </button>
+          <button class="tech-tab" data-tab="purchaseRequest">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <path d="M16 10a4 4 0 0 1-8 0"/>
+            </svg>
+            Solicitar Material
+          </button>
         </div>
 
         <!-- Tab Content: My OS -->
@@ -272,6 +280,43 @@
             </div>
           </div>
           <div id="allOsList"></div>
+        </div>
+
+        <!-- Tab Content: Solicitar Material -->
+        <div id="purchaseRequestTab" class="tech-tab-content" style="display:none">
+          <div class="card">
+            <div class="card-header">
+              <h3>Solicitar Material ou Peça</h3>
+              <p style="color: var(--text-secondary); font-size: 0.875rem;">Envie uma solicitação de compra para o administrador</p>
+            </div>
+            <form id="purchaseRequestForm" style="padding: 1rem;">
+              <div class="form-group">
+                <label for="requestMaterialName">Nome do Material/Peça *</label>
+                <input type="text" id="requestMaterialName" required placeholder="Ex: Rolamento 6205, Filtro de óleo, Correia...">
+              </div>
+              <div class="form-group">
+                <label for="requestObservations">Observações (opcional)</label>
+                <textarea id="requestObservations" rows="3" placeholder="Detalhes adicionais sobre o material..."></textarea>
+              </div>
+              <button type="submit" class="btn-primary" style="width: 100%;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 2L11 13"/>
+                  <path d="M22 2L15 22 11 13 2 9 22 2z"/>
+                </svg>
+                Enviar Solicitação
+              </button>
+            </form>
+          </div>
+
+          <!-- Lista de solicitações do técnico -->
+          <div class="card" style="margin-top: 1.5rem;">
+            <div class="card-header">
+              <h3>Minhas Solicitações</h3>
+            </div>
+            <div id="myPurchaseRequestsList" style="padding: 1rem;">
+              <p class="empty-state">Nenhuma solicitação realizada</p>
+            </div>
+          </div>
         </div>
       </div>
 
