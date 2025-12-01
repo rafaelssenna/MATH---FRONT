@@ -748,7 +748,97 @@ function closeCreateCompanyModal() {
   // Reseta título do modal
   const modalTitle = document.querySelector('#createCompanyModal h2')
   if (modalTitle) modalTitle.textContent = 'Nova Empresa'
+
+  // Reseta campos de emails de faturamento
+  resetBillingEmailsForm()
 }
+
+/**
+ * Adiciona um novo campo de email de faturamento
+ */
+function addBillingEmailField() {
+  const container = document.getElementById('billingEmailsContainer')
+  if (!container) return
+
+  const row = document.createElement('div')
+  row.className = 'billing-email-row'
+  row.style.cssText = 'display: flex; gap: 0.5rem; align-items: center;'
+  row.innerHTML = `
+    <input type="email" class="billing-email-input" placeholder="outro@empresa.com" style="flex: 1;">
+    <button type="button" class="btn-icon" onclick="removeBillingEmailField(this)" title="Remover email" style="background: #ef4444; color: white; border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  `
+  container.appendChild(row)
+}
+
+/**
+ * Remove um campo de email de faturamento
+ */
+function removeBillingEmailField(button) {
+  const row = button.closest('.billing-email-row')
+  if (row) row.remove()
+}
+
+/**
+ * Carrega emails de faturamento no formulário
+ */
+function loadBillingEmailsToForm(emailsStr) {
+  const container = document.getElementById('billingEmailsContainer')
+  if (!container) return
+
+  // Limpa container
+  container.innerHTML = ''
+
+  // Divide emails e cria campos
+  const emails = emailsStr ? emailsStr.split(',').map(e => e.trim()).filter(e => e) : ['']
+
+  emails.forEach((email, index) => {
+    const row = document.createElement('div')
+    row.className = 'billing-email-row'
+    row.style.cssText = 'display: flex; gap: 0.5rem; align-items: center;'
+
+    if (index === 0) {
+      // Primeiro campo tem botão de adicionar
+      row.innerHTML = `
+        <input type="email" class="billing-email-input" placeholder="faturamento@empresa.com" style="flex: 1;" value="${escapeHtml(email)}">
+        <button type="button" class="btn-icon" onclick="addBillingEmailField()" title="Adicionar email" style="background: #22c55e; color: white; border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+        </button>
+      `
+    } else {
+      // Campos adicionais têm botão de remover
+      row.innerHTML = `
+        <input type="email" class="billing-email-input" placeholder="outro@empresa.com" style="flex: 1;" value="${escapeHtml(email)}">
+        <button type="button" class="btn-icon" onclick="removeBillingEmailField(this)" title="Remover email" style="background: #ef4444; color: white; border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      `
+    }
+    container.appendChild(row)
+  })
+}
+
+/**
+ * Reseta campos de emails de faturamento para estado inicial
+ */
+function resetBillingEmailsForm() {
+  loadBillingEmailsToForm('')
+}
+
+// Expõe funções de emails de faturamento globalmente
+window.addBillingEmailField = addBillingEmailField
+window.removeBillingEmailField = removeBillingEmailField
+window.loadBillingEmailsToForm = loadBillingEmailsToForm
+window.resetBillingEmailsForm = resetBillingEmailsForm
 
 /**
  * Configura navegação entre as sub-tabs da seção Gestão de Empresas
@@ -2007,10 +2097,16 @@ function handleCompanyForm(e) {
   const addressInput = document.getElementById("companyAddress")
   const phone1Input = document.getElementById("companyPhone1")
   const emailInput = document.getElementById("companyEmail")
-  const billingEmailInput = document.getElementById("companyBillingEmail")
   const observationsInput = document.getElementById("companyObservations")
   const billingRuleInput = document.getElementById("companyBillingRule")
   const isNewInput = document.getElementById("companyIsNew")
+
+  // Coleta múltiplos emails de faturamento
+  const billingEmailInputs = document.querySelectorAll('#billingEmailsContainer .billing-email-input')
+  const billingEmailsArray = Array.from(billingEmailInputs)
+    .map(input => input.value.trim())
+    .filter(email => email !== '')
+  const billingEmails = billingEmailsArray.join(', ')
 
   // Extrai valores com segurança
   const name = nameInput ? nameInput.value.trim() : ""
@@ -2020,7 +2116,6 @@ function handleCompanyForm(e) {
   const address = addressInput ? addressInput.value.trim() : ""
   const phone1 = phone1Input ? phone1Input.value.trim() : ""
   const email = emailInput ? emailInput.value.trim() : ""
-  const billingEmail = billingEmailInput ? billingEmailInput.value.trim() : ""
   const observations = observationsInput ? observationsInput.value.trim() : ""
   const billingRule = billingRuleInput ? billingRuleInput.value.trim() : ""
   const isNew = isNewInput ? isNewInput.checked : false
@@ -2052,7 +2147,7 @@ function handleCompanyForm(e) {
     address,
     phone1,
     email,
-    billing_email: billingEmail || null,
+    billing_emails: billingEmails || null,
     observations: observations || null,
     billing_rule: billingRule || null,
     is_new: isNew,
@@ -2178,7 +2273,21 @@ function populateCompanyDetails(company, osList = []) {
   setText('detailsCompanyAddress', fullAddress || '')
   setText('detailsCompanyPhones', phones || '')
   setText('detailsCompanyEmail', company.email || '')
-  setText('detailsCompanyBillingEmail', company.billing_email || 'Não informado')
+
+  // Exibe múltiplos emails de faturamento
+  const billingEmailsDiv = document.getElementById('detailsCompanyBillingEmails')
+  if (billingEmailsDiv) {
+    const emails = company.billing_emails || company.billing_email || ''
+    if (emails) {
+      const emailList = emails.split(',').map(e => e.trim()).filter(e => e)
+      billingEmailsDiv.innerHTML = emailList.length > 0
+        ? emailList.map(email => `<span style="display: inline-block; background: var(--bg-input); padding: 0.25rem 0.5rem; border-radius: 4px; margin: 0.25rem 0.25rem 0 0; font-size: 0.875rem;">${escapeHtml(email)}</span>`).join('')
+        : '<span style="color: var(--text-secondary);">Não informado</span>'
+    } else {
+      billingEmailsDiv.innerHTML = '<span style="color: var(--text-secondary);">Não informado</span>'
+    }
+  }
+
   setText('detailsCompanyObservations', company.observations || company.info || '')
 
   // Armazena ID da empresa no modal para usar nos botões de ação
@@ -2553,7 +2662,6 @@ async function editCompany(companyId) {
     const addressInput = document.getElementById('companyAddress')
     const phone1Input = document.getElementById('companyPhone1')
     const emailInput = document.getElementById('companyEmail')
-    const billingEmailInput = document.getElementById('companyBillingEmail')
     const observationsInput = document.getElementById('companyObservations')
     const billingRuleInput = document.getElementById('companyBillingRule')
     const isNewInput = document.getElementById('companyIsNew')
@@ -2565,10 +2673,13 @@ async function editCompany(companyId) {
     if (addressInput) addressInput.value = company.address || ''
     if (phone1Input) phone1Input.value = company.phone1 || ''
     if (emailInput) emailInput.value = company.email || ''
-    if (billingEmailInput) billingEmailInput.value = company.billing_email || ''
     if (observationsInput) observationsInput.value = company.observations || ''
     if (billingRuleInput) billingRuleInput.value = company.billing_rule || ''
     if (isNewInput) isNewInput.checked = company.is_new || false
+
+    // Preenche múltiplos emails de faturamento
+    const billingEmailsStr = company.billing_emails || company.billing_email || ''
+    loadBillingEmailsToForm(billingEmailsStr)
 
     // Armazena ID da empresa sendo editada
     form.dataset.editingId = companyId

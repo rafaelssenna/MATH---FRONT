@@ -556,9 +556,18 @@
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <label for="companyBillingEmail">E-mail para Faturamento</label>
-                                    <input type="email" id="companyBillingEmail" placeholder="faturamento@empresa.com">
-                                    <small style="color: var(--text-secondary); font-size: 0.8rem;">Este e-mail receberá as notas fiscais</small>
+                                    <label>E-mails para Faturamento</label>
+                                    <div id="billingEmailsContainer" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                        <div class="billing-email-row" style="display: flex; gap: 0.5rem; align-items: center;">
+                                            <input type="email" class="billing-email-input" placeholder="faturamento@empresa.com" style="flex: 1;">
+                                            <button type="button" class="btn-icon" onclick="addBillingEmailField()" title="Adicionar email" style="background: #22c55e; color: white; border-radius: 6px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M12 5v14M5 12h14"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <small style="color: var(--text-secondary); font-size: 0.8rem;">Estes e-mails receberão as notas fiscais. Clique em + para adicionar mais.</small>
                                 </div>
                                 <div class="form-group">
                                     <label for="companyObservations">Observações</label>
@@ -620,7 +629,10 @@
                                     <p><strong>Endereço:</strong> <span id="detailsCompanyAddress"></span></p>
                                     <p><strong>Telefones:</strong> <span id="detailsCompanyPhones"></span></p>
                                     <p><strong>Email:</strong> <span id="detailsCompanyEmail"></span></p>
-                                    <p><strong>Email Faturamento:</strong> <span id="detailsCompanyBillingEmail"></span></p>
+                                    <div style="margin: 0.5rem 0;">
+                                        <strong>Emails para Faturamento:</strong>
+                                        <div id="detailsCompanyBillingEmails" style="margin-top: 0.25rem;"></div>
+                                    </div>
                                     <p><strong>Observações:</strong> <span id="detailsCompanyObservations"></span></p>
 
                                     <div style="margin: 1.5rem 0; padding: 1rem; background: var(--bg-input); border-radius: 12px; border: 1px solid var(--border-color);">
