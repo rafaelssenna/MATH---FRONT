@@ -9120,6 +9120,7 @@ async function loadPurchaseOrdersStats() {
     const response = await fetch(`${API_URL}/api/purchase-orders/stats`)
     if (!response.ok) throw new Error('Erro ao buscar estatísticas')
     const stats = await response.json()
+    console.log('[loadPurchaseOrdersStats] Stats recebidos:', stats)
 
     // Atualiza badges
     const pendingBadge = document.getElementById('pendingOrdersBadge')
@@ -9132,11 +9133,18 @@ async function loadPurchaseOrdersStats() {
 
     // Adiciona/remove animação de piscar no menu
     const menuGroup = document.querySelector('.menu-group-products')
+    console.log('[loadPurchaseOrdersStats] Menu group encontrado:', !!menuGroup, 'Pending:', stats.pending)
     if (menuGroup) {
       if (stats.pending > 0) {
+        // Remove e readiciona a classe para reiniciar a animação
+        menuGroup.classList.remove('has-pending')
+        // Força reflow para reiniciar animação
+        void menuGroup.offsetWidth
         menuGroup.classList.add('has-pending')
+        console.log('[loadPurchaseOrdersStats] Classe has-pending ADICIONADA - Classes:', menuGroup.className)
       } else {
         menuGroup.classList.remove('has-pending')
+        console.log('[loadPurchaseOrdersStats] Classe has-pending REMOVIDA')
       }
     }
   } catch (err) {
