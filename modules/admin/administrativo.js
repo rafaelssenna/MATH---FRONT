@@ -4435,12 +4435,13 @@ function setupSidebar() {
     item.dataset.bound = "true"
   })
 
-  // Expande o grupo que contém o item ativo por padrão
-  const activeItem = document.querySelector(".sidebar-menu .menu-group-items li.active")
-  if (activeItem) {
-    const parentGroup = activeItem.closest(".menu-group")
-    if (parentGroup) parentGroup.classList.add("expanded")
-  }
+  // Fecha todos os menus ao iniciar (todos começam fechados)
+  menuGroups.forEach((group) => {
+    group.classList.remove("expanded")
+  })
+
+  // Verifica se há pedidos pendentes para ativar animação
+  loadPurchaseOrdersStats()
 
   // Restaura estado ao carregar
   restoreAdminState()
@@ -9128,6 +9129,16 @@ async function loadPurchaseOrdersStats() {
     if (pendingBadge) pendingBadge.textContent = stats.pending || 0
     if (approvedBadge) approvedBadge.textContent = stats.approved || 0
     if (menuBadge) menuBadge.textContent = stats.pending || 0
+
+    // Adiciona/remove animação de piscar no menu
+    const menuGroup = document.querySelector('.menu-group-products')
+    if (menuGroup) {
+      if (stats.pending > 0) {
+        menuGroup.classList.add('has-pending')
+      } else {
+        menuGroup.classList.remove('has-pending')
+      }
+    }
   } catch (err) {
     console.error('[loadPurchaseOrdersStats] Erro:', err)
   }
