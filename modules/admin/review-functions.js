@@ -1564,6 +1564,12 @@ function createConferenceModal() {
               </svg>
               <span>Salvar</span>
             </button>
+            <button id="btnWarrantyConference" class="btn-conference" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);" onclick="sendToWarranty(currentConferenceOS.id)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+              <span>Garantia</span>
+            </button>
             <button id="btnApproveConference" class="btn-conference btn-approve" onclick="approveConferenceOS()">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="20 6 9 17 4 12"/>
@@ -2145,6 +2151,172 @@ async function restoreArchivedToReview(osId) {
   } catch (error) {
     console.error('Erro ao restaurar OS:', error)
     showToast(error.message || 'Erro ao restaurar OS para conferência', 'error')
+  }
+}
+
+// ========================================
+// SEÇÃO: GARANTIA
+// ========================================
+
+/**
+ * Carrega OS em Garantia
+ */
+async function loadWarrantyOS() {
+  try {
+    const response = await fetch(`${API_URL}/api/review/warranty`)
+    if (!response.ok) {
+      throw new Error('Erro ao carregar OS em garantia')
+    }
+
+    const osList = await response.json()
+    renderWarrantyOSList(osList)
+
+    // Atualiza contador
+    const countEl = document.getElementById('warrantyCount')
+    if (countEl) {
+      countEl.textContent = osList.length
+    }
+
+  } catch (error) {
+    console.error('Erro ao carregar garantia:', error)
+    showToast(error.message || 'Erro ao carregar OS em garantia', 'error')
+  }
+}
+
+/**
+ * Renderiza lista de OS em Garantia
+ */
+function renderWarrantyOSList(osList) {
+  const container = document.getElementById('warrantyOSList')
+  if (!container) return
+
+  if (!osList || osList.length === 0) {
+    container.innerHTML = '<p class="empty-state">Nenhuma OS em garantia</p>'
+    return
+  }
+
+  const html = osList.map(os => {
+    const warrantyDate = os.warranty_at ? new Date(os.warranty_at).toLocaleDateString('pt-BR') : 'N/A'
+
+    return `
+      <div class="os-card" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; margin-bottom: 0.75rem; border: 2px solid #8b5cf6; border-radius: 12px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(124, 58, 237, 0.05) 100%);">
+        <div style="flex: 1;">
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+            <span style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary);">OS #${os.order_number || os.id}</span>
+            <span style="background: #8b5cf6; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">GARANTIA</span>
+          </div>
+          <div style="color: var(--text-secondary); font-size: 0.875rem;">
+            <p style="margin: 0.25rem 0;"><strong>Cliente:</strong> ${os.company_name || 'Não informado'}</p>
+            <p style="margin: 0.25rem 0;"><strong>Técnico:</strong> ${os.technician_username || 'Não atribuído'}</p>
+            <p style="margin: 0.25rem 0;"><strong>Data Garantia:</strong> ${warrantyDate}</p>
+            ${os.service_description ? `<p style="margin: 0.25rem 0;"><strong>Serviço:</strong> ${os.service_description.substring(0, 100)}${os.service_description.length > 100 ? '...' : ''}</p>` : ''}
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+          <button onclick="viewWarrantyOS(${os.id})" class="btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 0.25rem;">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            Ver
+          </button>
+          <button onclick="returnWarrantyToReview(${os.id})" class="btn-primary" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 0.5rem 1rem; font-size: 0.875rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 0.25rem;">
+              <polyline points="1 4 1 10 7 10"/>
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+            </svg>
+            Voltar para Conferência
+          </button>
+        </div>
+      </div>
+    `
+  }).join('')
+
+  container.innerHTML = html
+}
+
+/**
+ * Visualiza detalhes de uma OS em Garantia
+ */
+async function viewWarrantyOS(osId) {
+  try {
+    const response = await fetch(`${API_URL}/api/review/${osId}`)
+    if (!response.ok) {
+      throw new Error('Erro ao carregar OS')
+    }
+
+    const os = await response.json()
+
+    // Usa a modal de conferência para mostrar os dados (somente leitura)
+    currentConferenceOS = os
+    conferenceMaterials = os.materials || []
+    conferenceWorklogs = os.worklogs || []
+    conferenceDisplacements = os.displacements || []
+
+    // Abre modal de conferência
+    openConferenceModal(osId)
+
+  } catch (error) {
+    console.error('Erro ao visualizar OS:', error)
+    showToast(error.message || 'Erro ao carregar OS', 'error')
+  }
+}
+
+/**
+ * Retorna OS da Garantia para Conferência
+ */
+async function returnWarrantyToReview(osId) {
+  if (!confirm('Deseja retornar esta OS para conferência?')) {
+    return
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/api/review/${osId}/return-from-warranty`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.message || 'Erro ao retornar OS')
+    }
+
+    showToast('OS retornada para conferência!', 'success')
+    loadWarrantyOS()
+    loadReviewData()
+
+  } catch (error) {
+    console.error('Erro ao retornar OS:', error)
+    showToast(error.message || 'Erro ao retornar OS para conferência', 'error')
+  }
+}
+
+/**
+ * Envia OS para Garantia
+ */
+async function sendToWarranty(osId) {
+  if (!confirm('Deseja enviar esta OS para garantia?')) {
+    return
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/api/review/${osId}/warranty`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.message || 'Erro ao enviar para garantia')
+    }
+
+    showToast('OS enviada para garantia!', 'success')
+    closeConferenceModal()
+    loadReviewData()
+
+  } catch (error) {
+    console.error('Erro ao enviar para garantia:', error)
+    showToast(error.message || 'Erro ao enviar OS para garantia', 'error')
   }
 }
 

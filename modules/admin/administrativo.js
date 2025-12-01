@@ -4399,6 +4399,11 @@ window.activateSection = function(section) {
     loadStandbyOS()
   }
 
+  // Seção de garantia
+  if (section === "warrantySection") {
+    loadWarrantyOS()
+  }
+
   // Seção de faturamento
   if (section === "billingSection") {
     console.log('📊 Abrindo seção de faturamento...')
