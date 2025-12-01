@@ -4795,7 +4795,7 @@ async function loadMyPurchaseRequests() {
   const container = document.getElementById('myPurchaseRequestsList')
   if (!container) return
 
-  const techId = localStorage.getItem('technician_id')
+  const techId = localStorage.getItem('technicianId')
   if (!techId) {
     container.innerHTML = '<p class="empty-state">Faça login para ver suas solicitações</p>'
     return
@@ -4860,7 +4860,7 @@ async function submitPurchaseRequest(e) {
     return
   }
 
-  const techId = localStorage.getItem('technician_id')
+  const techId = localStorage.getItem('technicianId')
   if (!techId) {
     showToast('Faça login para enviar solicitações', 'error')
     return
