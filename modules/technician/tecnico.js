@@ -3252,19 +3252,40 @@ async function handleFinishSubmit(e) {
 
   // Deslocamentos
   payload.displacements = []
+  let displacementValidationError = null
   document.querySelectorAll("#displacementContainer .displacement-row").forEach((row) => {
     const kmSelect = row.querySelector(".km-option")
     const kmValue = kmSelect ? kmSelect.value : ""
     const kmTotalInput = row.querySelector(".km-total")
     let kmTotal = null
-    if (kmTotalInput && kmTotalInput.style.display !== "none" && kmTotalInput.value) {
-      const n = Number.parseFloat(kmTotalInput.value)
-      if (!isNaN(n)) kmTotal = n
+
+    // Só captura km_total se a opção for "maior" (acima de 100km)
+    const isMaior = kmValue && kmValue.toLowerCase() === "maior"
+    if (isMaior) {
+      if (kmTotalInput && kmTotalInput.value) {
+        const n = Number.parseFloat(kmTotalInput.value)
+        if (!isNaN(n) && n > 0) {
+          kmTotal = n
+        } else {
+          displacementValidationError = "Para deslocamento acima de 100km, informe a quilometragem total."
+        }
+      } else {
+        displacementValidationError = "Para deslocamento acima de 100km, informe a quilometragem total."
+      }
     }
+
     const vehicleSel = row.querySelector(".vehicle-select")
     const vehId = vehicleSel ? vehicleSel.value : ""
     payload.displacements.push({ km_option: kmValue, km_total: kmTotal, vehicle_id: vehId })
   })
+
+  // Valida se há erro de deslocamento
+  if (displacementValidationError) {
+    showToast(displacementValidationError, "error")
+    isSubmittingFinish = false
+    hideLoadingOverlay()
+    return
+  }
 
   // Assinaturas
   const techSig = getStoredTechnicianSignature()

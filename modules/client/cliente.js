@@ -56,6 +56,20 @@ function showToast(message, type = "success") {
   }, 3000)
 }
 
+/**
+ * Converte horas decimais para formato legível (ex: 4.5 -> "4h 30min")
+ * @param {number} decimalHours - Horas em formato decimal
+ * @returns {string} - Horas formatadas (ex: "4h 30min" ou "4h")
+ */
+function formatHours(decimalHours) {
+  const num = Number(decimalHours)
+  if (isNaN(num)) return "N/A"
+  const hours = Math.floor(num)
+  const minutes = Math.round((num - hours) * 60)
+  if (minutes === 0) return `${hours}h`
+  return `${hours}h ${minutes}min`
+}
+
 // ╔═══════════════════════════════════════════════════════════════════════════════╗
 // ║                   SEÇÃO 2: SISTEMA DE PERFIS (Netflix-style)                  ║
 // ╚═══════════════════════════════════════════════════════════════════════════════╝
@@ -1244,7 +1258,7 @@ async function viewClientOSDetails(id, type) {
                   ${item.observations ? `<p style="margin-top: 1rem;"><strong>Observações:</strong></p><p>${item.observations}</p>` : ""}
                   <div class="service-info">
                       <p><strong>Técnico Responsável:</strong> ${item.technician_name || "N/A"}</p>
-                      <p><strong>Tempo de Atendimento:</strong> ${item.total_hours ? item.total_hours + "h" : "N/A"}</p>
+                      <p><strong>Tempo de Atendimento:</strong> ${item.total_hours ? formatHours(item.total_hours) : "N/A"}</p>
                   </div>
               </div>
           </div>

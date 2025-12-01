@@ -46,6 +46,18 @@ function formatQuantity(qty) {
 }
 
 /**
+ * Converte horas decimais para formato legível (ex: 4.5 -> "4h 30min")
+ * @param {number} decimalHours - Horas em formato decimal
+ * @returns {string} - Horas formatadas (ex: "4h 30min" ou "4h")
+ */
+function formatHoursReview(decimalHours) {
+  const hours = Math.floor(decimalHours)
+  const minutes = Math.round((decimalHours - hours) * 60)
+  if (minutes === 0) return `${hours}h`
+  return `${hours}h ${minutes}min`
+}
+
+/**
  * Carrega dados de conferência (chamado ao abrir a seção)
  */
 async function loadReviewData() {
@@ -918,7 +930,7 @@ function recalculateConferenceTotals() {
         ${formatter.format(hoursCost)}
       </div>
       <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">
-        ${totalHours.toFixed(2)}h × ${formatter.format(hourlyRate)}/h
+        ${formatHoursReview(totalHours)} × ${formatter.format(hourlyRate)}/h
       </div>
     </div>
   `
@@ -1119,7 +1131,7 @@ function recalculateConferenceTotalsQuick() {
         }
         const detailDiv = div.querySelector('div[style*="font-size: 0.75rem"]')
         if (detailDiv && detailDiv.textContent.includes('×')) {
-          detailDiv.textContent = `${totalHours.toFixed(2)}h × ${formatter.format(hourlyRate)}/h`
+          detailDiv.textContent = `${formatHoursReview(totalHours)} × ${formatter.format(hourlyRate)}/h`
         }
       }
     })

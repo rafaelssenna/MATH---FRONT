@@ -1722,7 +1722,7 @@ function loadOSList() {
           ocorrencia: row.occurrence || "",
           causa: row.cause || "",
           observacoes: row.observations || "",
-          totalHoras: row.total_hours ? `${Number(row.total_hours).toFixed(2)} horas` : "",
+          totalHoras: row.total_hours ? formatHours(Number(row.total_hours)) : "",
           signatureTecnico: row.technician_signature || "",
           signatureCliente: row.client_signature || "",
           status: status,
@@ -2939,7 +2939,7 @@ async function viewOSDetails(id) {
       responsavel: row.requester || "",
       assistenteTecnico: row.technician_username || "",
       maintenanceType: row.maintenance_type || "",
-      totalHoras: row.total_hours ? `${Number(row.total_hours).toFixed(2)} horas` : "",
+      totalHoras: row.total_hours ? formatHours(Number(row.total_hours)) : "",
       totalHorasNum: row.total_hours || 0,
       descricao: row.service_description || "",
       ocorrencia: row.occurrence || "",
@@ -3004,7 +3004,7 @@ async function viewOSDetails(id) {
               </div>
               <div class="detail-field">
                 <label>Horas</label>
-                <span>${hours.toFixed(2)} h</span>
+                <span>${formatHours(hours)}</span>
               </div>
             `
           })
@@ -3129,14 +3129,25 @@ async function viewOSDetails(id) {
           String(d.km_option).toLowerCase() === 'none'
         )
 
-        if (d.km_total !== null && d.km_total !== undefined) {
+        // Determina km baseado no km_option primeiro, depois km_total
+        const opt = String(d.km_option || "").toLowerCase()
+        if (isSemDeslocamento) {
+          kmVal = 0
+          kmTotal = ""
+        } else if (opt.includes("50") && !opt.includes("100")) {
+          kmVal = 50
+          kmTotal = " - Até 50 km"
+        } else if (opt.includes("100")) {
+          kmVal = 100
+          kmTotal = " - Até 100 km"
+        } else if (opt.includes("maior") || opt.includes("acima") || opt.includes("above")) {
+          // Acima de 100km - usa o valor em km_total
+          kmVal = d.km_total !== null && d.km_total !== undefined ? Number(d.km_total) || 0 : 0
+          kmTotal = kmVal > 0 ? ` - ${kmVal} km` : " - não informado"
+        } else if (d.km_total !== null && d.km_total !== undefined && Number(d.km_total) > 0) {
+          // Fallback para valores legados
           kmVal = Number(d.km_total) || 0
           kmTotal = ` - ${kmVal} km`
-        } else if (d.km_option && !isSemDeslocamento) {
-          const opt = String(d.km_option).toLowerCase()
-          if (opt.includes("50")) kmVal = 50
-          else if (opt.includes("100")) kmVal = 100
-          if (kmVal > 0) kmTotal = ` - ${kmVal} km`
         }
         totalKm += kmVal
 
@@ -3256,7 +3267,7 @@ async function viewOSDetails(id) {
         <div class="detail-grid" style="margin-bottom: 1rem; padding: 0.75rem; background: var(--bg-input); border-radius: 8px;">
           <div class="detail-field">
             <label>Horas Trabalhadas</label>
-            <span>${currentOS.totalHoras || "0.00 horas"}</span>
+            <span>${currentOS.totalHoras ? formatHours(Number(currentOS.totalHoras)) : "0h"}</span>
           </div>
           <div class="detail-field">
             <label>Valor/Hora</label>
@@ -3918,14 +3929,26 @@ async function generateAndOpenOSPDF() {
     if (Array.isArray(currentOS.displacements) && currentOS.displacements.length > 0) {
       currentOS.displacements.forEach((d) => {
         let km = 0
-        if (d && d.km_total !== undefined && d.km_total !== null && String(d.km_total).trim() !== "") {
-          const parsed = Number(d.km_total)
-          if (!isNaN(parsed) && parsed > 0) km = parsed
-        } else if (d && d.km_option) {
-          const opt = String(d.km_option).toLowerCase()
-          if (opt.includes("50")) km = 50
-          else if (opt.includes("100")) km = 100
+        const opt = String(d?.km_option || "").toLowerCase()
+
+        // Verifica se é sem deslocamento
+        if (opt === 'nenhum' || opt === 'sem_deslocamento' || opt.includes('sem')) {
+          return // Pula este deslocamento
         }
+
+        // Determina km baseado no km_option primeiro
+        if (opt.includes("50") && !opt.includes("100")) {
+          km = 50
+        } else if (opt.includes("100") && !opt.includes("acima")) {
+          km = 100
+        } else if (opt.includes("maior") || opt.includes("acima") || opt.includes("above")) {
+          // Acima de 100km - usa km_total
+          if (d && d.km_total !== undefined && d.km_total !== null) {
+            const parsed = Number(d.km_total)
+            if (!isNaN(parsed) && parsed > 0) km = parsed
+          }
+        }
+
         if (km > 0) {
           totalKm += km
           if (km <= 50) cost += isNew ? 95 : 80
@@ -4080,16 +4103,23 @@ async function generateAndOpenOSPDF() {
       )
 
       if (d) {
+        const opt = String(d.km_option || "").toLowerCase()
+
         if (isSemDeslocamento) {
           distText = "Não houve deslocamento"
-        } else if (d.km_total !== undefined && d.km_total !== null && String(d.km_total).trim() !== "") {
-          // Verifica primeiro se tem km_total preenchido (acima de 100 km)
-          distText = `Acima: ${d.km_total} km`
-        } else {
-          // Se não tem km_total, verifica o km_option (até 50 ou até 100)
-          const opt = String(d.km_option || "").toLowerCase()
-          if (opt.includes("50")) distText = "Até 50 km"
-          else if (opt.includes("100")) distText = "Até 100 km"
+        } else if (opt.includes("50") && !opt.includes("100")) {
+          // Opção "até 50 km" (ex: "50", "ate_50km", etc)
+          distText = "Até 50 km"
+        } else if (opt.includes("100")) {
+          // Opção "até 100 km" (ex: "100", "ate_100km", etc)
+          distText = "Até 100 km"
+        } else if (opt.includes("maior") || opt.includes("acima") || opt.includes("above")) {
+          // Opção "acima de 100 km" - usa km_total
+          const kmVal = d.km_total !== undefined && d.km_total !== null ? Number(d.km_total) : 0
+          distText = `Acima de 100 km: ${kmVal > 0 ? kmVal + ' km' : 'não informado'}`
+        } else if (d.km_total !== undefined && d.km_total !== null && Number(d.km_total) > 0) {
+          // Fallback: se tiver km_total válido, mostra
+          distText = `${d.km_total} km`
         }
       }
 
