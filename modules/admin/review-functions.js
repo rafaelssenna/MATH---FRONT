@@ -1149,17 +1149,28 @@ function toggleClientType() {
  * Atualiza o valor da hora customizado
  */
 function updateCustomHourlyRate(value) {
-  const numValue = parseFloat(value)
-  if (isNaN(numValue) || numValue < 0) return
+  // Trata vírgula como decimal (formato brasileiro)
+  const cleanValue = String(value).replace(',', '.')
+  const numValue = parseFloat(cleanValue)
+
+  console.log('[CUSTOM RATE] Input:', value, '→ Parsed:', numValue)
+
+  if (isNaN(numValue) || numValue < 0) {
+    console.log('[CUSTOM RATE] Valor inválido, ignorando')
+    return
+  }
 
   const isNewClient = currentConferenceOS?.is_new_client || false
   const defaultRate = isNewClient ? 175 : 150
 
-  // Se o valor for igual ao padrão, não precisa de custom
+  // Se o valor for igual ao padrão simples (150/175), não marca como custom
+  // Mas qualquer outro valor, mesmo que seja igual à taxa por distância, é considerado custom
   if (numValue === defaultRate) {
     customHourlyRate = null
+    console.log('[CUSTOM RATE] Valor igual ao padrão básico, usando null')
   } else {
     customHourlyRate = numValue
+    console.log('[CUSTOM RATE] Valor customizado definido:', customHourlyRate)
   }
 
   // Recalcula sem re-renderizar completamente para evitar perder foco do input
@@ -1369,6 +1380,10 @@ async function approveConferenceOS() {
     // Para enviar ao backend: envia null se não foi customizado (backend calculará baseado em distância)
     const effectiveRateToSend = customHourlyRate !== null ? customHourlyRate : null
 
+    console.log('[APPROVE] customHourlyRate:', customHourlyRate)
+    console.log('[APPROVE] effectiveRateToSend:', effectiveRateToSend)
+    console.log('[APPROVE] hourlyRate usado no cálculo:', hourlyRate)
+
     const totalAdditionalServices = conferenceAdditionalServices.reduce((sum, s) => {
       return sum + (parseFloat(s.value) || 0)
     }, 0)
@@ -1449,6 +1464,10 @@ async function saveConferenceChanges() {
     // Para enviar ao backend: envia null se não foi customizado (backend calculará baseado em distância)
     const effectiveRateToSend = customHourlyRate !== null ? customHourlyRate : null
 
+    console.log('[SAVE] customHourlyRate:', customHourlyRate)
+    console.log('[SAVE] effectiveRateToSend:', effectiveRateToSend)
+    console.log('[SAVE] hourlyRate usado no cálculo:', hourlyRate)
+
     const totalAdditionalServices = conferenceAdditionalServices.reduce((sum, s) => {
       return sum + (parseFloat(s.value) || 0)
     }, 0)
@@ -1469,7 +1488,7 @@ async function saveConferenceChanges() {
       company_id: selectedCompanyId,
       machine_id: selectedMachineId,
       grandTotal,
-      customHourlyRate: effectiveRateToSend,
+      effective_hourly_rate: effectiveRateToSend,
       materials: conferenceMaterials.length,
       worklogs: conferenceWorklogs.length,
       displacements: conferenceDisplacements.length
