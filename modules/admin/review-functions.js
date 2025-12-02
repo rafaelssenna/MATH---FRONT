@@ -70,13 +70,17 @@ const PRICING_TABLE = {
 
 /**
  * Obtém taxa horária e horas mínimas baseado na distância total
- * @param {number} totalKm - Distância total em km
+ * IMPORTANTE: Para calcular a TAXA HORÁRIA, usa-se apenas a distância de IDA (km/2)
+ * O parâmetro totalKm é a distância total (ida + volta)
+ * @param {number} totalKm - Distância total em km (ida + volta)
  * @param {boolean} isNewClient - Se é cliente novo
- * @returns {object} { rate, minHours, maxKm, rangeDescription }
+ * @returns {object} { rate, minHours, maxKm, rangeDescription, kmForRate }
  */
 function getHourlyRateByDistance(totalKm, isNewClient = false) {
   const table = isNewClient ? PRICING_TABLE.newClient : PRICING_TABLE.existingClient
-  const km = totalKm || 0
+  // Usa apenas a distância de IDA para calcular a faixa de preço
+  const km = Math.round((totalKm || 0) / 2)
+  console.log(`[PRICING] KM total: ${totalKm}, KM para taxa (só ida): ${km}`)
 
   for (const tier of table.hourlyRates) {
     if (km <= tier.maxKm) {
@@ -85,7 +89,8 @@ function getHourlyRateByDistance(totalKm, isNewClient = false) {
         rate: tier.rate,
         minHours: tier.minHours,
         maxKm: tier.maxKm,
-        rangeDescription: `${maxKmDisplay} km`
+        rangeDescription: `${maxKmDisplay} km`,
+        kmForRate: km // KM usado para calcular (só ida)
       }
     }
   }
@@ -96,7 +101,8 @@ function getHourlyRateByDistance(totalKm, isNewClient = false) {
     rate: lastTier.rate,
     minHours: lastTier.minHours,
     maxKm: lastTier.maxKm,
-    rangeDescription: 'acima de 800 km'
+    rangeDescription: 'acima de 800 km',
+    kmForRate: km // KM usado para calcular (só ida)
   }
 }
 
