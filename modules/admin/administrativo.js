@@ -3062,7 +3062,7 @@ async function viewOSDetails(id) {
       solicitante: row.requester || "",
       signatureTecnico: row.technician_signature || "",
       signatureCliente: row.client_signature || "",
-      valorHoraTecnico: row.technician_hourly_rate !== undefined ? row.technician_hourly_rate : null,
+      valorHoraTecnico: row.effective_hourly_rate !== undefined ? row.effective_hourly_rate : (row.technician_hourly_rate !== undefined ? row.technician_hourly_rate : null),
       deslocamentoKm: row.displacement_km,
       carroUtilizado:
         resolvePlate(row.car_used) ||

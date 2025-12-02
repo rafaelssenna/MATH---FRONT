@@ -36,6 +36,89 @@ let allMachinesForReview = []
 let conferenceOSListCache = [] // Cache para filtro de busca
 let customHourlyRate = null // Valor da hora customizado (null = usar padrão)
 
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║           TABELA DE PREÇOS OFICIAL - SINCRONIZADA COM BACKEND                 ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
+const PRICING_TABLE = {
+  newClient: {
+    hourlyRates: [
+      { maxKm: 150, rate: 175, minHours: 2 },
+      { maxKm: 300, rate: 204, minHours: 4 },
+      { maxKm: 800, rate: 262, minHours: 8 },
+      { maxKm: Infinity, rate: 409, minHours: 18 }
+    ],
+    displacement: {
+      fixed50: 95,    // Até 50 km
+      fixed100: 170,  // Até 100 km
+      perKm: 2.57     // Acima de 100 km
+    }
+  },
+  existingClient: {
+    hourlyRates: [
+      { maxKm: 150, rate: 150, minHours: 2 },
+      { maxKm: 300, rate: 175, minHours: 4 },
+      { maxKm: 800, rate: 225, minHours: 8 },
+      { maxKm: Infinity, rate: 350, minHours: 18 }
+    ],
+    displacement: {
+      fixed50: 80,    // Até 50 km
+      fixed100: 150,  // Até 100 km
+      perKm: 2.20     // Acima de 100 km
+    }
+  }
+}
+
+/**
+ * Obtém taxa horária e horas mínimas baseado na distância total
+ * @param {number} totalKm - Distância total em km
+ * @param {boolean} isNewClient - Se é cliente novo
+ * @returns {object} { rate, minHours, maxKm, rangeDescription }
+ */
+function getHourlyRateByDistance(totalKm, isNewClient = false) {
+  const table = isNewClient ? PRICING_TABLE.newClient : PRICING_TABLE.existingClient
+  const km = totalKm || 0
+
+  for (const tier of table.hourlyRates) {
+    if (km <= tier.maxKm) {
+      const maxKmDisplay = tier.maxKm === Infinity ? 'acima de 800' : `até ${tier.maxKm}`
+      return {
+        rate: tier.rate,
+        minHours: tier.minHours,
+        maxKm: tier.maxKm,
+        rangeDescription: `${maxKmDisplay} km`
+      }
+    }
+  }
+
+  // Fallback para última faixa (> 800km)
+  const lastTier = table.hourlyRates[table.hourlyRates.length - 1]
+  return {
+    rate: lastTier.rate,
+    minHours: lastTier.minHours,
+    maxKm: lastTier.maxKm,
+    rangeDescription: 'acima de 800 km'
+  }
+}
+
+/**
+ * Calcula o total de km dos deslocamentos
+ */
+function calculateTotalDisplacementKm(displacements, isNewClient) {
+  let totalKm = 0
+  for (const d of displacements) {
+    const normalizedKmOption = normalizeKmOption(d.km_option)
+    if (normalizedKmOption === 'sem_deslocamento') continue
+    if (normalizedKmOption === 'acima_100km' && d.km_total > 0) {
+      totalKm += parseFloat(d.km_total) || 0
+    } else if (normalizedKmOption === 'ate_50km') {
+      totalKm += 50
+    } else if (normalizedKmOption === 'ate_100km') {
+      totalKm += 100
+    }
+  }
+  return totalKm
+}
+
 /**
  * Formata quantidade de material - mostra inteiro se não tiver decimais
  * Ex: 1.00 → "1", 1.50 → "1.5", 2.75 → "2.75"
@@ -850,22 +933,33 @@ function recalculateConferenceTotals() {
   }, 0)
   console.log('💰 Total Materiais:', totalMaterials)
 
-  // 2. Calcula custo de deslocamentos
+  // 2. Calcula custo de deslocamentos e km total
   const isNewClient = currentConferenceOS.is_new_client || false
+  const totalKm = calculateTotalDisplacementKm(conferenceDisplacements, isNewClient)
   const displacementCost = conferenceDisplacements.reduce((sum, d) => {
     const cost = calculateDisplacementCost(d, isNewClient)
     console.log('🚗 Deslocamento:', d, '→ Custo:', cost)
     return sum + cost
   }, 0)
-  console.log('🚗 Total Deslocamentos:', displacementCost)
+  console.log('🚗 Total Deslocamentos:', displacementCost, '| KM Total:', totalKm)
 
-  // 3. Calcula custo de horas trabalhadas
-  const totalHours = calculateTotalHours()
-  // Usa taxa customizada se definida, senão usa padrão baseado em cliente novo (175) ou antigo (150)
-  const defaultRate = isNewClient ? 175 : 150
-  const hourlyRate = customHourlyRate !== null ? customHourlyRate : defaultRate
-  const hoursCost = totalHours * hourlyRate
-  console.log('⏱️ Horas:', totalHours, '× Taxa:', hourlyRate, `(${customHourlyRate !== null ? 'CUSTOM' : isNewClient ? 'NOVO' : 'ANTIGO'})`, '=', hoursCost)
+  // 3. Calcula custo de horas trabalhadas COM TAXA BASEADA EM DISTÂNCIA
+  const actualHours = calculateTotalHours()
+
+  // Obtém taxa e horas mínimas baseadas na distância total
+  const rateInfo = getHourlyRateByDistance(totalKm, isNewClient)
+
+  // Aplica horas mínimas (se customHourlyRate for null, aplica mínimo; se for custom, usuário controla)
+  const billableHours = customHourlyRate !== null ? actualHours : Math.max(actualHours, rateInfo.minHours)
+  const roundedBillableHours = Math.round(billableHours * 2) / 2 // Arredonda para 0.5h
+
+  // Usa taxa customizada se definida, senão usa taxa baseada em distância
+  const hourlyRate = customHourlyRate !== null ? customHourlyRate : rateInfo.rate
+  const hoursCost = roundedBillableHours * hourlyRate
+
+  console.log('📏 Distância Total:', totalKm, 'km → Faixa:', rateInfo.rangeDescription)
+  console.log('⏱️ Horas reais:', actualHours, '| Horas mín:', rateInfo.minHours, '| Horas faturáveis:', roundedBillableHours)
+  console.log('💵 Taxa:', hourlyRate, `(${customHourlyRate !== null ? 'CUSTOM' : 'distância'})`, '× Horas:', roundedBillableHours, '=', hoursCost)
 
   // 4. Calcula total de serviços adicionais
   const totalAdditionalServices = conferenceAdditionalServices.reduce((sum, s) => {
@@ -915,12 +1009,16 @@ function recalculateConferenceTotals() {
         ` : ''}
       </div>
       <div style="font-size: 0.75rem; color: ${isCustomRate ? '#f59e0b' : 'var(--text-secondary)'}; margin-top: 0.25rem;">
-        ${isCustomRate ? '⚠️ Valor customizado' : `Padrão: ${isNewClient ? 'Cliente Novo (R$ 175)' : 'Cliente Antigo (R$ 150)'}`}
+        ${isCustomRate
+          ? '⚠️ Valor customizado'
+          : `📏 ${totalKm}km → ${rateInfo.rangeDescription} = R$${rateInfo.rate}/h (${isNewClient ? 'Novo' : 'Antigo'})`
+        }
       </div>
     </div>
   `
 
   // Campo: Custo de Horas (calculado)
+  const hoursAppliedMin = roundedBillableHours > actualHours
   fieldsHTML += `
     <div>
       <label style="font-size: 0.875rem; color: var(--text-secondary); display: block; margin-bottom: 0.5rem;">
@@ -929,8 +1027,11 @@ function recalculateConferenceTotals() {
       <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 0.75rem; border-radius: 8px; font-size: 1.125rem; font-weight: 600; color: var(--text-primary);">
         ${formatter.format(hoursCost)}
       </div>
-      <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">
-        ${formatHoursReview(totalHours)} × ${formatter.format(hourlyRate)}/h
+      <div style="font-size: 0.75rem; color: ${hoursAppliedMin ? '#f59e0b' : 'var(--text-secondary)'}; margin-top: 0.25rem;">
+        ${hoursAppliedMin
+          ? `⚠️ ${formatHoursReview(actualHours)} → ${formatHoursReview(roundedBillableHours)} (mín ${rateInfo.minHours}h) × ${formatter.format(hourlyRate)}/h`
+          : `${formatHoursReview(roundedBillableHours)} × ${formatter.format(hourlyRate)}/h`
+        }
       </div>
     </div>
   `
