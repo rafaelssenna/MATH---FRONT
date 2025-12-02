@@ -134,8 +134,10 @@ function formatQuantity(qty) {
  * @returns {string} - Horas formatadas (ex: "4h 30min" ou "4h")
  */
 function formatHoursReview(decimalHours) {
-  const hours = Math.floor(decimalHours)
-  const minutes = Math.round((decimalHours - hours) * 60)
+  const num = parseFloat(decimalHours) || 0
+  if (isNaN(num) || num === 0) return '0h'
+  const hours = Math.floor(num)
+  const minutes = Math.round((num - hours) * 60)
   if (minutes === 0) return `${hours}h`
   return `${hours}h ${minutes}min`
 }

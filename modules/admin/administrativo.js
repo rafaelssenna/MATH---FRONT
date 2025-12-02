@@ -246,8 +246,10 @@ function parseAsLocalTime(dateString) {
  * @returns {string} - Horas formatadas (ex: "4h 30min" ou "4h")
  */
 function formatHours(decimalHours) {
-  const hours = Math.floor(decimalHours)
-  const minutes = Math.round((decimalHours - hours) * 60)
+  const num = parseFloat(decimalHours) || 0
+  if (isNaN(num) || num === 0) return '0h'
+  const hours = Math.floor(num)
+  const minutes = Math.round((num - hours) * 60)
   if (minutes === 0) return `${hours}h`
   return `${hours}h ${minutes}min`
 }
@@ -3203,7 +3205,7 @@ async function viewOSDetails(id) {
               </div>
               <div class="detail-field">
                   <label>Total de Horas (Geral)</label>
-                  <span>${currentOS.totalHoras}</span>
+                  <span>${currentOS.totalHoras || "0h"}</span>
               </div>
               ${
                 currentOS.maintenanceType
@@ -3378,7 +3380,7 @@ async function viewOSDetails(id) {
         <div class="detail-grid" style="margin-bottom: 1rem; padding: 0.75rem; background: var(--bg-input); border-radius: 8px;">
           <div class="detail-field">
             <label>Horas Trabalhadas</label>
-            <span>${currentOS.totalHoras ? formatHours(Number(currentOS.totalHoras)) : "0h"}</span>
+            <span>${currentOS.totalHoras || "0h"}</span>
           </div>
           <div class="detail-field">
             <label>Valor/Hora</label>
@@ -3581,7 +3583,7 @@ async function viewOSDetails(id) {
               </div>
               <div class="detail-field">
                   <label>Total de Horas</label>
-                  <span>${currentOS.totalHoras}</span>
+                  <span>${currentOS.totalHoras || "0h"}</span>
               </div>
           </div>
           <div class="detail-field" style="margin-top: 1rem;">
@@ -3605,48 +3607,88 @@ function closeModal() {
 
 /**
  * Pesquisa OS por número, cliente ou técnico.
+ * Busca diretamente da API para garantir dados atualizados.
  */
 function searchOS() {
-  const query = document.getElementById("adminSearch").value.toLowerCase()
-  const osList = JSON.parse(localStorage.getItem("osList") || "[]")
-  const filtered = osList.filter(
-    (os) =>
-      String(os.osNumber).toLowerCase().includes(query) ||
-      (os.cliente || "").toLowerCase().includes(query) ||
-      (os.assistenteTecnico || "").toLowerCase().includes(query)
-  )
+  const query = document.getElementById("adminSearch").value.trim()
   const container = document.getElementById("osList")
   if (!container) return
-  if (filtered.length === 0) {
-    container.innerHTML = '<p class="empty-state">Nenhuma OS encontrada</p>'
+
+  // Se não tem query, recarrega lista normal
+  if (!query) {
+    loadOSList()
     return
   }
-  container.innerHTML = filtered
-    .map(
-      (os) => `
-        <div class="os-card" onclick="viewOSDetails(${os.id})">
+
+  // Busca da API com o termo de pesquisa
+  const url = `${API_URL}/api/os?search=${encodeURIComponent(query)}&only_with_order_number=true`
+
+  container.innerHTML = '<p class="loading-state">Buscando...</p>'
+
+  fetch(url)
+    .then(res => {
+      if (!res.ok) throw new Error(`Erro: ${res.status}`)
+      return res.json()
+    })
+    .then(rows => {
+      const filtered = rows.filter(row => row.order_number !== null && row.order_number !== undefined)
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<p class="empty-state">Nenhuma OS encontrada para "' + escapeHtml(query) + '"</p>'
+        return
+      }
+
+      container.innerHTML = filtered.map(row => {
+        const status = row.status || 'assigned'
+        let statusLabel = ''
+        switch (status) {
+          case 'pending': statusLabel = 'Pendente'; break
+          case 'assigned': statusLabel = 'Atribuída'; break
+          case 'in_progress': statusLabel = 'Em Andamento'; break
+          case 'pending_review': statusLabel = 'Aguardando Conferência'; break
+          case 'completed': statusLabel = 'Concluída'; break
+          case 'archived': statusLabel = 'Arquivada'; break
+          default: statusLabel = status
+        }
+        const dataFormatada = row.scheduled_date || row.created_at
+          ? new Date(row.scheduled_date || row.created_at).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+          : 'N/A'
+        return `
+          <div class="os-card" data-os-id="${row.id}" style="cursor: pointer;">
             <div class="os-card-header">
-                <h3 class="os-card-title">O.S ${os.osNumber}</h3>
-                <span class="status-badge ${os.status}">${os.status === "pending" ? "Pendente" : "Concluída"}</span>
+              <h3 class="os-card-title">O.S ${row.order_number}</h3>
+              <span class="status-badge ${status}">${statusLabel}</span>
             </div>
             <div class="os-card-body">
-                <div class="os-card-field">
-                    <label>Cliente</label>
-                    <span>${os.cliente}</span>
-                </div>
-                <div class="os-card-field">
-                    <label>Técnico</label>
-                    <span>${os.assistenteTecnico}</span>
-                </div>
-                <div class="os-card-field">
-                    <label>Data</label>
-                    <span>${new Date(os.dataProgramada).toLocaleDateString("pt-BR")}</span>
-                </div>
+              <div class="os-card-field">
+                <label>Cliente</label>
+                <span>${escapeHtml(row.client_name || row.company_name || 'N/A')}</span>
+              </div>
+              <div class="os-card-field">
+                <label>Técnico</label>
+                <span>${escapeHtml(row.technician_username || 'N/A')}</span>
+              </div>
+              <div class="os-card-field">
+                <label>Data</label>
+                <span>${dataFormatada}</span>
+              </div>
             </div>
-        </div>
-    `
-    )
-    .join("")
+          </div>
+        `
+      }).join('')
+
+      // Adiciona evento de clique aos cards
+      container.querySelectorAll('.os-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const osId = card.dataset.osId
+          if (osId) viewOSDetails(parseInt(osId))
+        })
+      })
+    })
+    .catch(err => {
+      console.error('Erro na busca:', err)
+      container.innerHTML = '<p class="empty-state">Erro ao buscar OS</p>'
+    })
 }
 
 /**
