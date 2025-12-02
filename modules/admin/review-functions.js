@@ -350,6 +350,26 @@ async function openConferenceModal(osId) {
     conferenceDisplacements = currentConferenceOS.displacements || []
     conferenceAdditionalServices = currentConferenceOS.additional_services || []
 
+    // Verifica se há taxa customizada salva na OS
+    // Calcula a taxa padrão baseada na distância total para comparação
+    const savedRate = parseFloat(currentConferenceOS.effective_hourly_rate)
+    const isNewClient = currentConferenceOS.is_new_client || false
+
+    // Calcula KM total para determinar a faixa de preço correta
+    const totalKm = calculateTotalDisplacementKm(conferenceDisplacements, isNewClient)
+    const rateInfo = getHourlyRateByDistance(totalKm, isNewClient)
+    const defaultRateForDistance = rateInfo.rate
+
+    console.log('[OPEN] OS carregada - isNew:', isNewClient, 'totalKm:', totalKm, 'savedRate:', savedRate, 'defaultRate:', defaultRateForDistance)
+
+    if (!isNaN(savedRate) && savedRate > 0 && savedRate !== defaultRateForDistance) {
+      customHourlyRate = savedRate
+      console.log('[OPEN] Taxa customizada carregada do banco:', customHourlyRate)
+    } else {
+      customHourlyRate = null
+      console.log('[OPEN] Usando taxa padrão (nenhuma customização salva)')
+    }
+
     // Abre modal de edição completo
     renderConferenceModal()
     document.getElementById('conferenceModal').style.display = 'flex'
@@ -1160,14 +1180,18 @@ function updateCustomHourlyRate(value) {
     return
   }
 
+  // Calcula a taxa padrão correta baseada na distância atual
   const isNewClient = currentConferenceOS?.is_new_client || false
-  const defaultRate = isNewClient ? 175 : 150
+  const totalKm = calculateTotalDisplacementKm(conferenceDisplacements, isNewClient)
+  const rateInfo = getHourlyRateByDistance(totalKm, isNewClient)
+  const defaultRateForDistance = rateInfo.rate
 
-  // Se o valor for igual ao padrão simples (150/175), não marca como custom
-  // Mas qualquer outro valor, mesmo que seja igual à taxa por distância, é considerado custom
-  if (numValue === defaultRate) {
+  console.log('[CUSTOM RATE] totalKm:', totalKm, 'defaultRate:', defaultRateForDistance)
+
+  // Se o valor for igual à taxa padrão para a distância atual, não marca como custom
+  if (numValue === defaultRateForDistance) {
     customHourlyRate = null
-    console.log('[CUSTOM RATE] Valor igual ao padrão básico, usando null')
+    console.log('[CUSTOM RATE] Valor igual à taxa padrão por distância, usando null')
   } else {
     customHourlyRate = numValue
     console.log('[CUSTOM RATE] Valor customizado definido:', customHourlyRate)
