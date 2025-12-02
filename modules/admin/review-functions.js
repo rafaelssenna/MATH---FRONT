@@ -1362,10 +1362,12 @@ async function approveConferenceOS() {
     }, 0)
 
     const totalHours = calculateTotalHours()
-    // Usa taxa customizada se definida, senão usa padrão
+    // Usa taxa customizada se definida, senão usa padrão para exibição
     const defaultRate = isNewClient ? 175 : 150
     const hourlyRate = customHourlyRate !== null ? customHourlyRate : defaultRate
     const hoursCost = totalHours * hourlyRate
+    // Para enviar ao backend: envia null se não foi customizado (backend calculará baseado em distância)
+    const effectiveRateToSend = customHourlyRate !== null ? customHourlyRate : null
 
     const totalAdditionalServices = conferenceAdditionalServices.reduce((sum, s) => {
       return sum + (parseFloat(s.value) || 0)
@@ -1388,7 +1390,7 @@ async function approveConferenceOS() {
         maintenance_type: selectedMaintenanceType, // Tipo de manutenção selecionado
         service_description: document.getElementById('conferenceServiceDesc').value,
         is_new_client: isNewClient, // Envia o tipo de cliente atualizado
-        effective_hourly_rate: hourlyRate, // Taxa efetiva usada nesta OS
+        effective_hourly_rate: effectiveRateToSend, // Taxa customizada (null = usar cálculo por distância)
         value_service: totalAdditionalServices, // Soma dos serviços adicionais
         total_service_cost: totalServiceCost,
         total_material_cost: totalMaterials,
@@ -1444,6 +1446,8 @@ async function saveConferenceChanges() {
     const defaultRate = isNewClient ? 175 : 150
     const hourlyRate = customHourlyRate !== null ? customHourlyRate : defaultRate
     const hoursCost = totalHours * hourlyRate
+    // Para enviar ao backend: envia null se não foi customizado (backend calculará baseado em distância)
+    const effectiveRateToSend = customHourlyRate !== null ? customHourlyRate : null
 
     const totalAdditionalServices = conferenceAdditionalServices.reduce((sum, s) => {
       return sum + (parseFloat(s.value) || 0)
@@ -1465,6 +1469,7 @@ async function saveConferenceChanges() {
       company_id: selectedCompanyId,
       machine_id: selectedMachineId,
       grandTotal,
+      customHourlyRate: effectiveRateToSend,
       materials: conferenceMaterials.length,
       worklogs: conferenceWorklogs.length,
       displacements: conferenceDisplacements.length
@@ -1480,7 +1485,7 @@ async function saveConferenceChanges() {
         service_description: document.getElementById('conferenceServiceDesc')?.value || null,
         observations: observations,
         is_new_client: isNewClient,
-        effective_hourly_rate: hourlyRate,
+        effective_hourly_rate: effectiveRateToSend,
         value_service: totalAdditionalServices,
         total_service_cost: totalServiceCost,
         total_material_cost: totalMaterials,
