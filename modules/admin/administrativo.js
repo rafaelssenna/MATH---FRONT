@@ -10213,6 +10213,14 @@ async function abrirBoleto(idCobranca) {
 
     if (!response.ok) {
       const error = await response.json()
+
+      // Mensagem amigável se boleto não existe
+      if (response.status === 404) {
+        showToast('Boleto não gerado. Gere no Conta Azul primeiro.', 'warning')
+        console.log('Dica:', error.hint || error.action)
+        return
+      }
+
       throw new Error(error.error || 'Erro ao buscar boleto')
     }
 
@@ -10227,7 +10235,7 @@ async function abrirBoleto(idCobranca) {
     }
   } catch (error) {
     console.error('Erro ao abrir boleto:', error)
-    showToast(`Erro ao abrir boleto: ${error.message}`, 'error')
+    showToast(`Erro: ${error.message}`, 'error')
   }
 }
 
