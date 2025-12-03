@@ -9947,3 +9947,227 @@ window.testCategoriasContaAzul = testCategoriasContaAzul
 window.buscarNotasFiscais = buscarNotasFiscais
 window.downloadNotaFiscalXML = downloadNotaFiscalXML
 window.downloadNotaFiscalPDF = downloadNotaFiscalPDF
+
+// ============================================================
+// CONTA AZUL - Boletos / Contas a Receber
+// ============================================================
+
+/**
+ * Atualiza o status da conexao na secao de boletos
+ */
+function updateBoletosStatusUI(status) {
+  const indicator = document.getElementById('boletosStatusIndicator')
+  const statusText = document.getElementById('boletosStatusText')
+  const connectBtn = document.getElementById('boletosConnectBtn')
+
+  if (indicator && statusText) {
+    if (status.connected && status.isValid) {
+      indicator.style.background = '#22c55e'
+      statusText.textContent = 'Conectado ao Conta Azul'
+      if (connectBtn) connectBtn.style.display = 'none'
+    } else if (status.connected && !status.isValid) {
+      indicator.style.background = '#f59e0b'
+      statusText.textContent = 'Token expirado - reconecte'
+      if (connectBtn) connectBtn.style.display = 'flex'
+    } else {
+      indicator.style.background = '#ef4444'
+      statusText.textContent = 'Nao conectado'
+      if (connectBtn) connectBtn.style.display = 'flex'
+    }
+  }
+}
+
+/**
+ * Busca boletos por periodo
+ */
+async function buscarBoletos() {
+  const dataInicial = document.getElementById('boletoDataInicial')?.value
+  const dataFinal = document.getElementById('boletoDataFinal')?.value
+  const listContainer = document.getElementById('boletosList')
+  const countSpan = document.getElementById('boletoResultCount')
+
+  if (!dataInicial || !dataFinal) {
+    showToast('Informe as datas inicial e final', 'warning')
+    return
+  }
+
+  if (listContainer) {
+    listContainer.innerHTML = '<p style="text-align: center; padding: 2rem;"><span class="spinner"></span> Buscando boletos...</p>'
+  }
+
+  try {
+    let url = `${API_URL}/api/contaazul/boletos?data_inicio=${dataInicial}&data_fim=${dataFinal}`
+
+    const response = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || 'Erro ao buscar boletos')
+    }
+
+    const data = await response.json()
+    const boletos = Array.isArray(data) ? data : (data.itens || data.items || [])
+
+    if (countSpan) {
+      countSpan.textContent = `${boletos.length} resultado(s)`
+    }
+
+    if (boletos.length === 0) {
+      if (listContainer) {
+        listContainer.innerHTML = '<p class="empty-state">Nenhum boleto encontrado no periodo informado</p>'
+      }
+      return
+    }
+
+    renderBoletos(boletos)
+  } catch (err) {
+    console.error('[Boletos] Erro ao buscar:', err)
+    showToast(err.message || 'Erro ao buscar boletos', 'error')
+    if (listContainer) {
+      listContainer.innerHTML = `<p class="empty-state" style="color: var(--danger);">Erro: ${err.message}</p>`
+    }
+  }
+}
+
+/**
+ * Renderiza a lista de boletos
+ */
+function renderBoletos(boletos) {
+  const listContainer = document.getElementById('boletosList')
+  if (!listContainer) return
+
+  const html = boletos.map(boleto => {
+    const descricao = boleto.descricao || boleto.description || boleto.nome || '-'
+    const valor = boleto.valor || boleto.value || boleto.valor_total || 0
+    const dataVencimento = boleto.data_vencimento || boleto.due_date || boleto.vencimento || '-'
+    const status = boleto.status || boleto.situacao || '-'
+    const cliente = boleto.cliente?.nome || boleto.customer?.name || boleto.nome_cliente || '-'
+    const parcelas = boleto.parcelas || []
+
+    // Formata valor
+    const valorFormatado = typeof valor === 'number'
+      ? valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+      : `R$ ${valor}`
+
+    // Formata data
+    let dataFormatada = '-'
+    if (dataVencimento && dataVencimento !== '-') {
+      try {
+        const dt = new Date(dataVencimento)
+        dataFormatada = dt.toLocaleDateString('pt-BR')
+      } catch {
+        dataFormatada = dataVencimento
+      }
+    }
+
+    // Badge de status
+    const statusClass = {
+      'PAGO': 'status-completed',
+      'PAID': 'status-completed',
+      'pago': 'status-completed',
+      'PENDENTE': 'status-pending',
+      'PENDING': 'status-pending',
+      'pendente': 'status-pending',
+      'VENCIDO': 'status-overdue',
+      'OVERDUE': 'status-overdue',
+      'vencido': 'status-overdue',
+      'CANCELADO': 'status-cancelled',
+      'CANCELLED': 'status-cancelled'
+    }[status] || 'status-pending'
+
+    // Renderiza parcelas se existirem
+    let parcelasHtml = ''
+    if (parcelas.length > 0) {
+      parcelasHtml = `
+        <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color);">
+          <strong style="font-size: 0.8rem; color: var(--text-secondary);">Parcelas (${parcelas.length}):</strong>
+          <div style="margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem;">
+            ${parcelas.map((p, idx) => {
+              const pValor = p.valor || p.value || 0
+              const pData = p.data_vencimento || p.due_date || '-'
+              const pStatus = p.status || p.situacao || '-'
+              let pDataFmt = pData
+              try {
+                if (pData && pData !== '-') {
+                  pDataFmt = new Date(pData).toLocaleDateString('pt-BR')
+                }
+              } catch {}
+              const pValorFmt = typeof pValor === 'number'
+                ? pValor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+                : `R$ ${pValor}`
+              return `
+                <div style="background: var(--bg-input); padding: 0.5rem 0.75rem; border-radius: 6px; font-size: 0.8rem;">
+                  <div><strong>#${idx + 1}</strong> - ${pValorFmt}</div>
+                  <div style="color: var(--text-secondary);">Venc: ${pDataFmt}</div>
+                  <div style="color: var(--text-secondary);">Status: ${pStatus}</div>
+                </div>
+              `
+            }).join('')}
+          </div>
+        </div>
+      `
+    }
+
+    return `
+      <div class="boleto-item" style="padding: 1rem; border-bottom: 1px solid var(--border-color);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+          <div>
+            <strong style="font-size: 1rem;">${escapeHtml(descricao)}</strong>
+            <div style="color: var(--text-secondary); font-size: 0.875rem; margin-top: 0.25rem;">
+              Cliente: ${escapeHtml(cliente)}
+            </div>
+          </div>
+          <span class="${statusClass}" style="padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">
+            ${status}
+          </span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; font-size: 0.875rem;">
+          <div>
+            <span style="color: var(--text-secondary);">Valor:</span>
+            <strong style="color: var(--primary);">${valorFormatado}</strong>
+          </div>
+          <div>
+            <span style="color: var(--text-secondary);">Vencimento:</span>
+            <strong>${dataFormatada}</strong>
+          </div>
+        </div>
+        ${parcelasHtml}
+      </div>
+    `
+  }).join('')
+
+  listContainer.innerHTML = html || '<p class="empty-state">Nenhum boleto encontrado</p>'
+}
+
+// Expoe funcoes de boletos globalmente
+window.buscarBoletos = buscarBoletos
+
+// Atualiza showSection para tambem verificar status na secao de boletos
+const originalShowSectionBoletos = window.showSection
+if (typeof originalShowSectionBoletos === 'function') {
+  window.showSection = function(sectionId) {
+    originalShowSectionBoletos(sectionId)
+    if (sectionId === 'boletosSection') {
+      // Verifica status e atualiza UI de boletos
+      checkContaAzulStatus().then(status => {
+        updateBoletosStatusUI(status)
+      })
+      // Define datas padrao (ultimos 30 dias)
+      const hoje = new Date()
+      const trintaDiasAtras = new Date(hoje)
+      trintaDiasAtras.setDate(hoje.getDate() - 30)
+
+      const boletoDataFinal = document.getElementById('boletoDataFinal')
+      const boletoDataInicial = document.getElementById('boletoDataInicial')
+
+      if (boletoDataFinal && !boletoDataFinal.value) {
+        boletoDataFinal.value = hoje.toISOString().split('T')[0]
+      }
+      if (boletoDataInicial && !boletoDataInicial.value) {
+        boletoDataInicial.value = trintaDiasAtras.toISOString().split('T')[0]
+      }
+    }
+  }
+}

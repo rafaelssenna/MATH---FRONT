@@ -344,6 +344,15 @@
                                     </svg>
                                     Notas Fiscais
                                 </li>
+                                <li data-section="boletosSection" id="boletosNavItem">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                                        <line x1="1" y1="10" x2="23" y2="10"/>
+                                        <line x1="6" y1="16" x2="6" y2="16"/>
+                                        <line x1="10" y1="16" x2="18" y2="16"/>
+                                    </svg>
+                                    Boletos
+                                </li>
                                 <li data-section="contaAzulSection" id="contaAzulNavItem">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M12 2L2 7l10 5 10-5-10-5z"/>
@@ -1309,6 +1318,71 @@
                             </div>
                             <div id="notasFiscaisList" style="padding: 1rem;">
                                 <p class="empty-state">Use os filtros acima para buscar notas fiscais</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Seção de Boletos (Conta Azul) -->
+                    <section id="boletosSection" class="admin-page" style="display:none">
+                        <div class="page-header">
+                            <div>
+                                <h1>Boletos / Contas a Receber</h1>
+                                <p>Consulte boletos e contas a receber do Conta Azul</p>
+                            </div>
+                        </div>
+
+                        <!-- Status da conexão -->
+                        <div id="boletosStatusCard" class="card" style="margin-bottom: 1.5rem;">
+                            <div style="padding: 1rem; display: flex; align-items: center; justify-content: space-between;">
+                                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                    <div id="boletosStatusIndicator" style="width: 12px; height: 12px; border-radius: 50%; background: #ef4444;"></div>
+                                    <span id="boletosStatusText">Verificando conexao...</span>
+                                </div>
+                                <button id="boletosConnectBtn" class="btn-primary" onclick="connectContaAzul()" style="display: none;">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                        <path d="M2 17l10 5 10-5"/>
+                                        <path d="M2 12l10 5 10-5"/>
+                                    </svg>
+                                    Conectar Conta Azul
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Filtros de busca -->
+                        <div class="card" style="margin-bottom: 1.5rem;">
+                            <div class="card-header">
+                                <h3>Buscar Boletos</h3>
+                            </div>
+                            <div style="padding: 1rem;">
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                                    <div class="form-group">
+                                        <label for="boletoDataInicial">Data Inicial *</label>
+                                        <input type="date" id="boletoDataInicial" style="width: 100%; padding: 0.5rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary);">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="boletoDataFinal">Data Final *</label>
+                                        <input type="date" id="boletoDataFinal" style="width: 100%; padding: 0.5rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary);">
+                                    </div>
+                                </div>
+                                <button class="btn-primary" onclick="buscarBoletos()">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="11" cy="11" r="8"/>
+                                        <path d="m21 21-4.35-4.35"/>
+                                    </svg>
+                                    Buscar Boletos
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Resultados -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Resultados</h3>
+                                <span id="boletoResultCount" style="color: var(--text-secondary); font-size: 0.875rem;"></span>
+                            </div>
+                            <div id="boletosList" style="padding: 1rem;">
+                                <p class="empty-state">Use os filtros acima para buscar boletos</p>
                             </div>
                         </div>
                     </section>
