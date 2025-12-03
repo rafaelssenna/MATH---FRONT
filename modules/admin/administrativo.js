@@ -10032,114 +10032,160 @@ async function buscarBoletos() {
 }
 
 /**
- * Renderiza a lista de boletos
+ * Renderiza a lista de parcelas a receber
  */
 function renderBoletos(boletos) {
   const listContainer = document.getElementById('boletosList')
   if (!listContainer) return
 
   const html = boletos.map(boleto => {
-    const descricao = boleto.descricao || boleto.description || boleto.nome || '-'
-    const valor = boleto.valor || boleto.value || boleto.valor_total || 0
-    const dataVencimento = boleto.data_vencimento || boleto.due_date || boleto.vencimento || '-'
-    const status = boleto.status || boleto.situacao || '-'
-    const cliente = boleto.cliente?.nome || boleto.customer?.name || boleto.nome_cliente || '-'
-    const parcelas = boleto.parcelas || []
+    const descricao = boleto.descricao || '-'
+    const valor = boleto.valor || 0
+    const valorPago = boleto.valor_pago || 0
+    const valorPendente = boleto.valor_pendente || 0
+    const dataVencimento = boleto.data_vencimento || '-'
+    const status = boleto.status || '-'
+    const statusTraduzido = boleto.status_traduzido || status
+    const cliente = boleto.cliente || '-'
+    const numeroVenda = boleto.numero_venda
 
-    // Formata valor
-    const valorFormatado = typeof valor === 'number'
-      ? valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-      : `R$ ${valor}`
+    // Formata valores
+    const formatarMoeda = (v) => typeof v === 'number'
+      ? v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+      : 'R$ 0,00'
+
+    const valorFormatado = formatarMoeda(valor)
+    const valorPagoFormatado = formatarMoeda(valorPago)
+    const valorPendenteFormatado = formatarMoeda(valorPendente)
 
     // Formata data
     let dataFormatada = '-'
     if (dataVencimento && dataVencimento !== '-') {
       try {
-        const dt = new Date(dataVencimento)
+        const dt = new Date(dataVencimento + 'T00:00:00')
         dataFormatada = dt.toLocaleDateString('pt-BR')
       } catch {
         dataFormatada = dataVencimento
       }
     }
 
-    // Badge de status
-    const statusClass = {
-      'PAGO': 'status-completed',
-      'PAID': 'status-completed',
-      'pago': 'status-completed',
-      'PENDENTE': 'status-pending',
-      'PENDING': 'status-pending',
-      'pendente': 'status-pending',
-      'VENCIDO': 'status-overdue',
-      'OVERDUE': 'status-overdue',
-      'vencido': 'status-overdue',
-      'CANCELADO': 'status-cancelled',
-      'CANCELLED': 'status-cancelled'
-    }[status] || 'status-pending'
-
-    // Renderiza parcelas se existirem
-    let parcelasHtml = ''
-    if (parcelas.length > 0) {
-      parcelasHtml = `
-        <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color);">
-          <strong style="font-size: 0.8rem; color: var(--text-secondary);">Parcelas (${parcelas.length}):</strong>
-          <div style="margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem;">
-            ${parcelas.map((p, idx) => {
-              const pValor = p.valor || p.value || 0
-              const pData = p.data_vencimento || p.due_date || '-'
-              const pStatus = p.status || p.situacao || '-'
-              let pDataFmt = pData
-              try {
-                if (pData && pData !== '-') {
-                  pDataFmt = new Date(pData).toLocaleDateString('pt-BR')
-                }
-              } catch {}
-              const pValorFmt = typeof pValor === 'number'
-                ? pValor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-                : `R$ ${pValor}`
-              return `
-                <div style="background: var(--bg-input); padding: 0.5rem 0.75rem; border-radius: 6px; font-size: 0.8rem;">
-                  <div><strong>#${idx + 1}</strong> - ${pValorFmt}</div>
-                  <div style="color: var(--text-secondary);">Venc: ${pDataFmt}</div>
-                  <div style="color: var(--text-secondary);">Status: ${pStatus}</div>
-                </div>
-              `
-            }).join('')}
-          </div>
-        </div>
-      `
+    // Badge de status com cores
+    const statusConfig = {
+      'ACQUITTED': { class: 'status-completed', label: 'Recebido', bg: '#10b981' },
+      'RECEBIDO': { class: 'status-completed', label: 'Recebido', bg: '#10b981' },
+      'PAGO': { class: 'status-completed', label: 'Pago', bg: '#10b981' },
+      'PAID': { class: 'status-completed', label: 'Pago', bg: '#10b981' },
+      'PENDENTE': { class: 'status-pending', label: 'Pendente', bg: '#f59e0b' },
+      'PENDING': { class: 'status-pending', label: 'Pendente', bg: '#f59e0b' },
+      'EM_ABERTO': { class: 'status-pending', label: 'Em Aberto', bg: '#f59e0b' },
+      'VENCIDO': { class: 'status-overdue', label: 'Vencido', bg: '#ef4444' },
+      'ATRASADO': { class: 'status-overdue', label: 'Atrasado', bg: '#ef4444' },
+      'OVERDUE': { class: 'status-overdue', label: 'Vencido', bg: '#ef4444' },
+      'CANCELADO': { class: 'status-cancelled', label: 'Cancelado', bg: '#6b7280' },
+      'CANCELLED': { class: 'status-cancelled', label: 'Cancelado', bg: '#6b7280' }
     }
+    const statusInfo = statusConfig[status] || { class: 'status-pending', label: statusTraduzido || status, bg: '#6b7280' }
+
+    // Botão de PDF se tiver número da venda
+    const pdfButton = numeroVenda ? `
+      <button onclick="downloadVendaPDF('${numeroVenda}')"
+              style="background: var(--primary); color: white; border: none; padding: 0.4rem 0.75rem;
+                     border-radius: 6px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; gap: 0.3rem;"
+              title="Baixar PDF da Venda">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        PDF
+      </button>
+    ` : ''
 
     return `
-      <div class="boleto-item" style="padding: 1rem; border-bottom: 1px solid var(--border-color);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-          <div>
-            <strong style="font-size: 1rem;">${escapeHtml(descricao)}</strong>
+      <div class="boleto-item" style="padding: 1rem; border-bottom: 1px solid var(--border-color); background: var(--bg-card);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+          <div style="flex: 1;">
+            <strong style="font-size: 1rem; color: var(--text-primary);">${escapeHtml(descricao)}</strong>
             <div style="color: var(--text-secondary); font-size: 0.875rem; margin-top: 0.25rem;">
-              Cliente: ${escapeHtml(cliente)}
+              ${escapeHtml(cliente)}
             </div>
           </div>
-          <span class="${statusClass}" style="padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">
-            ${status}
-          </span>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            ${pdfButton}
+            <span style="background: ${statusInfo.bg}; color: white; padding: 0.25rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">
+              ${statusInfo.label}
+            </span>
+          </div>
         </div>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; font-size: 0.875rem;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem; font-size: 0.875rem;">
           <div>
-            <span style="color: var(--text-secondary);">Valor:</span>
-            <strong style="color: var(--primary);">${valorFormatado}</strong>
+            <span style="color: var(--text-secondary); display: block; font-size: 0.75rem;">Total</span>
+            <strong style="color: var(--primary); font-size: 1.1rem;">${valorFormatado}</strong>
           </div>
           <div>
-            <span style="color: var(--text-secondary);">Vencimento:</span>
+            <span style="color: var(--text-secondary); display: block; font-size: 0.75rem;">Recebido</span>
+            <strong style="color: #10b981;">${valorPagoFormatado}</strong>
+          </div>
+          <div>
+            <span style="color: var(--text-secondary); display: block; font-size: 0.75rem;">Pendente</span>
+            <strong style="color: ${valorPendente > 0 ? '#ef4444' : 'var(--text-primary)'};">${valorPendenteFormatado}</strong>
+          </div>
+          <div>
+            <span style="color: var(--text-secondary); display: block; font-size: 0.75rem;">Vencimento</span>
             <strong>${dataFormatada}</strong>
           </div>
         </div>
-        ${parcelasHtml}
       </div>
     `
   }).join('')
 
-  listContainer.innerHTML = html || '<p class="empty-state">Nenhum boleto encontrado</p>'
+  listContainer.innerHTML = html || '<p class="empty-state">Nenhuma parcela a receber encontrada</p>'
 }
+
+/**
+ * Baixa o PDF de uma venda
+ */
+async function downloadVendaPDF(numeroVenda) {
+  const token = localStorage.getItem('adminToken')
+  if (!token) {
+    showToast('Faça login para baixar o PDF', 'error')
+    return
+  }
+
+  try {
+    showToast('Gerando PDF...', 'info')
+
+    const response = await fetch(`${API_URL}/api/contaazul/vendas/${numeroVenda}/pdf`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+
+    if (!response.ok) {
+      const error = await response.text()
+      throw new Error(error || 'Erro ao gerar PDF')
+    }
+
+    // Baixa o arquivo
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `Venda-${numeroVenda}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    window.URL.revokeObjectURL(url)
+
+    showToast('PDF baixado com sucesso!', 'success')
+  } catch (error) {
+    console.error('Erro ao baixar PDF:', error)
+    showToast(`Erro ao baixar PDF: ${error.message}`, 'error')
+  }
+}
+
+// Expoe função de download PDF globalmente
+window.downloadVendaPDF = downloadVendaPDF
 
 // Expoe funcoes de boletos globalmente
 window.buscarBoletos = buscarBoletos
