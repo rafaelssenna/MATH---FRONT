@@ -1144,23 +1144,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
   initializeTheme()
 
-  // Remove loading após tempo mínimo e carrega dados em background
+  // Remove loading imediatamente para liberar interação
+  // Dados são carregados em background de forma não-bloqueante
   function initializeSystem() {
-    const startTime = Date.now()
-
-    // Pré-carrega dados em background
-    preloadSystemData().catch(err => {
-      console.warn('Aviso: Alguns dados não foram pré-carregados:', err)
-    })
-
-    // Aguarda mínimo de 800ms para mostrar o loading (bonito mas rápido)
-    const minLoadTime = 800
-    const elapsed = Date.now() - startTime
-    const remaining = Math.max(0, minLoadTime - elapsed)
-
+    // Esconde loading rapidamente (300ms para animação suave)
     setTimeout(() => {
       hideLoadingScreen()
-    }, remaining)
+    }, 300)
+
+    // Pré-carrega dados em background DEPOIS que a UI estiver interativa
+    // Usa requestIdleCallback se disponível, senão setTimeout com delay
+    const loadDataInBackground = () => {
+      preloadSystemData().catch(err => {
+        console.warn('Aviso: Alguns dados não foram pré-carregados:', err)
+      })
+    }
+
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(loadDataInBackground, { timeout: 2000 })
+    } else {
+      setTimeout(loadDataInBackground, 100)
+    }
   }
 
   initializeSystem()
