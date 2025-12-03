@@ -9767,7 +9767,17 @@ function renderNotasFiscais(notas) {
         </div>
       </div>
       ${chave ? `
-        <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color);">
+        <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color); display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button class="btn-primary" onclick="downloadNotaFiscalPDF('${chave}')" style="font-size: 0.875rem; padding: 0.5rem 1rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+            Baixar PDF
+          </button>
           <button class="btn-secondary" onclick="downloadNotaFiscalXML('${chave}')" style="font-size: 0.875rem; padding: 0.5rem 1rem;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -9868,6 +9878,41 @@ async function downloadNotaFiscalXML(chave) {
   }
 }
 
+/**
+ * Baixa o PDF (DANFE) de uma nota fiscal
+ */
+async function downloadNotaFiscalPDF(chave) {
+  try {
+    showToast('Gerando PDF...', 'info')
+
+    const response = await fetch(`${API_URL}/api/contaazul/notas-fiscais/${chave}/pdf`, {
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+    })
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Erro ao gerar PDF' }))
+      throw new Error(error.error || 'Erro ao gerar PDF')
+    }
+
+    const blob = await response.blob()
+
+    // Faz download do PDF
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `NF_${chave.substring(0, 20)}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+
+    showToast('PDF baixado com sucesso!', 'success')
+  } catch (err) {
+    console.error('[ContaAzul] Erro ao baixar PDF:', err)
+    showToast(err.message || 'Erro ao gerar PDF', 'error')
+  }
+}
+
 // Inicializa verificação de status quando entrar nas seções fiscais
 const originalShowSection = window.showSection
 if (typeof originalShowSection === 'function') {
@@ -9901,3 +9946,4 @@ window.testContaAzulConnection = testContaAzulConnection
 window.testCategoriasContaAzul = testCategoriasContaAzul
 window.buscarNotasFiscais = buscarNotasFiscais
 window.downloadNotaFiscalXML = downloadNotaFiscalXML
+window.downloadNotaFiscalPDF = downloadNotaFiscalPDF
