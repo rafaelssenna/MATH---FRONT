@@ -9460,7 +9460,7 @@ window.rejectPurchaseOrder = rejectPurchaseOrder
 async function checkContaAzulStatus() {
   try {
     const response = await fetch(`${API_URL}/api/contaazul/status`, {
-      headers: { 'Authorization': `Bearer ${window.adminToken}` }
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
     })
     const data = await response.json()
 
@@ -9553,7 +9553,7 @@ async function connectContaAzul() {
     showToast('Redirecionando para o Conta Azul...', 'info')
 
     const response = await fetch(`${API_URL}/api/contaazul/auth-url`, {
-      headers: { 'Authorization': `Bearer ${window.adminToken}` }
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
     })
 
     const data = await response.json()
@@ -9579,7 +9579,7 @@ async function disconnectContaAzul() {
   try {
     const response = await fetch(`${API_URL}/api/contaazul/disconnect`, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${window.adminToken}` }
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
     })
 
     const data = await response.json()
@@ -9604,7 +9604,7 @@ async function testContaAzulConnection() {
     showToast('Testando conexão...', 'info')
 
     const response = await fetch(`${API_URL}/api/contaazul/categorias`, {
-      headers: { 'Authorization': `Bearer ${window.adminToken}` }
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
     })
 
     const data = await response.json()
@@ -9632,7 +9632,7 @@ async function testCategoriasContaAzul() {
     if (resultPre) resultPre.textContent = 'Buscando categorias...'
 
     const response = await fetch(`${API_URL}/api/contaazul/categorias`, {
-      headers: { 'Authorization': `Bearer ${window.adminToken}` }
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
     })
 
     const data = await response.json()
@@ -9692,7 +9692,7 @@ async function buscarNotasFiscais() {
     }
 
     const response = await fetch(url, {
-      headers: { 'Authorization': `Bearer ${window.adminToken}` }
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
     })
 
     const data = await response.json()
@@ -9832,7 +9832,7 @@ async function downloadNotaFiscalXML(chave) {
     showToast('Baixando XML...', 'info')
 
     const response = await fetch(`${API_URL}/api/contaazul/notas-fiscais/${chave}`, {
-      headers: { 'Authorization': `Bearer ${window.adminToken}` }
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
     })
 
     if (!response.ok) {
