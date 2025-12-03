@@ -9449,3 +9449,447 @@ window.openNewPurchaseOrderModal = openNewPurchaseOrderModal
 window.closeNewPurchaseOrderModal = closeNewPurchaseOrderModal
 window.approvePurchaseOrder = approvePurchaseOrder
 window.rejectPurchaseOrder = rejectPurchaseOrder
+
+// ============================================================
+// CONTA AZUL - Integração de Notas Fiscais
+// ============================================================
+
+/**
+ * Verifica o status da conexão com Conta Azul
+ */
+async function checkContaAzulStatus() {
+  try {
+    const response = await fetch(`${API_URL}/api/contaazul/status`, {
+      headers: { 'Authorization': `Bearer ${window.adminToken}` }
+    })
+    const data = await response.json()
+
+    updateContaAzulStatusUI(data)
+    return data
+  } catch (err) {
+    console.error('[ContaAzul] Erro ao verificar status:', err)
+    updateContaAzulStatusUI({ connected: false, error: err.message })
+    return { connected: false }
+  }
+}
+
+/**
+ * Atualiza a interface com o status da conexão
+ */
+function updateContaAzulStatusUI(status) {
+  // Atualiza indicador na seção Fiscal
+  const indicator = document.getElementById('contaAzulStatusIndicator')
+  const statusText = document.getElementById('contaAzulStatusText')
+  const connectBtn = document.getElementById('contaAzulConnectBtn')
+
+  if (indicator && statusText) {
+    if (status.connected && status.isValid) {
+      indicator.style.background = '#22c55e'
+      statusText.textContent = 'Conectado ao Conta Azul'
+      if (connectBtn) connectBtn.style.display = 'none'
+    } else if (status.connected && !status.isValid) {
+      indicator.style.background = '#f59e0b'
+      statusText.textContent = 'Token expirado - reconecte'
+      if (connectBtn) connectBtn.style.display = 'flex'
+    } else {
+      indicator.style.background = '#ef4444'
+      statusText.textContent = 'Não conectado'
+      if (connectBtn) connectBtn.style.display = 'flex'
+    }
+  }
+
+  // Atualiza seção de Conexão Conta Azul
+  const statusIcon = document.getElementById('connectionStatusIcon')
+  const statusTitle = document.getElementById('connectionStatusTitle')
+  const statusDesc = document.getElementById('connectionStatusDesc')
+  const connectionDetails = document.getElementById('connectionDetails')
+  const btnConnect = document.getElementById('btnConnectContaAzul')
+  const btnTest = document.getElementById('btnTestConnection')
+  const btnDisconnect = document.getElementById('btnDisconnect')
+
+  if (statusIcon && statusTitle) {
+    if (status.connected && status.isValid) {
+      statusIcon.style.background = 'rgba(34, 197, 94, 0.1)'
+      statusIcon.innerHTML = `<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>`
+      statusTitle.textContent = 'Conectado'
+      statusTitle.style.color = '#22c55e'
+      statusDesc.textContent = 'A integração com o Conta Azul está ativa'
+
+      if (connectionDetails) {
+        connectionDetails.style.display = 'block'
+        document.getElementById('tokenExpiresAt').textContent = new Date(status.expiresAt).toLocaleString('pt-BR')
+        document.getElementById('tokenUpdatedAt').textContent = new Date(status.updatedAt).toLocaleString('pt-BR')
+      }
+
+      if (btnConnect) btnConnect.style.display = 'none'
+      if (btnTest) btnTest.style.display = 'flex'
+      if (btnDisconnect) btnDisconnect.style.display = 'flex'
+    } else {
+      statusIcon.style.background = 'rgba(239, 68, 68, 0.1)'
+      statusIcon.innerHTML = `<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="15" y1="9" x2="9" y2="15"/>
+        <line x1="9" y1="9" x2="15" y2="15"/>
+      </svg>`
+      statusTitle.textContent = 'Desconectado'
+      statusTitle.style.color = '#ef4444'
+      statusDesc.textContent = status.error || 'Conecte-se ao Conta Azul para buscar notas fiscais'
+
+      if (connectionDetails) connectionDetails.style.display = 'none'
+      if (btnConnect) btnConnect.style.display = 'flex'
+      if (btnTest) btnTest.style.display = 'none'
+      if (btnDisconnect) btnDisconnect.style.display = 'none'
+    }
+  }
+}
+
+/**
+ * Inicia o fluxo de conexão OAuth com Conta Azul
+ */
+async function connectContaAzul() {
+  try {
+    showToast('Redirecionando para o Conta Azul...', 'info')
+
+    const response = await fetch(`${API_URL}/api/contaazul/auth-url`, {
+      headers: { 'Authorization': `Bearer ${window.adminToken}` }
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Erro ao obter URL de autenticação')
+    }
+
+    // Redireciona para o Conta Azul
+    window.location.href = data.url
+  } catch (err) {
+    console.error('[ContaAzul] Erro ao conectar:', err)
+    showToast(err.message || 'Erro ao conectar com Conta Azul', 'error')
+  }
+}
+
+/**
+ * Desconecta do Conta Azul
+ */
+async function disconnectContaAzul() {
+  if (!confirm('Tem certeza que deseja desconectar do Conta Azul?')) return
+
+  try {
+    const response = await fetch(`${API_URL}/api/contaazul/disconnect`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${window.adminToken}` }
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Erro ao desconectar')
+    }
+
+    showToast('Desconectado do Conta Azul', 'success')
+    checkContaAzulStatus()
+  } catch (err) {
+    console.error('[ContaAzul] Erro ao desconectar:', err)
+    showToast(err.message || 'Erro ao desconectar', 'error')
+  }
+}
+
+/**
+ * Testa a conexão buscando categorias
+ */
+async function testContaAzulConnection() {
+  try {
+    showToast('Testando conexão...', 'info')
+
+    const response = await fetch(`${API_URL}/api/contaazul/categorias`, {
+      headers: { 'Authorization': `Bearer ${window.adminToken}` }
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Erro ao testar conexão')
+    }
+
+    showToast('Conexão OK! ' + (data.length || 0) + ' categorias encontradas', 'success')
+  } catch (err) {
+    console.error('[ContaAzul] Erro no teste:', err)
+    showToast(err.message || 'Erro ao testar conexão', 'error')
+  }
+}
+
+/**
+ * Busca categorias para teste (com exibição detalhada)
+ */
+async function testCategoriasContaAzul() {
+  const container = document.getElementById('testResultContainer')
+  const resultPre = document.getElementById('testResult')
+
+  try {
+    if (container) container.style.display = 'block'
+    if (resultPre) resultPre.textContent = 'Buscando categorias...'
+
+    const response = await fetch(`${API_URL}/api/contaazul/categorias`, {
+      headers: { 'Authorization': `Bearer ${window.adminToken}` }
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Erro ao buscar categorias')
+    }
+
+    if (resultPre) {
+      resultPre.textContent = JSON.stringify(data, null, 2)
+    }
+
+    showToast('Categorias carregadas com sucesso!', 'success')
+  } catch (err) {
+    console.error('[ContaAzul] Erro:', err)
+    if (resultPre) resultPre.textContent = 'Erro: ' + err.message
+    showToast(err.message || 'Erro ao buscar categorias', 'error')
+  }
+}
+
+/**
+ * Busca notas fiscais por período
+ */
+async function buscarNotasFiscais() {
+  const dataInicial = document.getElementById('nfDataInicial')?.value
+  const dataFinal = document.getElementById('nfDataFinal')?.value
+  const documento = document.getElementById('nfDocumento')?.value
+  const listContainer = document.getElementById('notasFiscaisList')
+  const countSpan = document.getElementById('nfResultCount')
+
+  if (!dataInicial || !dataFinal) {
+    showToast('Informe as datas inicial e final', 'error')
+    return
+  }
+
+  // Valida período máximo de 15 dias
+  const inicio = new Date(dataInicial)
+  const fim = new Date(dataFinal)
+  const diffDays = (fim - inicio) / (1000 * 60 * 60 * 24)
+
+  if (diffDays > 15) {
+    showToast('O período máximo é de 15 dias', 'error')
+    return
+  }
+
+  if (diffDays < 0) {
+    showToast('A data final deve ser maior que a inicial', 'error')
+    return
+  }
+
+  try {
+    if (listContainer) listContainer.innerHTML = '<p class="empty-state">Buscando notas fiscais...</p>'
+
+    let url = `${API_URL}/api/contaazul/notas-fiscais?data_inicial=${dataInicial}&data_final=${dataFinal}`
+    if (documento) {
+      url += `&documento=${documento.replace(/\D/g, '')}`
+    }
+
+    const response = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${window.adminToken}` }
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.error || data.message || 'Erro ao buscar notas fiscais')
+    }
+
+    // Atualiza contador
+    const notas = Array.isArray(data) ? data : (data.items || [])
+    if (countSpan) {
+      countSpan.textContent = `${notas.length} nota(s) encontrada(s)`
+    }
+
+    // Renderiza resultados
+    if (notas.length === 0) {
+      if (listContainer) listContainer.innerHTML = '<p class="empty-state">Nenhuma nota fiscal encontrada no período</p>'
+    } else {
+      renderNotasFiscais(notas)
+    }
+
+    showToast(`${notas.length} nota(s) encontrada(s)`, 'success')
+  } catch (err) {
+    console.error('[ContaAzul] Erro ao buscar NFs:', err)
+    if (listContainer) listContainer.innerHTML = `<p class="empty-state" style="color: #ef4444;">Erro: ${err.message}</p>`
+    showToast(err.message || 'Erro ao buscar notas fiscais', 'error')
+  }
+}
+
+/**
+ * Renderiza a lista de notas fiscais
+ */
+function renderNotasFiscais(notas) {
+  const container = document.getElementById('notasFiscaisList')
+  if (!container) return
+
+  container.innerHTML = notas.map(nf => `
+    <div class="nf-card" style="padding: 1rem; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 0.75rem; background: var(--bg-card);">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 200px;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <strong style="font-size: 1.1rem;">NF-e ${nf.numero || '-'}</strong>
+            <span class="status-badge" style="background: ${getStatusColor(nf.status)}; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; color: white;">
+              ${nf.status || 'N/A'}
+            </span>
+          </div>
+          <p style="margin: 0.25rem 0; color: var(--text-secondary); font-size: 0.875rem;">
+            <strong>Tomador:</strong> ${nf.tomador?.nome || nf.tomador?.razao_social || '-'}
+          </p>
+          <p style="margin: 0.25rem 0; color: var(--text-secondary); font-size: 0.875rem;">
+            <strong>CNPJ/CPF:</strong> ${formatDocument(nf.tomador?.cpf_cnpj || nf.tomador?.documento)}
+          </p>
+          <p style="margin: 0.25rem 0; color: var(--text-secondary); font-size: 0.875rem;">
+            <strong>Data Emissão:</strong> ${formatDate(nf.data_emissao)}
+          </p>
+        </div>
+        <div style="text-align: right;">
+          <p style="font-size: 1.25rem; font-weight: 600; color: var(--primary-blue); margin: 0;">
+            ${formatCurrency(nf.valor_total || nf.valor)}
+          </p>
+          <p style="margin: 0.25rem 0 0 0; font-size: 0.75rem; color: var(--text-secondary);">
+            Chave: ${nf.chave ? nf.chave.substring(0, 20) + '...' : '-'}
+          </p>
+        </div>
+      </div>
+      ${nf.chave ? `
+        <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color);">
+          <button class="btn-secondary" onclick="downloadNotaFiscalXML('${nf.chave}')" style="font-size: 0.875rem; padding: 0.5rem 1rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Baixar XML
+          </button>
+        </div>
+      ` : ''}
+    </div>
+  `).join('')
+}
+
+/**
+ * Retorna cor baseada no status da NF
+ */
+function getStatusColor(status) {
+  const colors = {
+    'AUTORIZADA': '#22c55e',
+    'EMITIDA': '#22c55e',
+    'CANCELADA': '#ef4444',
+    'REJEITADA': '#ef4444',
+    'PENDENTE': '#f59e0b',
+    'PROCESSANDO': '#3b82f6'
+  }
+  return colors[status?.toUpperCase()] || '#6b7280'
+}
+
+/**
+ * Formata documento (CNPJ/CPF)
+ */
+function formatDocument(doc) {
+  if (!doc) return '-'
+  doc = doc.replace(/\D/g, '')
+  if (doc.length === 11) {
+    return doc.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
+  }
+  if (doc.length === 14) {
+    return doc.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5')
+  }
+  return doc
+}
+
+/**
+ * Formata data para exibição
+ */
+function formatDate(dateStr) {
+  if (!dateStr) return '-'
+  try {
+    return new Date(dateStr).toLocaleDateString('pt-BR')
+  } catch {
+    return dateStr
+  }
+}
+
+/**
+ * Formata valor monetário
+ */
+function formatCurrency(value) {
+  if (value === null || value === undefined) return 'R$ 0,00'
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
+}
+
+/**
+ * Baixa o XML de uma nota fiscal
+ */
+async function downloadNotaFiscalXML(chave) {
+  try {
+    showToast('Baixando XML...', 'info')
+
+    const response = await fetch(`${API_URL}/api/contaazul/notas-fiscais/${chave}`, {
+      headers: { 'Authorization': `Bearer ${window.adminToken}` }
+    })
+
+    if (!response.ok) {
+      const error = await response.text()
+      throw new Error(error || 'Erro ao baixar XML')
+    }
+
+    const xml = await response.text()
+
+    // Cria blob e faz download
+    const blob = new Blob([xml], { type: 'application/xml' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `nfe_${chave}.xml`
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+
+    showToast('XML baixado com sucesso!', 'success')
+  } catch (err) {
+    console.error('[ContaAzul] Erro ao baixar XML:', err)
+    showToast(err.message || 'Erro ao baixar XML', 'error')
+  }
+}
+
+// Inicializa verificação de status quando entrar nas seções fiscais
+const originalShowSection = window.showSection
+if (typeof originalShowSection === 'function') {
+  window.showSection = function(sectionId) {
+    originalShowSection(sectionId)
+    if (sectionId === 'fiscalSection' || sectionId === 'contaAzulSection') {
+      checkContaAzulStatus()
+      // Define datas padrão (últimos 7 dias)
+      const hoje = new Date()
+      const seteDiasAtras = new Date(hoje)
+      seteDiasAtras.setDate(hoje.getDate() - 7)
+
+      const nfDataFinal = document.getElementById('nfDataFinal')
+      const nfDataInicial = document.getElementById('nfDataInicial')
+
+      if (nfDataFinal && !nfDataFinal.value) {
+        nfDataFinal.value = hoje.toISOString().split('T')[0]
+      }
+      if (nfDataInicial && !nfDataInicial.value) {
+        nfDataInicial.value = seteDiasAtras.toISOString().split('T')[0]
+      }
+    }
+  }
+}
+
+// Expõe funções do Conta Azul globalmente
+window.checkContaAzulStatus = checkContaAzulStatus
+window.connectContaAzul = connectContaAzul
+window.disconnectContaAzul = disconnectContaAzul
+window.testContaAzulConnection = testContaAzulConnection
+window.testCategoriasContaAzul = testCategoriasContaAzul
+window.buscarNotasFiscais = buscarNotasFiscais
+window.downloadNotaFiscalXML = downloadNotaFiscalXML
