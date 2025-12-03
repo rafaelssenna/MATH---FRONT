@@ -10086,20 +10086,21 @@ function renderBoletos(boletos) {
     }
     const statusInfo = statusConfig[status] || { class: 'status-pending', label: statusTraduzido || status, bg: '#6b7280' }
 
-    // Botão de PDF se tiver número da venda
-    const pdfButton = numeroVenda ? `
-      <button onclick="downloadVendaPDF('${numeroVenda}')"
-              style="background: var(--primary); color: white; border: none; padding: 0.4rem 0.75rem;
+    // Botão de Boleto (usando ID do evento financeiro)
+    const boletoButton = `
+      <button onclick="abrirBoleto('${boleto.id}')"
+              style="background: #059669; color: white; border: none; padding: 0.4rem 0.75rem;
                      border-radius: 6px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; gap: 0.3rem;"
-              title="Baixar PDF da Venda">
+              title="Abrir Boleto">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-          <polyline points="7 10 12 15 17 10"/>
-          <line x1="12" y1="15" x2="12" y2="3"/>
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <line x1="7" y1="8" x2="17" y2="8"/>
+          <line x1="7" y1="12" x2="17" y2="12"/>
+          <line x1="7" y1="16" x2="12" y2="16"/>
         </svg>
-        PDF
+        Boleto
       </button>
-    ` : ''
+    `
 
     return `
       <div class="boleto-item" style="padding: 1rem; border-bottom: 1px solid var(--border-color); background: var(--bg-card);">
@@ -10111,7 +10112,7 @@ function renderBoletos(boletos) {
             </div>
           </div>
           <div style="display: flex; align-items: center; gap: 0.5rem;">
-            ${pdfButton}
+            ${boletoButton}
             <span style="background: ${statusInfo.bg}; color: white; padding: 0.25rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">
               ${statusInfo.label}
             </span>
@@ -10186,6 +10187,48 @@ async function downloadVendaPDF(numeroVenda) {
 
 // Expoe função de download PDF globalmente
 window.downloadVendaPDF = downloadVendaPDF
+
+/**
+ * Abre a URL do boleto de uma cobrança
+ */
+async function abrirBoleto(idCobranca) {
+  const token = localStorage.getItem('adminToken')
+  if (!token) {
+    showToast('Faça login para acessar o boleto', 'error')
+    return
+  }
+
+  try {
+    showToast('Buscando boleto...', 'info')
+
+    const response = await fetch(`${API_URL}/api/contaazul/cobrancas/${idCobranca}/boleto`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Erro ao buscar boleto')
+    }
+
+    const data = await response.json()
+
+    if (data.url) {
+      // Abre a URL do boleto em nova aba
+      window.open(data.url, '_blank')
+      showToast('Boleto aberto em nova aba!', 'success')
+    } else {
+      showToast('URL do boleto não disponível', 'warning')
+    }
+  } catch (error) {
+    console.error('Erro ao abrir boleto:', error)
+    showToast(`Erro ao abrir boleto: ${error.message}`, 'error')
+  }
+}
+
+// Expoe função de abrir boleto globalmente
+window.abrirBoleto = abrirBoleto
 
 // Expoe funcoes de boletos globalmente
 window.buscarBoletos = buscarBoletos
