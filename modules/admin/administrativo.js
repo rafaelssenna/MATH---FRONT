@@ -9707,8 +9707,8 @@ async function buscarNotasFiscais() {
       throw new Error(data.error || data.message || 'Erro ao buscar notas fiscais')
     }
 
-    // Atualiza contador
-    const notas = Array.isArray(data) ? data : (data.items || [])
+    // Atualiza contador - API retorna 'itens' em português
+    const notas = Array.isArray(data) ? data : (data.itens || data.items || [])
     if (countSpan) {
       countSpan.textContent = `${notas.length} nota(s) encontrada(s)`
     }
@@ -9735,38 +9735,40 @@ function renderNotasFiscais(notas) {
   const container = document.getElementById('notasFiscaisList')
   if (!container) return
 
-  container.innerHTML = notas.map(nf => `
+  // Campos da API Conta Azul: numero_nota, nome_destinatario, chave_acesso, data_emissao, status
+  container.innerHTML = notas.map(nf => {
+    const numero = nf.numero_nota || nf.numero || '-'
+    const destinatario = nf.nome_destinatario || nf.tomador?.nome || nf.tomador?.razao_social || '-'
+    const chave = nf.chave_acesso || nf.chave || ''
+    const dataEmissao = nf.data_emissao
+    const status = nf.status || 'N/A'
+
+    return `
     <div class="nf-card" style="padding: 1rem; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 0.75rem; background: var(--bg-card);">
       <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
         <div style="flex: 1; min-width: 200px;">
           <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-            <strong style="font-size: 1.1rem;">NF-e ${nf.numero || '-'}</strong>
-            <span class="status-badge" style="background: ${getStatusColor(nf.status)}; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; color: white;">
-              ${nf.status || 'N/A'}
+            <strong style="font-size: 1.1rem;">NF-e ${numero}</strong>
+            <span class="status-badge" style="background: ${getStatusColor(status)}; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; color: white;">
+              ${status}
             </span>
           </div>
           <p style="margin: 0.25rem 0; color: var(--text-secondary); font-size: 0.875rem;">
-            <strong>Tomador:</strong> ${nf.tomador?.nome || nf.tomador?.razao_social || '-'}
+            <strong>Destinatário:</strong> ${destinatario}
           </p>
           <p style="margin: 0.25rem 0; color: var(--text-secondary); font-size: 0.875rem;">
-            <strong>CNPJ/CPF:</strong> ${formatDocument(nf.tomador?.cpf_cnpj || nf.tomador?.documento)}
+            <strong>Data Emissão:</strong> ${formatDate(dataEmissao)}
           </p>
-          <p style="margin: 0.25rem 0; color: var(--text-secondary); font-size: 0.875rem;">
-            <strong>Data Emissão:</strong> ${formatDate(nf.data_emissao)}
+          ${chave ? `
+          <p style="margin: 0.25rem 0; color: var(--text-secondary); font-size: 0.75rem; word-break: break-all;">
+            <strong>Chave:</strong> ${chave}
           </p>
-        </div>
-        <div style="text-align: right;">
-          <p style="font-size: 1.25rem; font-weight: 600; color: var(--primary-blue); margin: 0;">
-            ${formatCurrency(nf.valor_total || nf.valor)}
-          </p>
-          <p style="margin: 0.25rem 0 0 0; font-size: 0.75rem; color: var(--text-secondary);">
-            Chave: ${nf.chave ? nf.chave.substring(0, 20) + '...' : '-'}
-          </p>
+          ` : ''}
         </div>
       </div>
-      ${nf.chave ? `
+      ${chave ? `
         <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color);">
-          <button class="btn-secondary" onclick="downloadNotaFiscalXML('${nf.chave}')" style="font-size: 0.875rem; padding: 0.5rem 1rem;">
+          <button class="btn-secondary" onclick="downloadNotaFiscalXML('${chave}')" style="font-size: 0.875rem; padding: 0.5rem 1rem;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
               <polyline points="7 10 12 15 17 10"/>
@@ -9777,7 +9779,7 @@ function renderNotasFiscais(notas) {
         </div>
       ` : ''}
     </div>
-  `).join('')
+  `}).join('')
 }
 
 /**
