@@ -1171,6 +1171,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if (confirm("Tem certeza que deseja sair?")) {
         localStorage.removeItem("adminLoggedIn")
         localStorage.removeItem("adminName")
+        localStorage.removeItem("adminToken")
+        localStorage.removeItem("adminUserType")
         // Limpa estado ao fazer logout
         if (window.adminStateManager) {
           window.adminStateManager.clearState()
@@ -1657,6 +1659,10 @@ function handleAdminLogin(e) {
       localStorage.setItem("adminLoggedIn", "true")
       localStorage.setItem("adminName", data.username)
       localStorage.setItem("adminUserType", data.user_type || 'admin')
+      if (data.token) {
+        localStorage.setItem("adminToken", data.token)
+        console.log('🔐 [LOGIN] Token salvo:', data.token.substring(0, 30) + '...')
+      }
       showToast("Login realizado com sucesso!", "success")
       console.log('🔄 [LOGIN] Chamando showAdminSection()...')
       showAdminSection()
