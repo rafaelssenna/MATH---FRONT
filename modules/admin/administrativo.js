@@ -7964,6 +7964,22 @@ function renderBillingOSList(osList, tab) {
                   justify-content: center;
                   gap: 0.25rem;
                 "><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Ver</button>
+                ${os.url_boleto ? `
+                <button onclick="window.open('${os.url_boleto}', '_blank')" style="
+                  padding: 0.625rem 1rem;
+                  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+                  color: white;
+                  border: none;
+                  border-radius: 8px;
+                  cursor: pointer;
+                  font-size: 0.85rem;
+                  font-weight: 600;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  gap: 0.25rem;
+                "><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Boleto</button>
+                ` : ''}
                 <span style="text-align: center; color: var(--success-color); font-weight: 600; padding: 0.625rem; display: flex; align-items: center; justify-content: center; gap: 0.25rem;">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Faturada
                 </span>
@@ -8045,6 +8061,31 @@ function renderBillingOSList(osList, tab) {
                   </svg>
                   Ver
                 </button>
+                ${os.url_boleto ? `
+                <button onclick="window.open('${os.url_boleto}', '_blank')" title="Abrir Cobranca" style="
+                  padding: 0.5rem 0.75rem;
+                  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+                  color: white;
+                  border: none;
+                  border-radius: 6px;
+                  cursor: pointer;
+                  font-size: 0.875rem;
+                  font-weight: 500;
+                  display: inline-flex;
+                  align-items: center;
+                  gap: 0.35rem;
+                  margin-right: 0.5rem;
+                  justify-content: center;
+                " onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                  Boleto
+                </button>
+                ` : ''}
                 <span style="color: var(--success-color); font-weight: 600;">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: middle;">
                     <polyline points="20 6 9 17 4 12"/>
