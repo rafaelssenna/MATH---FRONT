@@ -10104,6 +10104,17 @@ function renderBoletos(boletos) {
         </svg>
         Boleto
       </button>
+      <button onclick="downloadBoletoPDF('${boleto.id}')"
+              style="background: #2563eb; color: white; border: none; padding: 0.4rem 0.75rem;
+                     border-radius: 6px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; gap: 0.3rem;"
+              title="Baixar PDF do Boleto">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        PDF
+      </button>
     `
 
     return `
@@ -10241,6 +10252,57 @@ async function abrirBoleto(idCobranca) {
 
 // Expoe função de abrir boleto globalmente
 window.abrirBoleto = abrirBoleto
+
+/**
+ * Baixa o PDF do boleto via automação
+ */
+async function downloadBoletoPDF(idCobranca) {
+  const token = localStorage.getItem('adminToken')
+  if (!token) {
+    showToast('Faça login para baixar o boleto', 'error')
+    return
+  }
+
+  try {
+    showToast('Baixando PDF do boleto... Aguarde, pode demorar alguns segundos.', 'info')
+
+    const response = await fetch(`${API_URL}/api/contaazul/cobrancas/${idCobranca}/boleto/download`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+
+      if (response.status === 404) {
+        showToast('Boleto não encontrado. Gere no Conta Azul primeiro.', 'warning')
+        return
+      }
+
+      throw new Error(error.error || 'Erro ao baixar boleto')
+    }
+
+    // Recebe o PDF e faz download
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `boleto-${idCobranca}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    window.URL.revokeObjectURL(url)
+
+    showToast('PDF do boleto baixado com sucesso!', 'success')
+  } catch (error) {
+    console.error('Erro ao baixar boleto:', error)
+    showToast(`Erro: ${error.message}`, 'error')
+  }
+}
+
+// Expoe função de download de boleto PDF globalmente
+window.downloadBoletoPDF = downloadBoletoPDF
 
 // Expoe funcoes de boletos globalmente
 window.buscarBoletos = buscarBoletos
