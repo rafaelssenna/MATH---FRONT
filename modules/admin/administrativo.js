@@ -3044,7 +3044,7 @@ async function abrirCobrancaContaAzul(cobrancaId) {
     // Busca a URL do boleto via API
     const response = await fetch(`${API_URL}/api/contaazul/cobrancas/${cobrancaId}/boleto`, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
       }
     })
 
