@@ -84,14 +84,14 @@
         let currentOS = null;
         let pdfDoc = null;
 
-        // Pega o ID da OS da URL
+        // Pega o número da OS da URL (aceita ?os=6519 ou ?id=6519)
         const urlParams = new URLSearchParams(window.location.search);
-        const osId = urlParams.get('id');
+        const osNumber = urlParams.get('os') || urlParams.get('id');
 
-        if (!osId) {
-            showError('ID da OS nao informado. Use: ?id=123');
+        if (!osNumber) {
+            showError('Numero da OS nao informado. Use: ?os=6519');
         } else {
-            loadOS(osId);
+            loadOS(osNumber);
         }
 
         async function loadOS(id) {
