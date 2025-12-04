@@ -147,6 +147,8 @@
             currentOS.signatureCliente = currentOS.signature_client || null;
             currentOS.materiais = currentOS.materials || [];
             currentOS.worklogs = currentOS.worklogs || [];
+            currentOS.displacements = currentOS.displacements || [];
+            currentOS.additionalServices = currentOS.additionalServices || [];
             currentOS.deslocamentoKm = currentOS.displacement_km || 0;
             currentOS.carroUtilizado = currentOS.vehicle_used || '';
         }
@@ -469,10 +471,46 @@
                 doc.text(website, marginX, footerY);
             };
 
-            // ====== Cabecalho ======
+            // ========= Carrega logo =========
+            const loadLogoData = () =>
+                new Promise((resolve) => {
+                    try {
+                        const img = new Image();
+                        img.crossOrigin = "anonymous";
+                        img.onload = () => {
+                            const LOGO_W = 30;
+                            const aspect = img.naturalHeight && img.naturalWidth ? img.naturalHeight / img.naturalWidth : 0.4;
+                            const LOGO_H = Math.max(8, Math.min(18, LOGO_W * aspect));
+                            const canvas = document.createElement("canvas");
+                            canvas.width = img.naturalWidth;
+                            canvas.height = img.naturalHeight;
+                            const ctx = canvas.getContext("2d");
+                            ctx.drawImage(img, 0, 0);
+                            let dataUrl = null;
+                            try { dataUrl = canvas.toDataURL("image/png"); } catch (_e) { resolve(null); return; }
+                            resolve({ dataUrl, w: LOGO_W, h: LOGO_H });
+                        };
+                        img.onerror = () => resolve(null);
+                        img.src = "assets/logohelsen.png";
+                    } catch (_err) {
+                        resolve(null);
+                    }
+                });
+
+            // ====== Cabecalho (logo + OS) ======
             doc.setFont("helvetica", "bold");
             doc.setFontSize(12);
+
+            const logo = await loadLogoData();
             let headerBlockH = 14;
+            const LOGO_X_OFFSET = 4;
+            if (logo && logo.dataUrl) {
+                try {
+                    doc.addImage(logo.dataUrl, "PNG", marginX + LOGO_X_OFFSET, y + 4, logo.w, logo.h);
+                    headerBlockH = Math.max(headerBlockH, logo.h + 2);
+                } catch (_e) {}
+            }
+
             const osLabel = `O.S.: ${currentOS.osNumber || ""}`;
             const rightX = marginX + contentW;
             const osW = doc.getTextWidth(osLabel);
@@ -621,7 +659,18 @@
                 ]);
             }
 
-            if (valServicoNum > 0) {
+            // Serviços Adicionais (mostra cada um individualmente)
+            if (Array.isArray(currentOS.additionalServices) && currentOS.additionalServices.length > 0) {
+                currentOS.additionalServices.forEach((s) => {
+                    const serviceValue = Number(s.value || 0);
+                    drawCells([
+                        { label: "Servico Adicional", value: s.description || "", width: 0.7 },
+                        { label: "Valor", value: fmtBRL(serviceValue), width: 0.3 },
+                    ]);
+                });
+                drawFullRow("Total de Servicos Adicionais", fmtBRL(valServicoNum));
+            } else if (valServicoNum > 0) {
+                // Fallback: se não houver array de serviços, mostra só o total (compatibilidade)
                 drawFullRow("Servico Adicional", fmtBRL(valServicoNum));
             }
 
