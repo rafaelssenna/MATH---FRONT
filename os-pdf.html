@@ -97,11 +97,13 @@
         async function loadOS(id) {
             try {
                 const response = await fetch(`${API_URL}/api/os/public/${id}`);
+                const data = await response.json();
+
                 if (!response.ok) {
-                    const data = await response.json();
                     throw new Error(data.message || 'OS nao encontrada');
                 }
-                currentOS = await response.json();
+
+                currentOS = data;
 
                 // Mapeia campos para o formato esperado pelo gerador de PDF
                 mapOSFields();
