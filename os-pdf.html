@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OS PDF - Helsen Service</title>
+    <link rel="icon" type="image/jpeg" href="assets/mate-icon.jpg">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: #1e293b;
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            max-width: 500px;
+            width: 100%;
+        }
+        .logo { width: 120px; margin-bottom: 20px; }
+        h1 { color: #f8fafc; font-size: 1.5rem; margin-bottom: 10px; }
+        .os-number { color: #3b82f6; font-size: 2rem; font-weight: 700; margin-bottom: 20px; }
+        .status { color: #94a3b8; font-size: 1rem; margin-bottom: 30px; }
+        .spinner {
+            width: 50px; height: 50px;
+            border: 4px solid #334155;
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .error { color: #ef4444; background: rgba(239, 68, 68, 0.1); padding: 15px; border-radius: 8px; margin-top: 20px; }
+        .success { color: #10b981; }
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 20px;
+            cursor: pointer;
+            border: none;
+            font-size: 1rem;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn-secondary {
+            background: #334155;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="assets/helsenservicelogo.png" alt="Helsen Service" class="logo">
+        <h1>Ordem de Serviço</h1>
+        <div class="os-number" id="osNumber">Carregando...</div>
+        <div class="status" id="status">Buscando dados da OS...</div>
+        <div class="spinner" id="spinner"></div>
+        <div id="actions" style="display: none;">
+            <button class="btn" onclick="downloadPDF()">Baixar PDF</button>
+            <button class="btn btn-secondary" onclick="openPDF()">Abrir em Nova Aba</button>
+        </div>
+        <div id="error" class="error" style="display: none;"></div>
+    </div>
+
+    <script>
+        // Configuracao da API - ajuste conforme seu ambiente
+        const API_URL = window.location.hostname === 'localhost'
+            ? 'http://localhost:3001'
+            : 'https://hs-back-production.up.railway.app';
+
+        let currentOS = null;
+        let pdfDoc = null;
+
+        // Pega o ID da OS da URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const osId = urlParams.get('id');
+
+        if (!osId) {
+            showError('ID da OS nao informado. Use: ?id=123');
+        } else {
+            loadOS(osId);
+        }
+
+        async function loadOS(id) {
+            try {
+                const response = await fetch(`${API_URL}/api/os/public/${id}`);
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.message || 'OS nao encontrada');
+                }
+                currentOS = await response.json();
+
+                // Mapeia campos para o formato esperado pelo gerador de PDF
+                mapOSFields();
+
+                document.getElementById('osNumber').textContent = `O.S. #${currentOS.osNumber || currentOS.order_number}`;
+                document.getElementById('status').innerHTML = '<span class="success">OS carregada com sucesso!</span>';
+                document.getElementById('spinner').style.display = 'none';
+                document.getElementById('actions').style.display = 'block';
+
+                // Gera o PDF automaticamente
+                await generatePDF();
+            } catch (err) {
+                showError(err.message);
+            }
+        }
+
+        function mapOSFields() {
+            // Mapeia os campos do banco para os nomes usados no PDF
+            currentOS.osNumber = currentOS.order_number;
+            currentOS.cliente = currentOS.client_name || currentOS.company_name || '';
+            currentOS.clienteCnpj = currentOS.company_cnpj || '';
+            currentOS.modelo = currentOS.machine_model || '';
+            currentOS.numeroSerie = currentOS.machine_serial || '';
+            currentOS.responsavel = currentOS.responsible || '';
+            currentOS.motivoChamado = currentOS.call_reason || '';
+            currentOS.assistenteTecnico = currentOS.technician_username || '';
+            currentOS.maintenanceType = currentOS.maintenance_type || '';
+            currentOS.descricao = currentOS.description || '';
+            currentOS.dataHoraInicio = currentOS.started_at;
+            currentOS.dataHoraFim = currentOS.finished_at;
+            currentOS.dataProgramada = currentOS.scheduled_date;
+            currentOS.totalHoras = currentOS.total_hours || '';
+            currentOS.totalHorasNum = Number(currentOS.total_hours) || 0;
+            currentOS.valorServico = currentOS.service_value || 0;
+            currentOS.custoServico = currentOS.service_cost || 0;
+            currentOS.custoMateriais = currentOS.materials_cost || 0;
+            currentOS.totalGeral = currentOS.grand_total || 0;
+            currentOS.isNewClient = currentOS.is_new_client || false;
+            currentOS.valorHoraTecnico = currentOS.hourly_rate || (currentOS.isNewClient ? 175 : 150);
+            currentOS.signatureTecnico = currentOS.signature_technician || null;
+            currentOS.signatureCliente = currentOS.signature_client || null;
+            currentOS.materiais = currentOS.materials || [];
+            currentOS.worklogs = currentOS.worklogs || [];
+            currentOS.deslocamentoKm = currentOS.displacement_km || 0;
+            currentOS.carroUtilizado = currentOS.vehicle_used || '';
+        }
+
+        function showError(msg) {
+            document.getElementById('spinner').style.display = 'none';
+            document.getElementById('status').style.display = 'none';
+            document.getElementById('error').textContent = msg;
+            document.getElementById('error').style.display = 'block';
+        }
+
+        // ========== GERACAO DO PDF ==========
+        function parseAsLocalTime(d) {
+            if (!d) return null;
+            if (d instanceof Date) return d;
+            const dateStr = String(d);
+            if (dateStr.includes('T')) {
+                const [datePart, timePart] = dateStr.split('T');
+                const [year, month, day] = datePart.split('-').map(Number);
+                const timeClean = timePart.replace('Z', '').split('.')[0];
+                const [hours, minutes, seconds] = timeClean.split(':').map(Number);
+                return new Date(year, month - 1, day, hours || 0, minutes || 0, seconds || 0);
+            }
+            return new Date(d);
+        }
+
+        function formatHours(h) {
+            const num = Number(h) || 0;
+            const hrs = Math.floor(num);
+            const mins = Math.round((num - hrs) * 60);
+            if (mins === 0) return `${hrs}h`;
+            return `${hrs}h ${mins}min`;
+        }
+
+        function formatQuantity(q) {
+            const num = Number(q) || 0;
+            return num % 1 === 0 ? String(num) : num.toFixed(2);
+        }
+
+        function formatCNPJ(cnpj) {
+            if (!cnpj) return '';
+            const digits = String(cnpj).replace(/\D/g, '');
+            if (digits.length !== 14) return cnpj;
+            return digits.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+        }
+
+        function resolvePlate(val) {
+            if (!val) return '';
+            if (typeof val === 'object' && val.plate) return val.plate;
+            return String(val);
+        }
+
+        async function generatePDF() {
+            if (!currentOS) return;
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF("p", "mm", "a4");
+
+            const pageW = doc.internal.pageSize.getWidth();
+            const pageH = doc.internal.pageSize.getHeight();
+            const marginX = 12;
+            const contentW = pageW - marginX * 2;
+            let y = 2;
+
+            const LINE_H = 3.6;
+            const PADY = 3;
+            const LEFT_INNER = 2;
+            const RIGHT_INNER = 2;
+            const BOTTOM_MARGIN = 20;
+
+            const fmtDateOnly = (d) => (!d ? "" : parseAsLocalTime(d).toLocaleDateString("pt-BR"));
+            const fmtTimeOnly = (d) => (!d ? "" : parseAsLocalTime(d).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }));
+            const fmtBRL = (n) => {
+                const num = Number(n || 0);
+                try { return num.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }); }
+                catch { return `R$ ${num.toFixed(2)}`; }
+            };
+
+            const ensureSpace = (needed) => {
+                if (y + needed <= pageH - BOTTOM_MARGIN) return;
+                doc.addPage();
+                y = 10;
+            };
+
+            const splitRespectingNewlines = (doc, text, maxW) => {
+                const raw = String(text ?? "").replace(/\r\n?/g, "\n");
+                const parts = raw.split("\n");
+                let out = [];
+                for (const part of parts) {
+                    const arr = doc.splitTextToSize(part, maxW);
+                    out = out.concat(arr.length ? arr : [""]);
+                }
+                return out;
+            };
+
+            const drawCells = (cells) => {
+                const naturals = cells.map((cell) => {
+                    const cellW = contentW * cell.width;
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(9);
+                    const labelText = `${cell.label}: `;
+                    const labelW = doc.getTextWidth(labelText);
+                    doc.setFont("helvetica", "normal");
+                    const maxTextW = Math.max(10, cellW - LEFT_INNER - RIGHT_INNER - labelW);
+                    const valueLines = splitRespectingNewlines(doc, String(cell.value ?? ""), maxTextW);
+                    const n = Math.max(1, valueLines.length);
+                    return { labelText, labelW, valueLines, naturalH: (2 * PADY) + (n - 1) * LINE_H };
+                });
+                const rowH = Math.max(...naturals.map(n => n.naturalH));
+                ensureSpace(rowH);
+                let x = marginX;
+                cells.forEach((cell, idx) => {
+                    const cellW = contentW * cell.width;
+                    const { labelText, labelW, valueLines, naturalH } = naturals[idx];
+                    doc.setDrawColor(200, 200, 200);
+                    doc.setFillColor(255, 255, 255);
+                    doc.rect(x, y, cellW, rowH, "S");
+                    const extra = rowH - naturalH;
+                    const baseY = y + PADY + (extra / 2);
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(9);
+                    doc.setTextColor(0, 0, 0);
+                    doc.text(labelText, x + LEFT_INNER, baseY);
+                    doc.setFont("helvetica", "normal");
+                    const maxTextW = Math.max(10, cellW - LEFT_INNER - RIGHT_INNER - labelW);
+                    let yy = baseY;
+                    const valX = x + LEFT_INNER + labelW;
+                    valueLines.forEach((li) => { doc.text(li, valX, yy); yy += LINE_H; });
+                    x += cellW;
+                });
+                y += rowH;
+            };
+
+            const drawFullRow = (label, value) => {
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(9);
+                const labelText = `${label}: `;
+                const labelW = doc.getTextWidth(labelText);
+                doc.setFont("helvetica", "normal");
+                const maxTextW = Math.max(10, contentW - LEFT_INNER - RIGHT_INNER - labelW);
+                const lines = splitRespectingNewlines(doc, String(value ?? ""), maxTextW);
+                const n = Math.max(1, lines.length);
+                const rowH = (2 * PADY) + (n - 1) * LINE_H;
+                ensureSpace(rowH);
+                doc.setDrawColor(200, 200, 200);
+                doc.setFillColor(255, 255, 255);
+                doc.rect(marginX, y, contentW, rowH, "S");
+                const baseY = y + PADY;
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(9);
+                doc.text(labelText, marginX + LEFT_INNER, baseY);
+                doc.setFont("helvetica", "normal");
+                let yy = baseY;
+                const valX = marginX + LEFT_INNER + labelW;
+                lines.forEach((li) => { doc.text(li, valX, yy); yy += LINE_H; });
+                y += rowH;
+            };
+
+            const drawFullRowMultipage = (label, value) => {
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(9);
+                const labelText = `${label}: `;
+                const labelW = doc.getTextWidth(labelText);
+                doc.setFont("helvetica", "normal");
+                const maxTextW = Math.max(10, contentW - LEFT_INNER - RIGHT_INNER - labelW);
+                const allLines = splitRespectingNewlines(doc, String(value ?? ""), maxTextW);
+                if (allLines.length === 0) { drawFullRow(label, ""); return; }
+                let i = 0;
+                while (i < allLines.length) {
+                    const MIN_SEG_H = 2 * PADY;
+                    if (y > pageH - BOTTOM_MARGIN - MIN_SEG_H) { doc.addPage(); y = 10; }
+                    const available = pageH - BOTTOM_MARGIN - y;
+                    let maxLines = 1 + Math.floor((available - 2 * PADY) / LINE_H);
+                    if (maxLines < 1) maxLines = 1;
+                    const segLines = allLines.slice(i, i + maxLines);
+                    const n = segLines.length;
+                    const segH = (2 * PADY) + (n - 1) * LINE_H;
+                    doc.setDrawColor(200, 200, 200);
+                    doc.setFillColor(255, 255, 255);
+                    doc.rect(marginX, y, contentW, segH, "S");
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(9);
+                    const baseY = y + PADY;
+                    doc.text(labelText, marginX + LEFT_INNER, baseY);
+                    doc.setFont("helvetica", "normal");
+                    let yy = baseY;
+                    const valX = marginX + LEFT_INNER + labelW;
+                    segLines.forEach((li) => { doc.text(li, valX, yy); yy += LINE_H; });
+                    y += segH;
+                    i += segLines.length;
+                }
+            };
+
+            const drawSectionHeaderColored = (title, color) => {
+                const headerH = 7;
+                ensureSpace(headerH);
+                doc.setFillColor(color.r, color.g, color.b);
+                doc.rect(marginX, y, contentW, headerH, "F");
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(11);
+                doc.setTextColor(0);
+                const baseY = y + headerH / 2 + 1.3;
+                doc.text(title, marginX + LEFT_INNER, baseY);
+                y += headerH;
+            };
+
+            const drawTitleBar = (text) => {
+                const VISUAL_H = 9;
+                const ADVANCE_H = 5;
+                const LIFT_UP = 5;
+                ensureSpace(Math.max(VISUAL_H, ADVANCE_H));
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(12);
+                const tW = doc.getTextWidth(text);
+                const tX = marginX + (contentW - tW) / 2;
+                doc.setTextColor(0);
+                const baseY = y + VISUAL_H / 2 + 1.2 - LIFT_UP;
+                doc.text(text, tX, baseY);
+                y += ADVANCE_H;
+            };
+
+            const drawClientBar = () => {
+                const cnpjTxt = currentOS.clienteCnpj ? ` | CNPJ: ${formatCNPJ(currentOS.clienteCnpj)}` : "";
+                const text = `Cliente: ${currentOS.cliente || ""}${cnpjTxt}`;
+                const lines = doc.splitTextToSize(text, contentW - LEFT_INNER - RIGHT_INNER);
+                const n = Math.max(1, lines.length);
+                const barH = (2 * PADY) + (n - 1) * LINE_H;
+                ensureSpace(barH);
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(9);
+                doc.setTextColor(0);
+                let yy = y + PADY;
+                lines.forEach((li) => { doc.text(li, marginX + LEFT_INNER, yy); yy += LINE_H; });
+                y += barH;
+            };
+
+            const drawSignatures = () => {
+                const sigH = 35;
+                const rowH = sigH + 7;
+                ensureSpace(rowH);
+                const cellW = (contentW - 2) / 2;
+                const maxW = cellW - 4;
+                const maxH = sigH - 4;
+                doc.setDrawColor(200, 200, 200);
+                doc.rect(marginX, y, cellW, sigH, "S");
+                doc.rect(marginX + cellW + 2, y, cellW, sigH, "S");
+
+                const addSignatureImage = (imageData, xPos, label) => {
+                    if (!imageData) return;
+                    try {
+                        const canvasRatio = 8 / 3;
+                        let finalWidth = maxW;
+                        let finalHeight = maxW / canvasRatio;
+                        if (finalHeight > maxH) { finalHeight = maxH; finalWidth = maxH * canvasRatio; }
+                        const offsetX = (maxW - finalWidth) / 2;
+                        const offsetY = (maxH - finalHeight) / 2;
+                        doc.addImage(imageData, "PNG", xPos + 2 + offsetX, y + 2 + offsetY, finalWidth, finalHeight, undefined, 'FAST');
+                    } catch (err) { console.error(`Erro assinatura ${label}:`, err); }
+                };
+
+                addSignatureImage(currentOS.signatureTecnico, marginX, 'TECNICO');
+                addSignatureImage(currentOS.signatureCliente, marginX + cellW + 2, 'CLIENTE');
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(8);
+                doc.setTextColor(0);
+                const techLabel = "Assinatura Tecnico";
+                const cliLabel = "Assinatura Cliente";
+                const techX = marginX + cellW / 2 - doc.getTextWidth(techLabel) / 2;
+                const cliX = marginX + cellW + 2 + cellW / 2 - doc.getTextWidth(cliLabel) / 2;
+                const yy = y + sigH + 5;
+                doc.text(techLabel, techX, yy);
+                doc.text(cliLabel, cliX, yy);
+                y += rowH;
+            };
+
+            const computeDisplacementCost = () => {
+                const isNew = !!currentOS.isNewClient;
+                const perKm = isNew ? 2.57 : 2.2;
+                let totalKm = 0;
+                let cost = 0;
+                if (Array.isArray(currentOS.displacements) && currentOS.displacements.length > 0) {
+                    currentOS.displacements.forEach((d) => {
+                        let km = 0;
+                        const opt = String(d?.km_option || "").toLowerCase();
+                        if (opt === 'nenhum' || opt === 'sem_deslocamento' || opt.includes('sem')) return;
+                        if (opt.includes("50") && !opt.includes("100")) km = 50;
+                        else if (opt.includes("100") && !opt.includes("acima")) km = 100;
+                        else if (opt.includes("maior") || opt.includes("acima") || opt.includes("above")) {
+                            if (d && d.km_total !== undefined && d.km_total !== null) {
+                                const parsed = Number(d.km_total);
+                                if (!isNaN(parsed) && parsed > 0) km = parsed;
+                            }
+                        }
+                        if (km > 0) {
+                            totalKm += km;
+                            if (km <= 50) cost += isNew ? 95 : 80;
+                            else if (km <= 100) cost += isNew ? 170 : 150;
+                            else cost += Math.round(km * perKm * 100) / 100;
+                        }
+                    });
+                } else {
+                    const kmVal = Number(currentOS.deslocamentoKm || 0);
+                    if (kmVal > 0) {
+                        totalKm = kmVal;
+                        if (kmVal <= 50) cost = isNew ? 95 : 80;
+                        else if (kmVal <= 100) cost = isNew ? 170 : 150;
+                        else cost = Math.round(kmVal * perKm * 100) / 100;
+                    }
+                }
+                return { totalKm, cost: Math.round(cost * 100) / 100 };
+            };
+
+            const drawFooter = () => {
+                const website = "www.helsenservice.com.br/";
+                const footerY = pageH - 8;
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(8);
+                doc.setTextColor(0);
+                doc.text(website, marginX, footerY);
+            };
+
+            // ====== Cabecalho ======
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(12);
+            let headerBlockH = 14;
+            const osLabel = `O.S.: ${currentOS.osNumber || ""}`;
+            const rightX = marginX + contentW;
+            const osW = doc.getTextWidth(osLabel);
+            const textY = y + 9.0;
+            doc.text(osLabel, rightX - osW, textY);
+            y += headerBlockH;
+
+            drawTitleBar("RELATORIO DE ASSISTENCIA TECNICA");
+
+            // ====== SESSAO CLIENTE ======
+            const TITLE_COLORS = {
+                cliente: { r: 232, g: 240, b: 254 },
+                tecnico: { r: 232, g: 240, b: 254 },
+                financeiro: { r: 232, g: 240, b: 254 },
+            };
+            drawSectionHeaderColored("Dados do Cliente", TITLE_COLORS.cliente);
+            drawClientBar();
+            {
+                const appVal = currentOS.modelo && currentOS.numeroSerie
+                    ? `${currentOS.modelo} - ${currentOS.numeroSerie}`
+                    : currentOS.modelo || currentOS.numeroSerie || "";
+                const responsavel = currentOS.responsavel || currentOS.assistenteTecnico || "";
+                drawCells([
+                    { label: "Equipamento", value: appVal, width: 0.5 },
+                    { label: "Responsavel", value: responsavel, width: 0.5 },
+                ]);
+            }
+            drawFullRowMultipage("Motivo do Chamado", currentOS.motivoChamado || "");
+
+            // ====== SESSAO TECNICO ======
+            drawSectionHeaderColored("Dados Tecnicos", TITLE_COLORS.tecnico);
+            drawCells([{ label: "Assistente Tecnico", value: currentOS.assistenteTecnico || "", width: 1 }]);
+
+            if (currentOS.maintenanceType) {
+                drawCells([{ label: "Tipo de Manutencao", value: currentOS.maintenanceType, width: 1 }]);
+            }
+
+            const periods = Array.isArray(currentOS.worklogs) ? currentOS.worklogs : [];
+            if (periods.length > 0) {
+                periods.forEach((wl) => {
+                    const s = wl && wl.start_datetime ? parseAsLocalTime(wl.start_datetime) : null;
+                    const e = wl && wl.end_datetime ? parseAsLocalTime(wl.end_datetime) : null;
+                    const hNum = wl && wl.hours != null ? Number(wl.hours) || 0 : s && e ? Math.max((e - s) / 36e5, 0) : 0;
+                    const inicioVal = s ? `${fmtDateOnly(s)} ${fmtTimeOnly(s)}` : "";
+                    const fimVal = e ? `${fmtDateOnly(e)} ${fmtTimeOnly(e)}` : "";
+                    drawCells([
+                        { label: 'Inicio', value: inicioVal, width: 0.33 },
+                        { label: 'Fim', value: fimVal, width: 0.33 },
+                        { label: 'Horas', value: formatHours(hNum), width: 0.34 },
+                    ]);
+                });
+                const totalGeral = periods.reduce((acc, wl) => {
+                    if (wl && wl.hours != null) return acc + (Number(wl.hours) || 0);
+                    const s = wl && wl.start_datetime ? parseAsLocalTime(wl.start_datetime) : null;
+                    const e = wl && wl.end_datetime ? parseAsLocalTime(wl.end_datetime) : null;
+                    return acc + (s && e ? Math.max((e - s) / 36e5, 0) : 0);
+                }, 0);
+                drawCells([{ label: "Total de Horas", value: formatHours(totalGeral), width: 1 }]);
+            } else {
+                const inicioVal = currentOS.dataHoraInicio ? `${fmtDateOnly(currentOS.dataHoraInicio)} ${fmtTimeOnly(currentOS.dataHoraInicio)}` : "";
+                const fimVal = currentOS.dataHoraFim ? `${fmtDateOnly(currentOS.dataHoraFim)} ${fmtTimeOnly(currentOS.dataHoraFim)}` : "";
+                drawCells([
+                    { label: "Inicio", value: inicioVal, width: 0.33 },
+                    { label: "Fim", value: fimVal, width: 0.33 },
+                    { label: "Total de Horas", value: currentOS.totalHoras || "", width: 0.34 },
+                ]);
+            }
+
+            drawFullRowMultipage("Descricao", currentOS.descricao || "");
+
+            if (Array.isArray(currentOS.displacements) && currentOS.displacements.length > 0) {
+                currentOS.displacements.forEach((d, idx) => {
+                    let distText = "";
+                    const isSemDeslocamento = d && d.km_option && (
+                        String(d.km_option).toLowerCase() === 'nenhum' ||
+                        String(d.km_option).toLowerCase() === 'sem_deslocamento' ||
+                        String(d.km_option).toLowerCase().includes('sem')
+                    );
+                    if (d) {
+                        const opt = String(d.km_option || "").toLowerCase();
+                        if (isSemDeslocamento) distText = "Nao houve deslocamento";
+                        else if (opt.includes("50") && !opt.includes("100")) distText = "Ate 50 km";
+                        else if (opt.includes("100")) distText = "Ate 100 km";
+                        else if (opt.includes("maior") || opt.includes("acima") || opt.includes("above")) {
+                            const kmVal = d.km_total !== undefined && d.km_total !== null ? Number(d.km_total) : 0;
+                            distText = `Acima de 100 km: ${kmVal > 0 ? kmVal + ' km' : 'nao informado'}`;
+                        } else if (d.km_total !== undefined && d.km_total !== null && Number(d.km_total) > 0) {
+                            distText = `${d.km_total} km`;
+                        }
+                    }
+                    if (isSemDeslocamento) {
+                        drawFullRow(`Deslocamento ${idx + 1}`, distText);
+                    } else {
+                        const plate = resolvePlate(d && d.vehicle) || resolvePlate(d && d.vehicle_plate) || resolvePlate(d && d.plate) || resolvePlate(currentOS.carroUtilizado) || currentOS.carroUtilizado || "";
+                        drawCells([
+                            { label: `Deslocamento ${idx + 1}`, value: distText, width: 0.5 },
+                            { label: "Placa", value: plate, width: 0.5 },
+                        ]);
+                    }
+                });
+            } else if (currentOS.deslocamentoKm || currentOS.carroUtilizado) {
+                let distText = "";
+                const kmVal = Number(currentOS.deslocamentoKm || 0);
+                if (!isNaN(kmVal) && kmVal > 0) {
+                    if (kmVal <= 50) distText = "Ate 50 km";
+                    else if (kmVal <= 100) distText = "Ate 100 km";
+                    else distText = `Acima: ${kmVal} km`;
+                }
+                const plate = resolvePlate(currentOS.carroUtilizado);
+                drawCells([
+                    { label: "Deslocamento", value: distText, width: 0.5 },
+                    { label: "Placa", value: plate, width: 0.5 },
+                ]);
+            }
+
+            // ====== SESSAO FINANCEIRO ======
+            drawSectionHeaderColored("Dados Financeiros", TITLE_COLORS.financeiro);
+            const { totalKm, cost: deslocCost } = computeDisplacementCost();
+            const valServicoNum = Number(currentOS.valorServico || 0);
+            const custoMatNum = Number(currentOS.custoMateriais || 0);
+            const totalHorasNum = Number(currentOS.totalHorasNum || 0);
+            const valorHoraNum = Number(currentOS.valorHoraTecnico) || (currentOS.isNewClient ? 175 : 150);
+            const custoHorasTrabalhadasNum = valorHoraNum * totalHorasNum;
+
+            drawCells([
+                { label: "Horas Trabalhadas", value: currentOS.totalHoras || "", width: 1 / 3 },
+                { label: "Valor da Hora", value: fmtBRL(valorHoraNum), width: 1 / 3 },
+                { label: "Total", value: fmtBRL(custoHorasTrabalhadasNum), width: 1 / 3 },
+            ]);
+
+            if (Array.isArray(currentOS.materiais) && currentOS.materiais.length > 0) {
+                currentOS.materiais.forEach((m) => {
+                    drawCells([
+                        { label: "Material", value: m.name || "", width: 0.35 },
+                        { label: "Qtde", value: formatQuantity(m.quantity), width: 0.1 },
+                        { label: "Val. Unit.", value: fmtBRL(m.unit_price), width: 0.27 },
+                        { label: "Total", value: fmtBRL(m.line_total), width: 0.28 },
+                    ]);
+                });
+                drawFullRow("Custo Total de Materiais", fmtBRL(custoMatNum));
+            }
+
+            if (totalKm > 0) {
+                drawCells([
+                    { label: `Deslocamento (${totalKm} km)`, value: fmtBRL(deslocCost), width: 1 },
+                ]);
+            }
+
+            if (valServicoNum > 0) {
+                drawFullRow("Servico Adicional", fmtBRL(valServicoNum));
+            }
+
+            // ====== TOTAL GERAL ======
+            {
+                const totalGer = fmtBRL(currentOS.totalGeral);
+                const lineH = 8;
+                ensureSpace(lineH);
+                doc.setFillColor(232, 240, 254);
+                doc.rect(marginX, y, contentW, lineH, "F");
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(10);
+                doc.setTextColor(0);
+                doc.text("Total Geral da O.S.", marginX + LEFT_INNER, y + 5.2);
+                doc.text(totalGer, marginX + contentW - doc.getTextWidth(totalGer) - RIGHT_INNER, y + 5.2);
+                y += lineH;
+            }
+
+            drawSignatures();
+            drawFooter();
+
+            pdfDoc = doc;
+            document.getElementById('status').innerHTML = '<span class="success">PDF gerado com sucesso!</span>';
+        }
+
+        function downloadPDF() {
+            if (!pdfDoc || !currentOS) return;
+            pdfDoc.save(`OS_${currentOS.osNumber}.pdf`);
+        }
+
+        function openPDF() {
+            if (!pdfDoc) return;
+            const pdfBlob = pdfDoc.output('blob');
+            const pdfUrl = URL.createObjectURL(pdfBlob);
+            window.open(pdfUrl, '_blank');
+            setTimeout(() => URL.revokeObjectURL(pdfUrl), 60000);
+        }
+    </script>
+</body>
+</html>
