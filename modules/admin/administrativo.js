@@ -3029,6 +3029,52 @@ function loadMachinesList(companyId) {
 }
 
 /**
+ * Abre a página da cobrança na Conta Azul
+ * Busca a URL do boleto via API e abre em nova aba
+ */
+async function abrirCobrancaContaAzul(cobrancaId) {
+  try {
+    // Mostra loading
+    const btn = event?.target?.closest('button')
+    if (btn) {
+      btn.disabled = true
+      btn.innerHTML = '<span style="display: inline-flex; align-items: center; gap: 0.25rem;">Carregando...</span>'
+    }
+
+    // Busca a URL do boleto via API
+    const response = await fetch(`${API_URL}/api/contaazul/cobrancas/${cobrancaId}/boleto`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    })
+
+    if (!response.ok) {
+      throw new Error('Erro ao buscar URL da cobrança')
+    }
+
+    const data = await response.json()
+
+    if (data.url) {
+      // Abre a URL em nova aba
+      window.open(data.url, '_blank')
+    } else {
+      // Se não tem URL, mostra mensagem
+      alert('URL da cobrança não encontrada. Verifique se a cobrança tem boleto gerado na Conta Azul.')
+    }
+  } catch (error) {
+    console.error('Erro ao abrir cobrança:', error)
+    alert('Erro ao buscar cobrança: ' + error.message)
+  } finally {
+    // Restaura o botão
+    const btn = event?.target?.closest('button')
+    if (btn) {
+      btn.disabled = false
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Cobrança'
+    }
+  }
+}
+
+/**
  * Visualiza uma ordem de serviço específica e abre o modal.
  */
 async function viewOSDetails(id) {
@@ -7979,7 +8025,22 @@ function renderBillingOSList(osList, tab) {
                   justify-content: center;
                   gap: 0.25rem;
                 "><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Boleto</button>
-                ` : ''}
+                ` : (os.cobranca_id ? `
+                <button onclick="abrirCobrancaContaAzul('${os.cobranca_id}')" style="
+                  padding: 0.625rem 1rem;
+                  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+                  color: white;
+                  border: none;
+                  border-radius: 8px;
+                  cursor: pointer;
+                  font-size: 0.85rem;
+                  font-weight: 600;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  gap: 0.25rem;
+                "><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Cobrança</button>
+                ` : '')}
                 <span style="text-align: center; color: var(--success-color); font-weight: 600; padding: 0.625rem; display: flex; align-items: center; justify-content: center; gap: 0.25rem;">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Faturada
                 </span>
@@ -8085,7 +8146,31 @@ function renderBillingOSList(osList, tab) {
                   </svg>
                   Boleto
                 </button>
-                ` : ''}
+                ` : (os.cobranca_id ? `
+                <button onclick="abrirCobrancaContaAzul('${os.cobranca_id}')" title="Ver Cobrança" style="
+                  padding: 0.5rem 0.75rem;
+                  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+                  color: white;
+                  border: none;
+                  border-radius: 6px;
+                  cursor: pointer;
+                  font-size: 0.875rem;
+                  font-weight: 500;
+                  display: inline-flex;
+                  align-items: center;
+                  gap: 0.35rem;
+                  margin-right: 0.5rem;
+                  justify-content: center;
+                " onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                  </svg>
+                  Cobrança
+                </button>
+                ` : '')}
                 <span style="color: var(--success-color); font-weight: 600;">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: middle;">
                     <polyline points="20 6 9 17 4 12"/>
