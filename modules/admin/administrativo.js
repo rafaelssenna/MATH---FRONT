@@ -10264,35 +10264,57 @@ async function downloadBoletoPDF(idCobranca) {
   }
 
   try {
-    showToast('Baixando PDF do boleto... Aguarde, pode demorar alguns segundos.', 'info')
+    showToast('Buscando URL do boleto...', 'info')
 
-    const response = await fetch(`${API_URL}/api/contaazul/cobrancas/${idCobranca}/boleto/download`, {
+    // Primeiro busca a URL da cobrança (usa o mesmo endpoint que já funciona)
+    const urlResponse = await fetch(`${API_URL}/api/contaazul/cobrancas/${idCobranca}/boleto`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
     })
 
-    if (!response.ok) {
-      const error = await response.json()
-
-      if (response.status === 404) {
+    if (!urlResponse.ok) {
+      const error = await urlResponse.json()
+      if (urlResponse.status === 404) {
         showToast('Boleto não encontrado. Gere no Conta Azul primeiro.', 'warning')
         return
       }
+      throw new Error(error.error || 'Erro ao buscar URL do boleto')
+    }
 
+    const urlData = await urlResponse.json()
+    if (!urlData.url) {
+      showToast('URL do boleto não disponível', 'warning')
+      return
+    }
+
+    showToast('Baixando PDF do boleto... Aguarde, pode demorar alguns segundos.', 'info')
+
+    // Agora faz o download do PDF passando a URL
+    const response = await fetch(`${API_URL}/api/contaazul/boleto/download`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ url: urlData.url })
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
       throw new Error(error.error || 'Erro ao baixar boleto')
     }
 
     // Recebe o PDF e faz download
     const blob = await response.blob()
-    const url = window.URL.createObjectURL(blob)
+    const downloadUrl = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
-    a.href = url
+    a.href = downloadUrl
     a.download = `boleto-${idCobranca}.pdf`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
-    window.URL.revokeObjectURL(url)
+    window.URL.revokeObjectURL(downloadUrl)
 
     showToast('PDF do boleto baixado com sucesso!', 'success')
   } catch (error) {
