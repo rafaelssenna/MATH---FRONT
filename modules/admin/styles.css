@@ -1255,37 +1255,55 @@ body {
   background: rgba(139, 92, 246, 0.08);
 }
 
-/* Animação de piscar quando há pedidos pendentes */
+/* Animação de piscar quando há pedidos pendentes - BEM CHAMATIVA */
 .menu-group-products.has-pending .menu-group-header {
-  animation: pulseOrange 0.8s ease-in-out infinite !important;
+  animation: blinkOrange 0.6s linear infinite !important;
   transition: none !important;
+  position: relative;
 }
 
+/* Pisca o item específico de Pedidos de Compra */
+.menu-group-products.has-pending #purchaseOrdersNavItem {
+  animation: blinkItem 0.6s linear infinite !important;
+}
+
+/* Badge pulsando */
 .menu-group-products.has-pending .menu-badge {
-  animation: pulseBadge 0.8s ease-in-out infinite !important;
+  animation: pulseBadge 0.6s ease-in-out infinite !important;
 }
 
-@keyframes pulseOrange {
-  0%, 100% {
-    background: rgba(249, 115, 22, 0.15) !important;
-    box-shadow: 0 0 0 rgba(249, 115, 22, 0) !important;
-    border-left-color: #f97316 !important;
+/* Animação principal - pisca de verdade */
+@keyframes blinkOrange {
+  0%, 49% {
+    background: rgba(249, 115, 22, 0.1) !important;
+    box-shadow: none !important;
   }
-  50% {
-    background: rgba(249, 115, 22, 0.5) !important;
-    box-shadow: 0 0 20px rgba(249, 115, 22, 0.8), inset 0 0 15px rgba(249, 115, 22, 0.2) !important;
-    border-left-color: #ff6b00 !important;
+  50%, 100% {
+    background: rgba(249, 115, 22, 0.6) !important;
+    box-shadow: 0 0 25px rgba(249, 115, 22, 0.9), inset 0 0 20px rgba(249, 115, 22, 0.3) !important;
   }
 }
 
+/* Pisca o item do submenu */
+@keyframes blinkItem {
+  0%, 49% {
+    background: transparent !important;
+  }
+  50%, 100% {
+    background: rgba(249, 115, 22, 0.3) !important;
+    box-shadow: inset 0 0 10px rgba(249, 115, 22, 0.5) !important;
+  }
+}
+
+/* Badge cresce e brilha */
 @keyframes pulseBadge {
-  0%, 100% {
+  0%, 49% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.7);
+    box-shadow: 0 0 5px rgba(249, 115, 22, 0.5);
   }
-  50% {
-    transform: scale(1.15);
-    box-shadow: 0 0 0 8px rgba(249, 115, 22, 0);
+  50%, 100% {
+    transform: scale(1.2);
+    box-shadow: 0 0 15px rgba(249, 115, 22, 1), 0 0 30px rgba(249, 115, 22, 0.5);
   }
 }
 
