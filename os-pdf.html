@@ -122,35 +122,40 @@
 
         function mapOSFields() {
             // Mapeia os campos do banco para os nomes usados no PDF
+            // Campos do banco: snake_case, campos do PDF: camelCase ou português
             currentOS.osNumber = currentOS.order_number;
             currentOS.cliente = currentOS.client_name || currentOS.company_name || '';
             currentOS.clienteCnpj = currentOS.company_cnpj || '';
             currentOS.modelo = currentOS.machine_model || '';
             currentOS.numeroSerie = currentOS.machine_serial || '';
-            currentOS.responsavel = currentOS.responsible || '';
+            currentOS.responsavel = currentOS.requester || currentOS.responsible || '';
             currentOS.motivoChamado = currentOS.call_reason || '';
             currentOS.assistenteTecnico = currentOS.technician_username || '';
             currentOS.maintenanceType = currentOS.maintenance_type || '';
-            currentOS.descricao = currentOS.description || '';
-            currentOS.dataHoraInicio = currentOS.started_at;
-            currentOS.dataHoraFim = currentOS.finished_at;
-            currentOS.dataProgramada = currentOS.scheduled_date;
+            // service_description é o campo do banco
+            currentOS.descricao = currentOS.service_description || currentOS.description || '';
+            // start_datetime e end_datetime são os campos do banco
+            currentOS.dataHoraInicio = currentOS.start_datetime || currentOS.started_at;
+            currentOS.dataHoraFim = currentOS.end_datetime || currentOS.finished_at;
+            currentOS.dataProgramada = currentOS.scheduled_date || currentOS.created_at;
             currentOS.totalHoras = currentOS.total_hours || '';
             currentOS.totalHorasNum = Number(currentOS.total_hours) || 0;
-            currentOS.valorServico = currentOS.service_value || 0;
-            currentOS.custoServico = currentOS.service_cost || 0;
-            currentOS.custoMateriais = currentOS.materials_cost || 0;
+            // value_service é o campo do banco
+            currentOS.valorServico = currentOS.value_service || currentOS.service_value || 0;
+            currentOS.custoServico = currentOS.total_service_cost || currentOS.service_cost || 0;
+            // total_material_cost é o campo do banco
+            currentOS.custoMateriais = currentOS.total_material_cost || currentOS.materials_cost || 0;
             currentOS.totalGeral = currentOS.grand_total || 0;
             currentOS.isNewClient = currentOS.is_new_client || false;
             currentOS.valorHoraTecnico = currentOS.hourly_rate || (currentOS.isNewClient ? 175 : 150);
             currentOS.signatureTecnico = currentOS.signature_technician || null;
-            currentOS.signatureCliente = currentOS.signature_client || null;
+            currentOS.signatureCliente = currentOS.signature_client || currentOS.client_signature || null;
             currentOS.materiais = currentOS.materials || [];
             currentOS.worklogs = currentOS.worklogs || [];
             currentOS.displacements = currentOS.displacements || [];
             currentOS.additionalServices = currentOS.additionalServices || [];
             currentOS.deslocamentoKm = currentOS.displacement_km || 0;
-            currentOS.carroUtilizado = currentOS.vehicle_used || '';
+            currentOS.carroUtilizado = currentOS.vehicle_used || currentOS.car_used || '';
         }
 
         function showError(msg) {
