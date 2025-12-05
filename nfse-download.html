@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download NFS-e - Helsen Service</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0d3b66 0%, #1d5a8c 50%, #2980b9 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 50px 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .logo {
+            max-width: 180px;
+            margin-bottom: 30px;
+        }
+
+        .icon-container {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #c41e3a 0%, #a01830 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 25px;
+            font-size: 45px;
+            box-shadow: 0 10px 30px rgba(196, 30, 58, 0.3);
+        }
+
+        .icon-container.success {
+            background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%);
+            box-shadow: 0 10px 30px rgba(39, 174, 96, 0.3);
+        }
+
+        .icon-container.error {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            box-shadow: 0 10px 30px rgba(231, 76, 60, 0.3);
+        }
+
+        h1 {
+            color: #1a365d;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .nfse-number {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 12px;
+            padding: 15px 25px;
+            margin: 20px 0;
+            display: inline-block;
+        }
+
+        .nfse-number span {
+            color: #6c757d;
+            font-size: 14px;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .nfse-number strong {
+            color: #c41e3a;
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .status {
+            color: #4a5568;
+            font-size: 16px;
+            margin: 20px 0;
+            line-height: 1.6;
+        }
+
+        /* Spinner */
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e9ecef;
+            border-top-color: #c41e3a;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Progress bar */
+        .progress-container {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 8px;
+            margin: 25px 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, #c41e3a, #e74c3c, #c41e3a);
+            background-size: 200% 100%;
+            height: 100%;
+            width: 30%;
+            border-radius: 10px;
+            animation: progress 1.5s ease-in-out infinite;
+        }
+
+        @keyframes progress {
+            0% { background-position: 100% 0; width: 30%; }
+            50% { width: 70%; }
+            100% { background-position: -100% 0; width: 30%; }
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 14px 35px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 15px;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #c41e3a 0%, #a01830 100%);
+            color: white;
+            box-shadow: 0 5px 20px rgba(196, 30, 58, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(196, 30, 58, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .btn-secondary:hover {
+            background: #dee2e6;
+        }
+
+        .error-message {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 10px;
+            padding: 15px;
+            color: #dc2626;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+            color: #6c757d;
+            font-size: 13px;
+        }
+
+        .footer a {
+            color: #0d3b66;
+            text-decoration: none;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="assets/logohelsen.png" alt="Helsen Service" class="logo">
+
+        <div id="loading-state">
+            <div class="icon-container">
+                🧾
+            </div>
+            <h1>Nota Fiscal de Serviço</h1>
+
+            <div class="nfse-number">
+                <span>NFS-e Número</span>
+                <strong id="nfse-num">---</strong>
+            </div>
+
+            <div class="spinner"></div>
+            <div class="progress-container">
+                <div class="progress-bar"></div>
+            </div>
+
+            <p class="status" id="status-text">Preparando download...</p>
+        </div>
+
+        <div id="success-state" class="hidden">
+            <div class="icon-container success">
+                ✓
+            </div>
+            <h1>Download Concluído!</h1>
+
+            <div class="nfse-number">
+                <span>NFS-e Número</span>
+                <strong id="nfse-num-success">---</strong>
+            </div>
+
+            <p class="status">Seu PDF foi baixado com sucesso.</p>
+
+            <button class="btn btn-primary" onclick="downloadAgain()">
+                Baixar Novamente
+            </button>
+        </div>
+
+        <div id="error-state" class="hidden">
+            <div class="icon-container error">
+                ✕
+            </div>
+            <h1>Erro no Download</h1>
+
+            <div class="error-message" id="error-message">
+                Não foi possível baixar o PDF.
+            </div>
+
+            <p class="status">Por favor, tente novamente ou entre em contato conosco.</p>
+
+            <button class="btn btn-primary" onclick="retryDownload()">
+                Tentar Novamente
+            </button>
+            <br>
+            <a href="https://faturas.contaazul.com" class="btn btn-secondary" style="margin-top: 10px;">
+                Acessar Conta Azul
+            </a>
+        </div>
+
+        <div class="footer">
+            <strong>Helsen Service</strong><br>
+            <a href="https://www.helsenservice.com.br">www.helsenservice.com.br</a>
+        </div>
+    </div>
+
+    <script>
+        let pdfUrl = null;
+        let nfseNumber = null;
+        let pdfBlob = null;
+
+        async function init() {
+            const params = new URLSearchParams(window.location.search);
+            pdfUrl = params.get('url');
+            nfseNumber = params.get('nfse') || '---';
+
+            // Atualiza número da NFS-e
+            document.getElementById('nfse-num').textContent = nfseNumber;
+            document.getElementById('nfse-num-success').textContent = nfseNumber;
+
+            if (!pdfUrl) {
+                showError('URL do PDF não fornecida');
+                return;
+            }
+
+            await downloadPdf();
+        }
+
+        async function downloadPdf() {
+            showLoading();
+            updateStatus('Conectando ao servidor...');
+
+            try {
+                updateStatus('Baixando nota fiscal...');
+
+                const response = await fetch(pdfUrl);
+
+                if (!response.ok) {
+                    throw new Error(`Erro ${response.status}: ${response.statusText}`);
+                }
+
+                updateStatus('Processando documento...');
+
+                pdfBlob = await response.blob();
+
+                if (pdfBlob.size < 1000) {
+                    throw new Error('PDF inválido ou vazio');
+                }
+
+                updateStatus('Abrindo PDF...');
+
+                // Cria URL e abre o PDF
+                const blobUrl = URL.createObjectURL(pdfBlob);
+
+                // Tenta abrir em nova aba
+                const newWindow = window.open(blobUrl, '_blank');
+
+                // Se bloqueado por popup, faz download direto
+                if (!newWindow || newWindow.closed) {
+                    const a = document.createElement('a');
+                    a.href = blobUrl;
+                    a.download = `NFS-e_${nfseNumber}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                }
+
+                // Limpa URL após 1 minuto
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+
+                showSuccess();
+
+            } catch (error) {
+                console.error('Erro:', error);
+                showError(error.message);
+            }
+        }
+
+        function showLoading() {
+            document.getElementById('loading-state').classList.remove('hidden');
+            document.getElementById('success-state').classList.add('hidden');
+            document.getElementById('error-state').classList.add('hidden');
+        }
+
+        function showSuccess() {
+            document.getElementById('loading-state').classList.add('hidden');
+            document.getElementById('success-state').classList.remove('hidden');
+            document.getElementById('error-state').classList.add('hidden');
+        }
+
+        function showError(message) {
+            document.getElementById('loading-state').classList.add('hidden');
+            document.getElementById('success-state').classList.add('hidden');
+            document.getElementById('error-state').classList.remove('hidden');
+
+            const errorEl = document.getElementById('error-message');
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+        }
+
+        function updateStatus(text) {
+            document.getElementById('status-text').textContent = text;
+        }
+
+        function retryDownload() {
+            downloadPdf();
+        }
+
+        function downloadAgain() {
+            if (pdfBlob) {
+                const blobUrl = URL.createObjectURL(pdfBlob);
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                a.download = `NFS-e_${nfseNumber}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+            } else {
+                downloadPdf();
+            }
+        }
+
+        // Inicia
+        init();
+    </script>
+</body>
+</html>
