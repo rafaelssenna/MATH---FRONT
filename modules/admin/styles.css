@@ -1257,20 +1257,35 @@ body {
 
 /* Animação de piscar quando há pedidos pendentes */
 .menu-group-products.has-pending .menu-group-header {
-  animation: pulseOrange 1.2s ease-in-out infinite !important;
+  animation: pulseOrange 0.8s ease-in-out infinite !important;
   transition: none !important;
+}
+
+.menu-group-products.has-pending .menu-badge {
+  animation: pulseBadge 0.8s ease-in-out infinite !important;
 }
 
 @keyframes pulseOrange {
   0%, 100% {
-    background: rgba(249, 115, 22, 0.1) !important;
+    background: rgba(249, 115, 22, 0.15) !important;
     box-shadow: 0 0 0 rgba(249, 115, 22, 0) !important;
     border-left-color: #f97316 !important;
   }
   50% {
-    background: rgba(249, 115, 22, 0.35) !important;
-    box-shadow: 0 0 15px rgba(249, 115, 22, 0.6), inset 0 0 10px rgba(249, 115, 22, 0.1) !important;
-    border-left-color: #ea580c !important;
+    background: rgba(249, 115, 22, 0.5) !important;
+    box-shadow: 0 0 20px rgba(249, 115, 22, 0.8), inset 0 0 15px rgba(249, 115, 22, 0.2) !important;
+    border-left-color: #ff6b00 !important;
+  }
+}
+
+@keyframes pulseBadge {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.7);
+  }
+  50% {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 8px rgba(249, 115, 22, 0);
   }
 }
 
