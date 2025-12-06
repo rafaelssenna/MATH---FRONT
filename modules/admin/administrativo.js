@@ -9768,7 +9768,33 @@ function updateContaAzulStatusUI(status) {
       if (btnConnect) btnConnect.style.display = 'none'
       if (btnTest) btnTest.style.display = 'flex'
       if (btnDisconnect) btnDisconnect.style.display = 'flex'
+    } else if (status.connected && !status.isValid) {
+      // Token expirado - precisa reconectar
+      statusIcon.style.background = 'rgba(245, 158, 11, 0.1)'
+      statusIcon.innerHTML = `<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>`
+      statusTitle.textContent = 'Token Expirado'
+      statusTitle.style.color = '#f59e0b'
+      statusDesc.textContent = 'O token de acesso expirou. Clique em "Reconectar" para renovar.'
+
+      if (connectionDetails) connectionDetails.style.display = 'none'
+      if (btnConnect) {
+        btnConnect.style.display = 'flex'
+        btnConnect.textContent = ''
+        btnConnect.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M23 4v6h-6"/>
+          <path d="M1 20v-6h6"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+        Reconectar ao Conta Azul`
+      }
+      if (btnTest) btnTest.style.display = 'none'
+      if (btnDisconnect) btnDisconnect.style.display = 'flex'
     } else {
+      // Não conectado
       statusIcon.style.background = 'rgba(239, 68, 68, 0.1)'
       statusIcon.innerHTML = `<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2">
         <circle cx="12" cy="12" r="10"/>
@@ -9780,7 +9806,15 @@ function updateContaAzulStatusUI(status) {
       statusDesc.textContent = status.error || 'Conecte-se ao Conta Azul para buscar notas fiscais'
 
       if (connectionDetails) connectionDetails.style.display = 'none'
-      if (btnConnect) btnConnect.style.display = 'flex'
+      if (btnConnect) {
+        btnConnect.style.display = 'flex'
+        btnConnect.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+          <polyline points="10 17 15 12 10 7"/>
+          <line x1="15" y1="12" x2="3" y2="12"/>
+        </svg>
+        Conectar ao Conta Azul`
+      }
       if (btnTest) btnTest.style.display = 'none'
       if (btnDisconnect) btnDisconnect.style.display = 'none'
     }
