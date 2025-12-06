@@ -4130,7 +4130,8 @@ function filterAllOS() {
 }
 
 /**
- * Visualiza detalhes de uma OS (versão técnico - pode ocultar valores)
+ * Visualiza detalhes COMPLETOS de uma OS (versão técnico)
+ * Mostra todas as informações incluindo materiais, horas, deslocamentos, etc.
  */
 async function viewOSDetailsTech(osId, hidePrices = false) {
   try {
@@ -4142,68 +4143,163 @@ async function viewOSDetailsTech(osId, hidePrices = false) {
     const modal = document.getElementById('osModal') || createOSModal()
     const details = modal.querySelector('#osDetails') || modal.querySelector('.modal-content')
 
-    const formattedDate = os.scheduled_date ? new Date(os.scheduled_date).toLocaleDateString('pt-BR') :
-                         os.created_at ? new Date(os.created_at).toLocaleDateString('pt-BR') : 'N/A'
+    // Formata datas
+    const formatDate = (dateStr) => {
+      if (!dateStr) return 'N/A'
+      const d = new Date(dateStr)
+      return d.toLocaleDateString('pt-BR')
+    }
+    const formatDateTime = (dateStr) => {
+      if (!dateStr) return 'N/A'
+      const d = new Date(dateStr)
+      return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+    }
+    const formatCurrency = (val) => {
+      if (!val && val !== 0) return 'N/A'
+      return 'R$ ' + Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    }
 
+    // Monta HTML com TODAS as informações
     let html = `
-      <h3 style="color: var(--primary-blue); margin-bottom: 1rem;">${os.order_number ? `O.S ${os.order_number}` : `S.S ${os.id}`}</h3>
+      <div style="max-height: 70vh; overflow-y: auto; padding-right: 0.5rem;">
+        <h3 style="color: var(--primary-blue); margin-bottom: 1rem; position: sticky; top: 0; background: var(--bg-card); padding: 0.5rem 0;">
+          ${os.order_number ? `O.S ${os.order_number}` : `S.S ${os.id}`}
+          <span class="status-badge status-${os.status}" style="margin-left: 0.5rem; font-size: 0.75rem;">${getStatusLabel(os.status)}</span>
+        </h3>
 
-      <div style="display: grid; gap: 1rem; margin-bottom: 1.5rem;">
-        <div class="info-group">
-          <strong>Cliente:</strong>
-          <p>${os.client_name || 'N/A'}</p>
+        <!-- INFORMAÇÕES BÁSICAS -->
+        <div style="background: var(--bg-secondary); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+          <h4 style="margin: 0 0 0.75rem 0; font-size: 0.9rem; color: var(--text-secondary);">📋 Informações Básicas</h4>
+          <div style="display: grid; gap: 0.5rem;">
+            <div><strong>Cliente:</strong> ${os.client_name || os.company_name || 'N/A'}</div>
+            ${os.company_cnpj ? `<div><strong>CNPJ:</strong> ${os.company_cnpj}</div>` : ''}
+            <div><strong>Data Agendada:</strong> ${formatDate(os.scheduled_date || os.created_at)}</div>
+            <div><strong>Tipo:</strong> ${os.maintenance_type || 'N/A'}</div>
+            ${os.requester ? `<div><strong>Solicitante:</strong> ${os.requester}</div>` : ''}
+          </div>
         </div>
-        <div class="info-group">
-          <strong>Data Agendada:</strong>
-          <p>${formattedDate}</p>
-        </div>
-        <div class="info-group">
-          <strong>Status:</strong>
-          <span class="status-badge status-${os.status}">${getStatusLabel(os.status)}</span>
-        </div>
-        <div class="info-group">
-          <strong>Tipo de Manutenção:</strong>
-          <p>${os.maintenance_type || 'N/A'}</p>
-        </div>
+
+        <!-- MÁQUINA -->
         ${os.machine_model ? `
-          <div class="info-group">
-            <strong>Máquina:</strong>
-            <p>${os.machine_model}${os.machine_serial ? ' - ' + os.machine_serial : ''}</p>
+        <div style="background: var(--bg-secondary); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+          <h4 style="margin: 0 0 0.75rem 0; font-size: 0.9rem; color: var(--text-secondary);">🔧 Máquina</h4>
+          <div style="display: grid; gap: 0.5rem;">
+            <div><strong>Modelo:</strong> ${os.machine_model}</div>
+            ${os.machine_serial ? `<div><strong>Nº Série:</strong> ${os.machine_serial}</div>` : ''}
           </div>
+        </div>
         ` : ''}
-        ${os.call_reason ? `
-          <div class="info-group">
-            <strong>Motivo do Chamado:</strong>
-            <p>${os.call_reason}</p>
+
+        <!-- DESCRIÇÕES -->
+        <div style="background: var(--bg-secondary); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+          <h4 style="margin: 0 0 0.75rem 0; font-size: 0.9rem; color: var(--text-secondary);">📝 Descrições</h4>
+          <div style="display: grid; gap: 0.75rem;">
+            ${os.call_reason ? `<div><strong>Motivo do Chamado:</strong><p style="margin: 0.25rem 0 0 0; white-space: pre-wrap;">${os.call_reason}</p></div>` : ''}
+            ${os.service_description ? `<div><strong>Descrição do Serviço:</strong><p style="margin: 0.25rem 0 0 0; white-space: pre-wrap;">${os.service_description}</p></div>` : ''}
+            ${os.occurrence ? `<div><strong>Ocorrência:</strong><p style="margin: 0.25rem 0 0 0; white-space: pre-wrap;">${os.occurrence}</p></div>` : ''}
+            ${os.observations ? `<div><strong>Observações:</strong><p style="margin: 0.25rem 0 0 0; white-space: pre-wrap;">${os.observations}</p></div>` : ''}
           </div>
-        ` : ''}
-        ${os.service_description ? `
-          <div class="info-group">
-            <strong>Descrição do Serviço:</strong>
-            <p>${os.service_description}</p>
+        </div>
+
+        <!-- HORÁRIOS -->
+        ${(os.start_datetime || os.end_datetime || os.total_hours) ? `
+        <div style="background: var(--bg-secondary); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+          <h4 style="margin: 0 0 0.75rem 0; font-size: 0.9rem; color: var(--text-secondary);">⏱️ Horários</h4>
+          <div style="display: grid; gap: 0.5rem;">
+            ${os.start_datetime ? `<div><strong>Início:</strong> ${formatDateTime(os.start_datetime)}</div>` : ''}
+            ${os.end_datetime ? `<div><strong>Término:</strong> ${formatDateTime(os.end_datetime)}</div>` : ''}
+            ${os.total_hours ? `<div><strong>Total de Horas:</strong> ${os.total_hours}h</div>` : ''}
           </div>
+        </div>
         ` : ''}
-        ${os.occurrence ? `
-          <div class="info-group">
-            <strong>Ocorrência:</strong>
-            <p>${os.occurrence}</p>
+
+        <!-- MATERIAIS -->
+        ${os.materials && os.materials.length > 0 ? `
+        <div style="background: var(--bg-secondary); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+          <h4 style="margin: 0 0 0.75rem 0; font-size: 0.9rem; color: var(--text-secondary);">📦 Materiais Utilizados (${os.materials.length})</h4>
+          <div style="display: grid; gap: 0.5rem;">
+            ${os.materials.map(m => `
+              <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: var(--bg-card); border-radius: 4px;">
+                <span>${m.name || m.description} ${m.quantity ? `(${m.quantity}x)` : ''}</span>
+                ${!hidePrices && m.total_price ? `<strong>${formatCurrency(m.total_price)}</strong>` : ''}
+              </div>
+            `).join('')}
           </div>
+        </div>
         ` : ''}
-        ${os.observations ? `
-          <div class="info-group">
-            <strong>Observações:</strong>
-            <p>${os.observations}</p>
+
+        <!-- DESLOCAMENTOS -->
+        ${os.displacements && os.displacements.length > 0 ? `
+        <div style="background: var(--bg-secondary); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+          <h4 style="margin: 0 0 0.75rem 0; font-size: 0.9rem; color: var(--text-secondary);">🚗 Deslocamentos (${os.displacements.length})</h4>
+          <div style="display: grid; gap: 0.5rem;">
+            ${os.displacements.map(d => `
+              <div style="padding: 0.5rem; background: var(--bg-card); border-radius: 4px;">
+                <div><strong>${d.km || d.distance} km</strong> ${d.vehicle ? `- ${d.vehicle}` : ''}</div>
+                ${d.description ? `<div style="font-size: 0.85rem; color: var(--text-secondary);">${d.description}</div>` : ''}
+              </div>
+            `).join('')}
           </div>
+        </div>
         ` : ''}
-        ${!hidePrices && os.total_amount ? `
-          <div class="info-group">
-            <strong>Valor Total:</strong>
-            <p style="font-size: 1.25rem; color: var(--success);">R$ ${Number(os.total_amount).toFixed(2)}</p>
+
+        <!-- SERVIÇOS ADICIONAIS -->
+        ${os.additionalServices && os.additionalServices.length > 0 ? `
+        <div style="background: var(--bg-secondary); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+          <h4 style="margin: 0 0 0.75rem 0; font-size: 0.9rem; color: var(--text-secondary);">➕ Serviços Adicionais (${os.additionalServices.length})</h4>
+          <div style="display: grid; gap: 0.5rem;">
+            ${os.additionalServices.map(s => `
+              <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: var(--bg-card); border-radius: 4px;">
+                <span>${s.description}</span>
+                ${!hidePrices && s.value ? `<strong>${formatCurrency(s.value)}</strong>` : ''}
+              </div>
+            `).join('')}
           </div>
+        </div>
         ` : ''}
+
+        <!-- VALORES (se não estiver ocultando preços) -->
+        ${!hidePrices ? `
+        <div style="background: linear-gradient(135deg, var(--primary-blue) 0%, #1d5a8c 100%); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; color: white;">
+          <h4 style="margin: 0 0 0.75rem 0; font-size: 0.9rem; opacity: 0.9;">💰 Valores</h4>
+          <div style="display: grid; gap: 0.5rem;">
+            ${os.total_service_cost ? `<div style="display: flex; justify-content: space-between;"><span>Mão de Obra:</span><span>${formatCurrency(os.total_service_cost)}</span></div>` : ''}
+            ${os.total_material_cost ? `<div style="display: flex; justify-content: space-between;"><span>Materiais:</span><span>${formatCurrency(os.total_material_cost)}</span></div>` : ''}
+            ${os.value_service ? `<div style="display: flex; justify-content: space-between;"><span>Serviços Adicionais:</span><span>${formatCurrency(os.value_service)}</span></div>` : ''}
+            ${os.grand_total ? `
+              <div style="border-top: 1px solid rgba(255,255,255,0.3); padding-top: 0.5rem; margin-top: 0.5rem; display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: bold;">
+                <span>TOTAL:</span>
+                <span>${formatCurrency(os.grand_total)}</span>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+        ` : ''}
+
+        <!-- ASSINATURAS -->
+        ${(os.signature_technician || os.signature_client) ? `
+        <div style="background: var(--bg-secondary); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+          <h4 style="margin: 0 0 0.75rem 0; font-size: 0.9rem; color: var(--text-secondary);">✍️ Assinaturas</h4>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            ${os.signature_technician ? `
+              <div style="text-align: center;">
+                <img src="${os.signature_technician}" alt="Assinatura Técnico" style="max-width: 100%; max-height: 80px; border: 1px solid var(--border); border-radius: 4px; background: white;">
+                <div style="font-size: 0.75rem; margin-top: 0.25rem;">Técnico</div>
+              </div>
+            ` : '<div></div>'}
+            ${os.signature_client ? `
+              <div style="text-align: center;">
+                <img src="${os.signature_client}" alt="Assinatura Cliente" style="max-width: 100%; max-height: 80px; border: 1px solid var(--border); border-radius: 4px; background: white;">
+                <div style="font-size: 0.75rem; margin-top: 0.25rem;">Cliente</div>
+              </div>
+            ` : '<div></div>'}
+          </div>
+        </div>
+        ` : ''}
+
       </div>
 
-      <button onclick="document.getElementById('osModal').style.display='none'" class="btn-secondary" style="width: 100%;">
+      <button onclick="document.getElementById('osModal').style.display='none'" class="btn-secondary" style="width: 100%; margin-top: 1rem;">
         Fechar
       </button>
     `
