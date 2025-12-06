@@ -1255,11 +1255,19 @@ body {
   background: rgba(139, 92, 246, 0.08);
 }
 
-/* Animação de piscar quando há pedidos pendentes - BEM CHAMATIVA */
+/* Animação de piscar quando há pedidos pendentes - CAIXA TODA PISCA */
+
+/* A CAIXA TODA do menu-group pisca */
+.menu-group-products.has-pending {
+  animation: blinkCard 0.5s linear infinite !important;
+  border-radius: 8px !important;
+  overflow: visible !important;
+}
+
+/* Header também pisca */
 .menu-group-products.has-pending .menu-group-header {
   animation: blinkHeader 0.5s linear infinite !important;
   transition: none !important;
-  position: relative;
 }
 
 /* Texto do header pisca de cor também */
@@ -1282,16 +1290,27 @@ body {
   animation: pulseBadge 0.5s ease-in-out infinite !important;
 }
 
-/* Animação do HEADER - pisca forte com borda laranja */
+/* Animação da CAIXA TODA - pisca forte com borda e glow */
+@keyframes blinkCard {
+  0%, 40% {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: 2px solid transparent !important;
+  }
+  50%, 100% {
+    background: rgba(249, 115, 22, 0.15) !important;
+    box-shadow: 0 0 30px rgba(249, 115, 22, 0.8), inset 0 0 20px rgba(249, 115, 22, 0.1) !important;
+    border: 2px solid #ff6b00 !important;
+  }
+}
+
+/* Animação do HEADER */
 @keyframes blinkHeader {
   0%, 40% {
     background: transparent !important;
-    border-left-color: transparent !important;
   }
   50%, 100% {
-    background: rgba(249, 115, 22, 0.5) !important;
-    border-left: 4px solid #ff6b00 !important;
-    box-shadow: 0 0 25px rgba(249, 115, 22, 0.9), inset 0 0 20px rgba(249, 115, 22, 0.3) !important;
+    background: rgba(249, 115, 22, 0.4) !important;
   }
 }
 
