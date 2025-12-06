@@ -1595,32 +1595,29 @@ function showAdminSection() {
   }
 
   console.log('📊 [showAdminSection] Carregando dados...')
-  loadOSList()
-  // Carrega empresas e máquinas para a gestão administrativa
-  loadCompaniesAdmin()
 
-  // Carrega lista de técnicos para permitir transferência de OS
-  loadTechniciansForTransfer()
-
-  loadCompaniesCache()
-
-  // Carrega veículos cadastrados
-  loadVehiclesList()
-
-  console.log('✅ [showAdminSection] Concluído!')
-
-  // Configura navegação lateral após carregar dados
+  // Configura navegação lateral PRIMEIRO (rápido, não bloqueia)
   setupSidebar()
-
-  // Conecta ao WebSocket para notificações em tempo real
-  connectWebSocket()
 
   // Garante que o botão de arrastar esteja oculto inicialmente
   const dragToggle = document.getElementById('dragModeToggle')
   if (dragToggle) dragToggle.style.display = 'none'
 
-  // Inicializa sistema de rotas (URLs bonitas)
+  // Inicializa sistema de rotas (URLs bonitas) - rápido
   initRouter()
+
+  // Conecta ao WebSocket
+  connectWebSocket()
+
+  console.log('✅ [showAdminSection] UI pronta! Carregando dados em background...')
+
+  // Carrega dados de forma NÃO-BLOQUEANTE usando setTimeout
+  // Isso permite que a UI fique interativa enquanto os dados carregam
+  setTimeout(() => loadOSList(), 0)
+  setTimeout(() => loadCompaniesAdmin(), 50)
+  setTimeout(() => loadTechniciansForTransfer(), 100)
+  setTimeout(() => loadCompaniesCache(), 150)
+  setTimeout(() => loadVehiclesList(), 200)
 }
 
 /**
