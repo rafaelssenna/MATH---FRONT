@@ -9706,6 +9706,13 @@ async function checkContaAzulStatus() {
     })
     const data = await response.json()
 
+    // Se a API retornou erro (token inválido, etc), trata como desconectado
+    if (!response.ok || data.error) {
+      console.warn('[ContaAzul] API retornou erro:', data.error || response.status)
+      updateContaAzulStatusUI({ connected: false, error: data.error || 'Erro ao verificar status' })
+      return { connected: false }
+    }
+
     updateContaAzulStatusUI(data)
     return data
   } catch (err) {
@@ -9719,6 +9726,8 @@ async function checkContaAzulStatus() {
  * Atualiza a interface com o status da conexão
  */
 function updateContaAzulStatusUI(status) {
+  console.log('[ContaAzul] Atualizando UI com status:', status)
+
   // Atualiza indicador na seção Fiscal
   const indicator = document.getElementById('contaAzulStatusIndicator')
   const statusText = document.getElementById('contaAzulStatusText')
@@ -9765,7 +9774,8 @@ function updateContaAzulStatusUI(status) {
         document.getElementById('tokenUpdatedAt').textContent = new Date(status.updatedAt).toLocaleString('pt-BR')
       }
 
-      if (btnConnect) btnConnect.style.display = 'none'
+      // Botão sempre visível para permitir reconexão a qualquer momento
+      if (btnConnect) btnConnect.style.display = 'flex'
       if (btnTest) btnTest.style.display = 'flex'
       if (btnDisconnect) btnDisconnect.style.display = 'flex'
     } else if (status.connected && !status.isValid) {
