@@ -1442,7 +1442,7 @@ function translateStatus(status) {
 function openPreviewOsModal(os) {
   const modal = document.getElementById('previewOsModal')
   if (!modal) return
-  
+
   // Preenche informações básicas
   const osNumberEl = document.getElementById('previewOsNumber')
   const clientNameEl = document.getElementById('previewClientName')
@@ -1457,7 +1457,78 @@ function openPreviewOsModal(os) {
   if (osNumberEl) osNumberEl.textContent = osTitle
   if (clientNameEl) clientNameEl.textContent = os.client_name || '-'
   if (statusEl) statusEl.textContent = translateStatus(os.status)
-  
+
+  // Preenche detalhes da OS
+  const scheduledDateEl = document.getElementById('previewScheduledDate')
+  const periodEl = document.getElementById('previewPeriod')
+  const maintenanceTypeEl = document.getElementById('previewMaintenanceType')
+  const technicianEl = document.getElementById('previewTechnician')
+  const machineSection = document.getElementById('previewMachineSection')
+  const machineEl = document.getElementById('previewMachine')
+  const descriptionSection = document.getElementById('previewDescriptionSection')
+  const descriptionEl = document.getElementById('previewDescription')
+  const occurrenceSection = document.getElementById('previewOccurrenceSection')
+  const occurrenceEl = document.getElementById('previewOccurrence')
+
+  // Data agendada
+  if (scheduledDateEl) {
+    scheduledDateEl.textContent = os.scheduled_date
+      ? new Date(os.scheduled_date).toLocaleDateString('pt-BR')
+      : '-'
+  }
+
+  // Período
+  if (periodEl) {
+    const periodMap = { morning: 'Manhã', afternoon: 'Tarde' }
+    periodEl.textContent = periodMap[os.period] || os.period || '-'
+  }
+
+  // Tipo de manutenção
+  if (maintenanceTypeEl) {
+    const typeMap = {
+      'preventive': 'Preventiva',
+      'corrective': 'Corretiva',
+      'installation': 'Instalação',
+      'training': 'Treinamento'
+    }
+    maintenanceTypeEl.textContent = typeMap[os.maintenance_type] || os.maintenance_type || '-'
+  }
+
+  // Técnico
+  if (technicianEl) {
+    technicianEl.textContent = os.technician_name || os.assigned_technician || '-'
+  }
+
+  // Máquina
+  if (machineSection && machineEl) {
+    if (os.machine_model || os.machine_serial) {
+      machineSection.style.display = 'block'
+      machineEl.textContent = [os.machine_model, os.machine_serial].filter(Boolean).join(' - ') || '-'
+    } else {
+      machineSection.style.display = 'none'
+    }
+  }
+
+  // Descrição do serviço
+  if (descriptionSection && descriptionEl) {
+    if (os.service_description) {
+      descriptionSection.style.display = 'block'
+      descriptionEl.textContent = os.service_description
+    } else {
+      descriptionSection.style.display = 'none'
+    }
+  }
+
+  // Ocorrência
+  if (occurrenceSection && occurrenceEl) {
+    if (os.occurrence) {
+      occurrenceSection.style.display = 'block'
+      occurrenceEl.textContent = os.occurrence
+    } else {
+      occurrenceSection.style.display = 'none'
+    }
+  }
+
   // Mostra botão aceitar se status for assigned
   if (acceptBtn) {
     if (os.status === 'assigned') {
@@ -1470,7 +1541,7 @@ function openPreviewOsModal(os) {
       acceptBtn.style.display = 'none'
     }
   }
-  
+
   // Carrega informações da empresa
   if (typeof loadCompanyInfoForPreview === 'function') {
     loadCompanyInfoForPreview(os.company_id, os.requester)
@@ -4840,6 +4911,10 @@ async function submitCreateOwnOS(event) {
       throw new Error('ID do técnico não encontrado. Sessão expirada.')
     }
 
+    // Calcula o período baseado na hora atual
+    const currentHour = new Date().getHours()
+    const period = currentHour < 12 ? 'morning' : 'afternoon'
+
     // Monta payload
     const payload = {
       company_name: company.name,
@@ -4847,7 +4922,8 @@ async function submitCreateOwnOS(event) {
       machine_id: machineId || null,
       call_reason: callReason || null,
       client_name: company.name, // Usa o nome da empresa como cliente
-      technician_id: parseInt(techId) // Garante que é número
+      technician_id: parseInt(techId), // Garante que é número
+      period: period // Período baseado na hora atual (manhã/tarde)
     }
 
     console.log('📤 [createOwnOS] Enviando payload:', JSON.stringify(payload, null, 2))
