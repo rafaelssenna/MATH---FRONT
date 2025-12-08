@@ -302,9 +302,12 @@
 
                 const contentType = response.headers.get('content-type') || '';
 
-                // Se não for PDF, pode ser erro de CORS ou redirect
+                // Se não for PDF, redireciona direto para o backend (que vai redirecionar pro Conta Azul)
                 if (!contentType.includes('pdf') && !contentType.includes('octet-stream')) {
                     console.warn('Content-Type não é PDF:', contentType);
+                    console.log('Redirecionando para URL direta...');
+                    window.location.href = pdfUrl;
+                    return;
                 }
 
                 updateStatus('Processando documento...');
@@ -312,7 +315,9 @@
                 pdfBlob = await response.blob();
 
                 if (pdfBlob.size < 500) {
-                    throw new Error('PDF inválido ou vazio');
+                    console.log('PDF muito pequeno, redirecionando...');
+                    window.location.href = pdfUrl;
+                    return;
                 }
 
                 updateStatus('Abrindo PDF...');
