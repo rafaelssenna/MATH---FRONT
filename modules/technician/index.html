@@ -320,160 +320,125 @@
         </div>
       </div>
 
-      <!-- Modal Preview OS -->
+      <!-- Modal Preview OS - COMPLETO -->
       <div id="previewOsModal" class="modal" style="display:none">
-        <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-content" style="max-width: 700px; max-height: 90vh; overflow-y: auto;">
           <span class="close" onclick="closePreviewOsModal()">&times;</span>
-          <h2>Informações da OS</h2>
-          
-          <div style="margin-bottom: 1.5rem;">
-            <h3 id="previewOsNumber" style="color: var(--primary-blue); margin-bottom: 0.5rem;">OS #</h3>
-            <p><strong>Cliente:</strong> <span id="previewClientName">-</span></p>
-            <p><strong>Status:</strong> <span id="previewStatus">-</span></p>
+
+          <!-- Loading -->
+          <div id="previewLoading" style="text-align: center; padding: 2rem;">
+            <p>Carregando informações...</p>
           </div>
 
-          <!-- Detalhes da OS -->
-          <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
-            <h3 style="margin: 0 0 0.75rem 0; color: var(--text-primary); font-size: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                <line x1="16" y1="2" x2="16" y2="6"/>
-                <line x1="8" y1="2" x2="8" y2="6"/>
-                <line x1="3" y1="10" x2="21" y2="10"/>
-              </svg>
-              Detalhes da OS
-            </h3>
-            <div style="display: grid; gap: 0.75rem; font-size: 0.9rem;">
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
-                <div>
-                  <strong style="color: var(--text-secondary);">Data Agendada:</strong>
-                  <p id="previewScheduledDate" style="margin: 0.25rem 0 0 0; color: var(--text-primary);">-</p>
-                </div>
-                <div>
-                  <strong style="color: var(--text-secondary);">Período:</strong>
-                  <p id="previewPeriod" style="margin: 0.25rem 0 0 0; color: var(--text-primary);">-</p>
-                </div>
-              </div>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
-                <div>
-                  <strong style="color: var(--text-secondary);">Tipo de Manutenção:</strong>
-                  <p id="previewMaintenanceType" style="margin: 0.25rem 0 0 0; color: var(--text-primary);">-</p>
-                </div>
-                <div>
-                  <strong style="color: var(--text-secondary);">Técnico:</strong>
-                  <p id="previewTechnician" style="margin: 0.25rem 0 0 0; color: var(--text-primary);">-</p>
-                </div>
-              </div>
-              <div id="previewMachineSection" style="display: none;">
-                <strong style="color: var(--text-secondary);">Máquina:</strong>
-                <p id="previewMachine" style="margin: 0.25rem 0 0 0; color: var(--text-primary);">-</p>
-              </div>
-              <div id="previewDescriptionSection" style="display: none;">
-                <strong style="color: var(--text-secondary);">Descrição do Serviço:</strong>
-                <p id="previewDescription" style="margin: 0.25rem 0 0 0; color: var(--text-primary); white-space: pre-wrap;">-</p>
-              </div>
-              <div id="previewOccurrenceSection" style="display: none;">
-                <strong style="color: var(--text-secondary);">Ocorrência:</strong>
-                <p id="previewOccurrence" style="margin: 0.25rem 0 0 0; color: var(--text-primary); white-space: pre-wrap;">-</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Informações da Empresa -->
-          <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
-            <h3 style="margin: 0 0 0.75rem 0; color: var(--text-primary); font-size: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                <polyline points="9 22 9 12 15 12 15 22"/>
-              </svg>
-              Informações da Empresa
-            </h3>
-            <div style="display: grid; gap: 0.75rem; font-size: 0.9rem;">
-              <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; color: var(--text-secondary);">
-                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                  <polyline points="9 22 9 12 15 12 15 22"/>
-                </svg>
-                <div style="flex: 1;">
-                  <strong style="color: var(--text-secondary);">Empresa:</strong>
-                  <p id="previewCompanyName" style="margin: 0.25rem 0 0 0; color: var(--text-primary);">Carregando...</p>
-                </div>
-              </div>
-              <div style="display: flex; align-items: start; gap: 0.5rem;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; margin-top: 2px; color: var(--text-secondary);">
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                  <circle cx="12" cy="10" r="3"/>
-                </svg>
-                <div style="flex: 1;">
-                  <strong style="color: var(--text-secondary);">Endereço:</strong>
-                  <p id="previewAddress" style="margin: 0.25rem 0 0 0; color: var(--text-primary);">Carregando...</p>
-                </div>
-              </div>
-              <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; color: var(--text-secondary);">
-                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-                </svg>
-                <div style="flex: 1;">
-                  <strong style="color: var(--text-secondary);">Telefone:</strong>
-                  <p id="previewPhone" style="margin: 0.25rem 0 0 0; color: var(--text-primary);">Carregando...</p>
-                </div>
-              </div>
-              <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; color: var(--text-secondary);">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
-                </svg>
-                <div style="flex: 1;">
-                  <strong style="color: var(--text-secondary);">Solicitante:</strong>
-                  <p id="previewRequester" style="margin: 0.25rem 0 0 0; color: var(--text-primary);">Carregando...</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Informações sobre o Chamado -->
-          <div id="previewCallInfoSection" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; display: none;">
-            <h3 style="margin: 0 0 0.75rem 0; color: var(--text-primary); font-size: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-              </svg>
-              Informações sobre o Chamado
-            </h3>
-
-            <!-- Motivo do Chamado -->
-            <div style="margin-bottom: 1rem;">
-              <div style="display: flex; align-items: start; gap: 0.5rem;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; margin-top: 2px; color: var(--text-secondary);">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="12" y1="16" x2="12" y2="12"/>
-                  <line x1="12" y1="8" x2="12.01" y2="8"/>
-                </svg>
-                <div style="flex: 1;">
-                  <strong style="color: var(--text-secondary);">Motivo do Chamado:</strong>
-                  <p id="previewCallReason" style="margin: 0.25rem 0 0 0; color: var(--text-primary);">-</p>
-                </div>
+          <!-- Conteúdo -->
+          <div id="previewContent" style="display: none;">
+            <!-- Cabeçalho -->
+            <div style="margin-bottom: 1.5rem; border-bottom: 2px solid var(--primary-blue); padding-bottom: 1rem;">
+              <h2 id="previewOsNumber" style="color: var(--primary-blue); margin: 0 0 0.5rem 0;">OS #</h2>
+              <div style="display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.9rem;">
+                <span><strong>Cliente:</strong> <span id="previewClientName">-</span></span>
+                <span><strong>Status:</strong> <span id="previewStatus" style="padding: 2px 8px; border-radius: 4px; background: var(--bg-secondary);">-</span></span>
               </div>
             </div>
 
-            <!-- Fotos do Problema -->
-            <div id="previewProblemPhotosContainer" style="display: none;">
-              <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; color: var(--text-secondary);">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                  <circle cx="8.5" cy="8.5" r="1.5"/>
-                  <polyline points="21 15 16 10 5 21"/>
-                </svg>
-                <strong style="color: var(--text-secondary);">Fotos do Problema:</strong>
-              </div>
-              <div id="previewProblemPhotos" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0.5rem; margin-top: 0.5rem;">
-                <!-- Fotos serão inseridas aqui -->
-              </div>
-            </div>
-          </div>
+            <!-- Grid de Informações -->
+            <div style="display: grid; gap: 1rem; font-size: 0.9rem;">
 
-          <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
-            <button class="btn-secondary" onclick="closePreviewOsModal()">Fechar</button>
-            <button id="acceptFromPreview" class="btn-accept" style="display:none">Aceitar OS</button>
+              <!-- Agenda e Técnico -->
+              <div style="background: var(--bg-secondary); border-radius: 8px; padding: 1rem;">
+                <h4 style="margin: 0 0 0.75rem 0; color: var(--primary-blue);">📅 Agenda</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem;">
+                  <div><strong>Data:</strong><br><span id="previewScheduledDate">-</span></div>
+                  <div><strong>Período:</strong><br><span id="previewPeriod">-</span></div>
+                  <div><strong>Técnico:</strong><br><span id="previewTechnician">-</span></div>
+                  <div><strong>Atribuído em:</strong><br><span id="previewAssignedAt">-</span></div>
+                </div>
+              </div>
+
+              <!-- Empresa -->
+              <div style="background: var(--bg-secondary); border-radius: 8px; padding: 1rem;">
+                <h4 style="margin: 0 0 0.75rem 0; color: var(--primary-blue);">🏢 Empresa</h4>
+                <div style="display: grid; gap: 0.5rem;">
+                  <div><strong>Nome:</strong> <span id="previewCompanyName">-</span></div>
+                  <div><strong>CNPJ:</strong> <span id="previewCompanyCnpj">-</span></div>
+                  <div><strong>Endereço:</strong> <span id="previewAddress">-</span></div>
+                  <div><strong>Telefone:</strong> <span id="previewPhone">-</span></div>
+                  <div><strong>Solicitante:</strong> <span id="previewRequester">-</span></div>
+                </div>
+              </div>
+
+              <!-- Máquina -->
+              <div id="previewMachineSection" style="background: var(--bg-secondary); border-radius: 8px; padding: 1rem; display: none;">
+                <h4 style="margin: 0 0 0.75rem 0; color: var(--primary-blue);">⚙️ Máquina</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                  <div><strong>Modelo:</strong> <span id="previewMachineModel">-</span></div>
+                  <div><strong>Série:</strong> <span id="previewMachineSerial">-</span></div>
+                  <div><strong>Aplicação:</strong> <span id="previewApplication">-</span></div>
+                </div>
+              </div>
+
+              <!-- Serviço -->
+              <div style="background: var(--bg-secondary); border-radius: 8px; padding: 1rem;">
+                <h4 style="margin: 0 0 0.75rem 0; color: var(--primary-blue);">🔧 Serviço</h4>
+                <div style="display: grid; gap: 0.75rem;">
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                    <div><strong>Tipo:</strong> <span id="previewMaintenanceType">-</span></div>
+                    <div><strong>Horas Total:</strong> <span id="previewTotalHours">-</span></div>
+                  </div>
+                  <div id="previewCallReasonSection">
+                    <strong>Motivo do Chamado:</strong>
+                    <p id="previewCallReason" style="margin: 0.25rem 0 0 0; white-space: pre-wrap; background: var(--bg-primary); padding: 0.5rem; border-radius: 4px;">-</p>
+                  </div>
+                  <div id="previewDescriptionSection" style="display: none;">
+                    <strong>Descrição do Serviço:</strong>
+                    <p id="previewDescription" style="margin: 0.25rem 0 0 0; white-space: pre-wrap; background: var(--bg-primary); padding: 0.5rem; border-radius: 4px;">-</p>
+                  </div>
+                  <div id="previewOccurrenceSection" style="display: none;">
+                    <strong>Ocorrência:</strong>
+                    <p id="previewOccurrence" style="margin: 0.25rem 0 0 0; white-space: pre-wrap; background: var(--bg-primary); padding: 0.5rem; border-radius: 4px;">-</p>
+                  </div>
+                  <div id="previewCauseSection" style="display: none;">
+                    <strong>Causa:</strong>
+                    <p id="previewCause" style="margin: 0.25rem 0 0 0; white-space: pre-wrap; background: var(--bg-primary); padding: 0.5rem; border-radius: 4px;">-</p>
+                  </div>
+                  <div id="previewObservationsSection" style="display: none;">
+                    <strong>Observações:</strong>
+                    <p id="previewObservations" style="margin: 0.25rem 0 0 0; white-space: pre-wrap; background: var(--bg-primary); padding: 0.5rem; border-radius: 4px;">-</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Períodos Trabalhados -->
+              <div id="previewWorklogsSection" style="background: var(--bg-secondary); border-radius: 8px; padding: 1rem; display: none;">
+                <h4 style="margin: 0 0 0.75rem 0; color: var(--primary-blue);">⏱️ Períodos Trabalhados</h4>
+                <div id="previewWorklogs" style="display: grid; gap: 0.5rem;"></div>
+              </div>
+
+              <!-- Materiais -->
+              <div id="previewMaterialsSection" style="background: var(--bg-secondary); border-radius: 8px; padding: 1rem; display: none;">
+                <h4 style="margin: 0 0 0.75rem 0; color: var(--primary-blue);">📦 Materiais</h4>
+                <div id="previewMaterials" style="display: grid; gap: 0.5rem;"></div>
+              </div>
+
+              <!-- Deslocamentos -->
+              <div id="previewDisplacementsSection" style="background: var(--bg-secondary); border-radius: 8px; padding: 1rem; display: none;">
+                <h4 style="margin: 0 0 0.75rem 0; color: var(--primary-blue);">🚗 Deslocamentos</h4>
+                <div id="previewDisplacements" style="display: grid; gap: 0.5rem;"></div>
+              </div>
+
+              <!-- Fotos/Anexos -->
+              <div id="previewAttachmentsSection" style="background: var(--bg-secondary); border-radius: 8px; padding: 1rem; display: none;">
+                <h4 style="margin: 0 0 0.75rem 0; color: var(--primary-blue);">📷 Fotos/Anexos</h4>
+                <div id="previewAttachments" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 0.5rem;"></div>
+              </div>
+
+            </div>
+
+            <!-- Botões -->
+            <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+              <button class="btn-secondary" onclick="closePreviewOsModal()">Fechar</button>
+              <button id="acceptFromPreview" class="btn-accept" style="display:none">Aceitar OS</button>
+            </div>
           </div>
         </div>
       </div>

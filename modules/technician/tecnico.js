@@ -1439,97 +1439,156 @@ function translateStatus(status) {
 // ╔═══════════════════════════════════════════════════════════════════════════════╗
 // ║                     SEÇÃO 8: PREVIEW E MODAL DE OS                            ║
 // ╚═══════════════════════════════════════════════════════════════════════════════╝
-function openPreviewOsModal(os) {
+async function openPreviewOsModal(os) {
   const modal = document.getElementById('previewOsModal')
   if (!modal) return
 
-  // Preenche informações básicas
-  const osNumberEl = document.getElementById('previewOsNumber')
-  const clientNameEl = document.getElementById('previewClientName')
-  const statusEl = document.getElementById('previewStatus')
-  const acceptBtn = document.getElementById('acceptFromPreview')
+  // Mostra modal com loading
+  modal.style.display = 'flex'
+  document.getElementById('previewLoading').style.display = 'block'
+  document.getElementById('previewContent').style.display = 'none'
 
-  // Define título: se não tiver order_number, é Solicitação de Serviço (S.S)
-  const osTitle = os.order_number
-    ? `O.S ${os.order_number}`
-    : `S.S (Solicitação de Serviço)`
+  try {
+    // Busca dados COMPLETOS da OS via API
+    const response = await fetch(`${API_URL}/api/os/${os.id}`)
+    if (!response.ok) throw new Error('Erro ao carregar OS')
+    const data = await response.json()
 
-  if (osNumberEl) osNumberEl.textContent = osTitle
-  if (clientNameEl) clientNameEl.textContent = os.client_name || '-'
-  if (statusEl) statusEl.textContent = translateStatus(os.status)
+    // Preenche todos os campos
+    fillPreviewModal(data)
 
-  // Preenche detalhes da OS
-  const scheduledDateEl = document.getElementById('previewScheduledDate')
-  const periodEl = document.getElementById('previewPeriod')
-  const maintenanceTypeEl = document.getElementById('previewMaintenanceType')
-  const technicianEl = document.getElementById('previewTechnician')
-  const machineSection = document.getElementById('previewMachineSection')
-  const machineEl = document.getElementById('previewMachine')
-  const descriptionSection = document.getElementById('previewDescriptionSection')
-  const descriptionEl = document.getElementById('previewDescription')
-  const occurrenceSection = document.getElementById('previewOccurrenceSection')
-  const occurrenceEl = document.getElementById('previewOccurrence')
-
-  // Data agendada
-  if (scheduledDateEl) {
-    scheduledDateEl.textContent = os.scheduled_date
-      ? new Date(os.scheduled_date).toLocaleDateString('pt-BR')
-      : '-'
-  }
-
-  // Período
-  if (periodEl) {
-    const periodMap = { morning: 'Manhã', afternoon: 'Tarde' }
-    periodEl.textContent = periodMap[os.period] || os.period || '-'
-  }
-
-  // Tipo de manutenção
-  if (maintenanceTypeEl) {
-    const typeMap = {
-      'preventive': 'Preventiva',
-      'corrective': 'Corretiva',
-      'installation': 'Instalação',
-      'training': 'Treinamento'
+    // Carrega informações da empresa separadamente (endereço completo)
+    if (data.company_id && typeof loadCompanyInfoForPreview === 'function') {
+      loadCompanyInfoForPreview(data.company_id, data.requester)
     }
-    maintenanceTypeEl.textContent = typeMap[os.maintenance_type] || os.maintenance_type || '-'
+
+    // Mostra conteúdo
+    document.getElementById('previewLoading').style.display = 'none'
+    document.getElementById('previewContent').style.display = 'block'
+
+  } catch (error) {
+    console.error('[openPreviewOsModal] Erro:', error)
+    // Fallback: usa dados básicos da lista
+    fillPreviewModal(os)
+    document.getElementById('previewLoading').style.display = 'none'
+    document.getElementById('previewContent').style.display = 'block'
+  }
+}
+
+function fillPreviewModal(os) {
+  const setText = (id, value) => {
+    const el = document.getElementById(id)
+    if (el) el.textContent = value || '-'
   }
 
-  // Técnico
-  if (technicianEl) {
-    technicianEl.textContent = os.technician_name || os.assigned_technician || '-'
+  const showSection = (id, show) => {
+    const el = document.getElementById(id)
+    if (el) el.style.display = show ? 'block' : 'none'
   }
+
+  // Título
+  const osTitle = os.order_number ? `O.S ${os.order_number}` : `S.S (Solicitação de Serviço)`
+  setText('previewOsNumber', osTitle)
+  setText('previewClientName', os.client_name)
+  setText('previewStatus', translateStatus(os.status))
+
+  // Agenda
+  setText('previewScheduledDate', os.scheduled_date ? new Date(os.scheduled_date).toLocaleDateString('pt-BR') : '-')
+  setText('previewPeriod', os.period === 'morning' ? 'Manhã' : os.period === 'afternoon' ? 'Tarde' : '-')
+  setText('previewTechnician', os.technician_username || os.technician_name || os.assigned_technician || '-')
+  setText('previewAssignedAt', os.assigned_at ? new Date(os.assigned_at).toLocaleString('pt-BR') : '-')
+
+  // Empresa
+  setText('previewCompanyName', os.company_name || os.client_name || '-')
+  setText('previewCompanyCnpj', os.company_cnpj || '-')
+  setText('previewRequester', os.requester || '-')
 
   // Máquina
-  if (machineSection && machineEl) {
-    if (os.machine_model || os.machine_serial) {
-      machineSection.style.display = 'block'
-      machineEl.textContent = [os.machine_model, os.machine_serial].filter(Boolean).join(' - ') || '-'
-    } else {
-      machineSection.style.display = 'none'
-    }
+  const hasMachine = os.machine_model || os.machine_serial
+  showSection('previewMachineSection', hasMachine)
+  setText('previewMachineModel', os.machine_model || '-')
+  setText('previewMachineSerial', os.machine_serial || '-')
+  setText('previewApplication', os.application || '-')
+
+  // Serviço
+  const typeMap = { 'preventive': 'Preventiva', 'corrective': 'Corretiva', 'installation': 'Instalação', 'training': 'Treinamento' }
+  setText('previewMaintenanceType', typeMap[os.maintenance_type] || os.maintenance_type || '-')
+  setText('previewTotalHours', os.total_hours ? `${os.total_hours}h` : '-')
+  setText('previewCallReason', os.call_reason || '-')
+
+  // Campos opcionais do serviço
+  showSection('previewDescriptionSection', os.service_description)
+  setText('previewDescription', os.service_description)
+
+  showSection('previewOccurrenceSection', os.occurrence)
+  setText('previewOccurrence', os.occurrence)
+
+  showSection('previewCauseSection', os.cause)
+  setText('previewCause', os.cause)
+
+  showSection('previewObservationsSection', os.observations)
+  setText('previewObservations', os.observations)
+
+  // Worklogs (períodos trabalhados)
+  const worklogsContainer = document.getElementById('previewWorklogs')
+  if (worklogsContainer && os.worklogs && os.worklogs.length > 0) {
+    showSection('previewWorklogsSection', true)
+    worklogsContainer.innerHTML = os.worklogs.map(w => {
+      const start = w.start_datetime ? new Date(w.start_datetime).toLocaleString('pt-BR') : '-'
+      const end = w.end_datetime ? new Date(w.end_datetime).toLocaleString('pt-BR') : '-'
+      return `<div style="background: var(--bg-primary); padding: 0.5rem; border-radius: 4px;">
+        <strong>${start}</strong> até <strong>${end}</strong> (${w.hours || 0}h)
+      </div>`
+    }).join('')
+  } else {
+    showSection('previewWorklogsSection', false)
   }
 
-  // Descrição do serviço
-  if (descriptionSection && descriptionEl) {
-    if (os.service_description) {
-      descriptionSection.style.display = 'block'
-      descriptionEl.textContent = os.service_description
-    } else {
-      descriptionSection.style.display = 'none'
-    }
+  // Materiais
+  const materialsContainer = document.getElementById('previewMaterials')
+  if (materialsContainer && os.materials && os.materials.length > 0) {
+    showSection('previewMaterialsSection', true)
+    materialsContainer.innerHTML = os.materials.map(m =>
+      `<div style="display: flex; justify-content: space-between; background: var(--bg-primary); padding: 0.5rem; border-radius: 4px;">
+        <span>${m.name} (x${m.quantity})</span>
+        <span>R$ ${(m.line_total || 0).toFixed(2)}</span>
+      </div>`
+    ).join('')
+  } else {
+    showSection('previewMaterialsSection', false)
   }
 
-  // Ocorrência
-  if (occurrenceSection && occurrenceEl) {
-    if (os.occurrence) {
-      occurrenceSection.style.display = 'block'
-      occurrenceEl.textContent = os.occurrence
-    } else {
-      occurrenceSection.style.display = 'none'
-    }
+  // Deslocamentos
+  const displacementsContainer = document.getElementById('previewDisplacements')
+  if (displacementsContainer && os.displacements && os.displacements.length > 0) {
+    showSection('previewDisplacementsSection', true)
+    displacementsContainer.innerHTML = os.displacements.map(d =>
+      `<div style="display: flex; justify-content: space-between; background: var(--bg-primary); padding: 0.5rem; border-radius: 4px;">
+        <span>${d.vehicle_plate || 'Veículo'} - ${d.km_total || 0} km</span>
+        <span>R$ ${(d.calculated_cost || 0).toFixed(2)}</span>
+      </div>`
+    ).join('')
+  } else {
+    showSection('previewDisplacementsSection', false)
   }
 
-  // Mostra botão aceitar se status for assigned
+  // Anexos/Fotos
+  const attachmentsContainer = document.getElementById('previewAttachments')
+  if (attachmentsContainer && os.attachments && os.attachments.length > 0) {
+    showSection('previewAttachmentsSection', true)
+    attachmentsContainer.innerHTML = os.attachments.map(a =>
+      `<a href="${API_URL}/api/attachments/${a.id}" target="_blank" style="display: block;">
+        <img src="${API_URL}/api/attachments/${a.id}" alt="${a.filename}"
+             style="width: 100%; height: 80px; object-fit: cover; border-radius: 4px; cursor: pointer;"
+             onerror="this.style.display='none'">
+      </a>`
+    ).join('')
+  } else {
+    showSection('previewAttachmentsSection', false)
+  }
+
+  // Botão aceitar
+  const acceptBtn = document.getElementById('acceptFromPreview')
   if (acceptBtn) {
     if (os.status === 'assigned') {
       acceptBtn.style.display = 'inline-block'
@@ -1541,17 +1600,6 @@ function openPreviewOsModal(os) {
       acceptBtn.style.display = 'none'
     }
   }
-
-  // Carrega informações da empresa
-  if (typeof loadCompanyInfoForPreview === 'function') {
-    loadCompanyInfoForPreview(os.company_id, os.requester)
-  }
-
-  // Carrega informações do chamado
-  loadCallInfoForPreview(os)
-
-  // Mostra modal
-  modal.style.display = 'flex'
 }
 
 async function loadCallInfoForPreview(os) {
