@@ -6171,7 +6171,7 @@ function renderScheduleTable(weekDates, technicians, osList, notes = []) {
         }
       }
       if (osList.length > 0) {
-        console.log(`   ✅ ${osList.length} OS encontrada(s)!`, osList.map(os => `#${os.id} - ${os.client_name} (${os.status})`))
+        console.log(`   ✅ ${osList.length} OS encontrada(s)!`, osList.map(os => `${os.id} - ${os.client_name} (${os.status})`))
       } else {
         console.log(`   ❌ Nenhuma OS`)
       }

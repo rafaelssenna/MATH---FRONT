@@ -280,7 +280,7 @@ function renderConferenceOSList(osList, isFiltered = false) {
       <tbody>
         ${osList.map(os => `
           <tr style="border-bottom: 1px solid var(--border-color);">
-            <td style="padding: 0.75rem; font-weight: 600;">#${os.order_number || os.id}</td>
+            <td style="padding: 0.75rem; font-weight: 600;">${os.order_number || os.id}</td>
             <td style="padding: 0.75rem;">${escapeHtml(os.company_name || 'N/A')}</td>
             <td style="padding: 0.75rem;">${escapeHtml(os.technician_username || 'N/A')}</td>
             <td style="padding: 0.75rem;">${os.finished_at ? new Date(os.finished_at).toLocaleDateString('pt-BR') : 'N/A'}</td>
@@ -405,7 +405,7 @@ function renderConferenceModal() {
       <div class="card" style="padding: 1.5rem; background: linear-gradient(135deg, #667eea22 0%, #764ba222 100%); border: 2px solid #667eea;">
         <!-- Linha 1: OS + Toggle Cliente -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
-          <h3 style="margin: 0; color: #667eea; font-size: 1.5rem;">OS #${os.order_number || os.id}</h3>
+          <h3 style="margin: 0; color: #667eea; font-size: 1.5rem;">OS ${os.order_number || os.id}</h3>
           <button
             id="toggleClientTypeBtn"
             onclick="toggleClientType()"
@@ -1383,7 +1383,7 @@ async function approveConferenceOS() {
     return
   }
 
-  if (!confirm(`Confirma a aprovação da OS #${currentConferenceOS.order_number || currentConferenceOS.id}?\n\nEla será enviada para faturamento.`)) {
+  if (!confirm(`Confirma a aprovação da OS ${currentConferenceOS.order_number || currentConferenceOS.id}?\n\nEla será enviada para faturamento.`)) {
     return
   }
 
@@ -1453,7 +1453,7 @@ async function approveConferenceOS() {
       throw new Error(error.message || 'Erro ao aprovar OS')
     }
 
-    showToast(`OS #${currentConferenceOS.order_number || currentConferenceOS.id} aprovada com sucesso!`, 'success')
+    showToast(`OS ${currentConferenceOS.order_number || currentConferenceOS.id} aprovada com sucesso!`, 'success')
     closeConferenceModal()
     loadReviewData()
   } catch (error) {
@@ -1552,7 +1552,7 @@ async function saveConferenceChanges() {
       throw new Error(error.message || 'Erro ao salvar alterações')
     }
 
-    showToast(`Alterações da OS #${currentConferenceOS.order_number || currentConferenceOS.id} salvas!`, 'success')
+    showToast(`Alterações da OS ${currentConferenceOS.order_number || currentConferenceOS.id} salvas!`, 'success')
     resetButtonLoading(btn, originalText)
   } catch (error) {
     console.error('Erro ao salvar alterações:', error)
@@ -1570,7 +1570,7 @@ async function cancelConferenceOS() {
     return
   }
 
-  const reason = prompt(`Por que você deseja CANCELAR a OS #${currentConferenceOS.order_number || currentConferenceOS.id}?\n\n(Ela não será faturada e ficará como cancelada no sistema)`)
+  const reason = prompt(`Por que você deseja CANCELAR a OS ${currentConferenceOS.order_number || currentConferenceOS.id}?\n\n(Ela não será faturada e ficará como cancelada no sistema)`)
 
   if (!reason || reason.trim() === '') {
     showToast('Você deve informar o motivo do cancelamento', 'error')
@@ -1589,7 +1589,7 @@ async function cancelConferenceOS() {
       throw new Error(error.message || 'Erro ao cancelar OS')
     }
 
-    showToast(`OS #${currentConferenceOS.order_number || currentConferenceOS.id} cancelada com sucesso.`, 'success')
+    showToast(`OS ${currentConferenceOS.order_number || currentConferenceOS.id} cancelada com sucesso.`, 'success')
     closeConferenceModal()
     loadReviewData()
   } catch (error) {
@@ -1607,7 +1607,7 @@ async function standbyConferenceOS() {
     return
   }
 
-  const reason = prompt(`Por que a OS #${currentConferenceOS.order_number || currentConferenceOS.id} está em STANDBY?\n\n(Ex: Aguardando material, aguardando aprovação do cliente, etc.)`)
+  const reason = prompt(`Por que a OS ${currentConferenceOS.order_number || currentConferenceOS.id} está em STANDBY?\n\n(Ex: Aguardando material, aguardando aprovação do cliente, etc.)`)
 
   if (!reason || reason.trim() === '') {
     showToast('Você deve informar o motivo do standby', 'error')
@@ -1626,7 +1626,7 @@ async function standbyConferenceOS() {
       throw new Error(error.message || 'Erro ao colocar OS em standby')
     }
 
-    showToast(`OS #${currentConferenceOS.order_number || currentConferenceOS.id} enviada para Standby.`, 'success')
+    showToast(`OS ${currentConferenceOS.order_number || currentConferenceOS.id} enviada para Standby.`, 'success')
     closeConferenceModal()
     loadReviewData()
   } catch (error) {
@@ -1924,7 +1924,7 @@ function renderStandbyOSList(osList) {
       <div class="os-card" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; margin-bottom: 0.75rem; border: 2px solid #f59e0b; border-radius: 12px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.05) 100%);">
         <div style="flex: 1;">
           <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <span style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary);">OS #${os.order_number || os.id}</span>
+            <span style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary);">OS ${os.order_number || os.id}</span>
             <span style="background: #f59e0b; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">STANDBY</span>
           </div>
           <div style="color: var(--text-secondary); font-size: 0.875rem;">
@@ -2176,7 +2176,7 @@ function renderArchivedOSList(osList) {
       <div class="os-card" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; margin-bottom: 0.75rem; border: 2px solid #ef4444; border-radius: 12px; background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.05) 100%);">
         <div style="flex: 1;">
           <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <span style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary);">OS #${os.order_number || os.id}</span>
+            <span style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary);">OS ${os.order_number || os.id}</span>
             <span style="background: #ef4444; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">CANCELADA</span>
           </div>
           <div style="color: var(--text-secondary); font-size: 0.875rem;">
@@ -2247,7 +2247,7 @@ function filterArchivedOSList() {
         <div class="os-card" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; margin-bottom: 0.75rem; border: 2px solid #ef4444; border-radius: 12px; background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.05) 100%);">
           <div style="flex: 1;">
             <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-              <span style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary);">OS #${os.order_number || os.id}</span>
+              <span style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary);">OS ${os.order_number || os.id}</span>
               <span style="background: #ef4444; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">CANCELADA</span>
             </div>
             <div style="color: var(--text-secondary); font-size: 0.875rem;">
@@ -2359,7 +2359,7 @@ function renderWarrantyOSList(osList) {
       <div class="os-card" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; margin-bottom: 0.75rem; border: 2px solid #8b5cf6; border-radius: 12px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(124, 58, 237, 0.05) 100%);">
         <div style="flex: 1;">
           <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <span style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary);">OS #${os.order_number || os.id}</span>
+            <span style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary);">OS ${os.order_number || os.id}</span>
             <span style="background: #8b5cf6; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">GARANTIA</span>
           </div>
           <div style="color: var(--text-secondary); font-size: 0.875rem;">
