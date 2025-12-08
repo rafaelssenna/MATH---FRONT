@@ -8529,6 +8529,26 @@ async function confirmMarkAsBilled(osId, osNumber, selectedEmails = null) {
     }
   }
 
+  // LOADING STATE - Desabilita botão e mostra spinner
+  const confirmBtn = document.querySelector('#invoiceModal .btn-primary')
+  const originalBtnHtml = confirmBtn?.innerHTML
+  if (confirmBtn) {
+    confirmBtn.disabled = true
+    confirmBtn.innerHTML = `
+      <svg width="20" height="20" viewBox="0 0 24 24" style="animation: spin 1s linear infinite; margin-right: 8px;">
+        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="31.4 31.4" stroke-linecap="round"/>
+      </svg>
+      Enviando email...
+    `
+    confirmBtn.style.opacity = '0.7'
+    confirmBtn.style.cursor = 'wait'
+  }
+
+  // Também desabilita o input e botão cancelar
+  if (invoiceInput) invoiceInput.disabled = true
+  const cancelBtn = document.querySelector('#invoiceModal .btn-secondary')
+  if (cancelBtn) cancelBtn.disabled = true
+
   try {
     const body = { invoice_number: invoiceNumber }
     if (selectedEmails) {
@@ -8544,6 +8564,9 @@ async function confirmMarkAsBilled(osId, osNumber, selectedEmails = null) {
     const result = await response.json()
 
     if (!response.ok) {
+      // Restaura o botão para permitir nova tentativa
+      restoreBillingButton(confirmBtn, originalBtnHtml, invoiceInput, cancelBtn)
+
       // Mostra erro detalhado
       let mensagemErro = result.message || 'Erro ao faturar OS'
 
@@ -8582,9 +8605,25 @@ async function confirmMarkAsBilled(osId, osNumber, selectedEmails = null) {
     showToast(mensagemSucesso, 'success')
     loadBillingData() // Recarrega a lista
   } catch (error) {
+    // Restaura o botão para permitir nova tentativa
+    restoreBillingButton(confirmBtn, originalBtnHtml, invoiceInput, cancelBtn)
     console.error('Erro ao marcar OS como faturada:', error)
     showToast(error.message || 'Erro ao marcar OS como faturada', 'error')
   }
+}
+
+/**
+ * Restaura o estado do botão de faturamento após erro
+ */
+function restoreBillingButton(btn, originalHtml, input, cancelBtn) {
+  if (btn) {
+    btn.disabled = false
+    btn.innerHTML = originalHtml || 'Confirmar Faturamento'
+    btn.style.opacity = '1'
+    btn.style.cursor = 'pointer'
+  }
+  if (input) input.disabled = false
+  if (cancelBtn) cancelBtn.disabled = false
 }
 
 /**
