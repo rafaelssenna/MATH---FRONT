@@ -8505,7 +8505,7 @@ function closeInvoiceModal() {
  * Confirma e envia o faturamento com número da nota
  * Inclui confirmação dupla para evitar faturamento acidental
  */
-async function confirmMarkAsBilled(osId, osNumber) {
+async function confirmMarkAsBilled(osId, osNumber, selectedEmails = null) {
   const invoiceInput = document.getElementById('invoiceNumberInput')
   const invoiceNumber = invoiceInput?.value?.trim()
 
@@ -8515,23 +8515,30 @@ async function confirmMarkAsBilled(osId, osNumber) {
     return
   }
 
-  // CONFIRMAÇÃO DUPLA - Ação irreversível
-  const confirmMessage = `⚠️ ATENÇÃO: Esta ação é IRREVERSÍVEL!\n\n` +
-    `Você está prestes a faturar:\n` +
-    `• O.S: ${osNumber}\n` +
-    `• Nota Fiscal: ${invoiceNumber}\n\n` +
-    `Após faturada, a OS não poderá ser editada.\n\n` +
-    `Deseja realmente continuar?`
+  // CONFIRMAÇÃO DUPLA - Ação irreversível (só na primeira chamada)
+  if (!selectedEmails) {
+    const confirmMessage = `⚠️ ATENÇÃO: Esta ação é IRREVERSÍVEL!\n\n` +
+      `Você está prestes a faturar:\n` +
+      `• O.S: ${osNumber}\n` +
+      `• Nota Fiscal: ${invoiceNumber}\n\n` +
+      `Após faturada, a OS não poderá ser editada.\n\n` +
+      `Deseja realmente continuar?`
 
-  if (!confirm(confirmMessage)) {
-    return
+    if (!confirm(confirmMessage)) {
+      return
+    }
   }
 
   try {
+    const body = { invoice_number: invoiceNumber }
+    if (selectedEmails) {
+      body.selected_emails = selectedEmails
+    }
+
     const response = await fetch(`${API_URL}/api/billing/os/${osId}/mark-billed`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ invoice_number: invoiceNumber })
+      body: JSON.stringify(body)
     })
 
     const result = await response.json()
@@ -8554,6 +8561,13 @@ async function confirmMarkAsBilled(osId, osNumber) {
       return
     }
 
+    // Se precisa selecionar emails, mostra modal de seleção
+    if (result.requires_email_selection) {
+      closeInvoiceModal()
+      showEmailSelectionModal(osId, osNumber, invoiceNumber, result.available_emails)
+      return
+    }
+
     closeInvoiceModal()
 
     // Monta mensagem de sucesso com info do email
@@ -8570,6 +8584,96 @@ async function confirmMarkAsBilled(osId, osNumber) {
   } catch (error) {
     console.error('Erro ao marcar OS como faturada:', error)
     showToast(error.message || 'Erro ao marcar OS como faturada', 'error')
+  }
+}
+
+/**
+ * Mostra modal para selecionar emails de faturamento
+ */
+function showEmailSelectionModal(osId, osNumber, invoiceNumber, emails) {
+  // Remove modal anterior se existir
+  document.getElementById('emailSelectionModal')?.remove()
+
+  const emailCheckboxes = emails.map((email, i) => `
+    <label style="display: flex; align-items: center; gap: 10px; padding: 12px; background: #f8fafc; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+      <input type="checkbox" name="billingEmail" value="${email}" checked style="width: 18px; height: 18px; cursor: pointer;">
+      <span style="font-size: 14px; color: #334155;">${email}</span>
+    </label>
+  `).join('')
+
+  const modal = document.createElement('div')
+  modal.id = 'emailSelectionModal'
+  modal.className = 'modal-overlay'
+  modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;'
+  modal.innerHTML = `
+    <div style="background: white; border-radius: 16px; padding: 24px; max-width: 450px; width: 90%; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+        <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+          <svg width="24" height="24" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <div>
+          <h3 style="margin: 0; font-size: 18px; color: #1e293b;">Selecione os Emails</h3>
+          <p style="margin: 4px 0 0 0; font-size: 13px; color: #64748b;">O.S ${osNumber} - NF: ${invoiceNumber}</p>
+        </div>
+      </div>
+
+      <p style="font-size: 14px; color: #475569; margin-bottom: 16px;">
+        Esta empresa possui múltiplos emails de faturamento. Selecione para quais deseja enviar:
+      </p>
+
+      <div id="emailCheckboxList" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
+        ${emailCheckboxes}
+      </div>
+
+      <div style="display: flex; gap: 12px;">
+        <button onclick="closeEmailSelectionModal()" style="flex: 1; padding: 12px; border: 1px solid #e2e8f0; background: white; border-radius: 8px; font-size: 14px; cursor: pointer; color: #64748b;">
+          Cancelar
+        </button>
+        <button onclick="sendWithSelectedEmails(${osId}, '${osNumber}', '${invoiceNumber}')" style="flex: 1; padding: 12px; border: none; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;">
+          Enviar Emails
+        </button>
+      </div>
+    </div>
+  `
+
+  document.body.appendChild(modal)
+}
+
+function closeEmailSelectionModal() {
+  document.getElementById('emailSelectionModal')?.remove()
+}
+
+async function sendWithSelectedEmails(osId, osNumber, invoiceNumber) {
+  const checkboxes = document.querySelectorAll('input[name="billingEmail"]:checked')
+  const selectedEmails = Array.from(checkboxes).map(cb => cb.value)
+
+  if (selectedEmails.length === 0) {
+    showToast('Selecione pelo menos um email', 'error')
+    return
+  }
+
+  closeEmailSelectionModal()
+
+  // Salva o invoiceNumber no input temporariamente para a função usar
+  let tempInput = document.getElementById('invoiceNumberInput')
+  if (!tempInput) {
+    tempInput = document.createElement('input')
+    tempInput.id = 'invoiceNumberInput'
+    tempInput.value = invoiceNumber
+    tempInput.style.display = 'none'
+    document.body.appendChild(tempInput)
+  } else {
+    tempInput.value = invoiceNumber
+  }
+
+  // Chama novamente com os emails selecionados
+  await confirmMarkAsBilled(osId, osNumber, selectedEmails)
+
+  // Remove input temporário
+  if (tempInput.style.display === 'none') {
+    tempInput.remove()
   }
 }
 
