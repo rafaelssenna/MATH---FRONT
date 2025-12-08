@@ -290,17 +290,28 @@
             try {
                 updateStatus('Baixando nota fiscal...');
 
-                const response = await fetch(pdfUrl);
+                const response = await fetch(pdfUrl, {
+                    method: 'GET',
+                    mode: 'cors',
+                    credentials: 'omit'
+                });
 
                 if (!response.ok) {
                     throw new Error(`Erro ${response.status}: ${response.statusText}`);
+                }
+
+                const contentType = response.headers.get('content-type') || '';
+
+                // Se não for PDF, pode ser erro de CORS ou redirect
+                if (!contentType.includes('pdf') && !contentType.includes('octet-stream')) {
+                    console.warn('Content-Type não é PDF:', contentType);
                 }
 
                 updateStatus('Processando documento...');
 
                 pdfBlob = await response.blob();
 
-                if (pdfBlob.size < 1000) {
+                if (pdfBlob.size < 500) {
                     throw new Error('PDF inválido ou vazio');
                 }
 
@@ -329,7 +340,9 @@
 
             } catch (error) {
                 console.error('Erro:', error);
-                showError(error.message);
+                // Qualquer erro: abre a URL direto (fallback garantido)
+                console.log('Erro no fetch, abrindo URL diretamente...');
+                window.location.href = pdfUrl;
             }
         }
 
