@@ -8534,13 +8534,38 @@ async function confirmMarkAsBilled(osId, osNumber) {
       body: JSON.stringify({ invoice_number: invoiceNumber })
     })
 
+    const result = await response.json()
+
     if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.message || 'Erro ao marcar OS como faturada')
+      // Mostra erro detalhado
+      let mensagemErro = result.message || 'Erro ao faturar OS'
+
+      // Se tiver links faltando, mostra quais
+      if (result.links_faltando && result.links_faltando.length > 0) {
+        mensagemErro += '\n\nLinks faltando:\n• ' + result.links_faltando.join('\n• ')
+      }
+
+      // Se tiver dica, mostra
+      if (result.dica) {
+        mensagemErro += '\n\n' + result.dica
+      }
+
+      alert(mensagemErro)
+      return
     }
 
     closeInvoiceModal()
-    showToast(`O.S ${osNumber} marcada como faturada! NF: ${invoiceNumber}`, 'success')
+
+    // Monta mensagem de sucesso com info do email
+    let mensagemSucesso = `O.S ${osNumber} faturada! NF: ${invoiceNumber}`
+    if (result.email_enviado) {
+      const qtdEmails = result.email_resultados?.filter(r => r.success).length || 0
+      mensagemSucesso += ` - Email enviado para ${qtdEmails} destinatário(s)`
+    } else if (result.billing_emails?.length === 0) {
+      mensagemSucesso += ' (sem email de faturamento cadastrado)'
+    }
+
+    showToast(mensagemSucesso, 'success')
     loadBillingData() // Recarrega a lista
   } catch (error) {
     console.error('Erro ao marcar OS como faturada:', error)
