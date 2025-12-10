@@ -1422,8 +1422,11 @@ async function approveConferenceOS() {
     const grandTotal = hoursCost + displacementCost + totalMaterials + totalAdditionalServices
 
     // Pega valores dos selects de empresa, máquina e tipo de manutenção
-    const selectedCompanyId = parseInt(document.getElementById('conferenceCompanySelect')?.value)
-    const selectedMachineId = parseInt(document.getElementById('conferenceMachineSelect')?.value)
+    // Valida IDs - se inválido, envia null (não NaN)
+    const rawCompanyId = document.getElementById('conferenceCompanySelect')?.value
+    const rawMachineId = document.getElementById('conferenceMachineSelect')?.value
+    const selectedCompanyId = rawCompanyId && !isNaN(parseInt(rawCompanyId)) ? parseInt(rawCompanyId) : null
+    const selectedMachineId = rawMachineId && !isNaN(parseInt(rawMachineId)) ? parseInt(rawMachineId) : null
     const selectedMaintenanceType = document.getElementById('conferenceMaintenanceType')?.value || null
 
     const response = await fetch(`${API_URL}/api/review/${currentConferenceOS.id}/approve`, {
@@ -1505,8 +1508,11 @@ async function saveConferenceChanges() {
     const totalServiceCost = hoursCost + displacementCost
     const grandTotal = hoursCost + displacementCost + totalMaterials + totalAdditionalServices
 
-    const selectedCompanyId = parseInt(document.getElementById('conferenceCompanySelect')?.value)
-    const selectedMachineId = parseInt(document.getElementById('conferenceMachineSelect')?.value)
+    // Valida IDs - se inválido, envia null (não NaN)
+    const rawCompanyId = document.getElementById('conferenceCompanySelect')?.value
+    const rawMachineId = document.getElementById('conferenceMachineSelect')?.value
+    const selectedCompanyId = rawCompanyId && !isNaN(parseInt(rawCompanyId)) ? parseInt(rawCompanyId) : null
+    const selectedMachineId = rawMachineId && !isNaN(parseInt(rawMachineId)) ? parseInt(rawMachineId) : null
     const selectedMaintenanceType = document.getElementById('conferenceMaintenanceType')?.value || null
 
     // Pega observações do campo se existir, senão usa o valor atual
