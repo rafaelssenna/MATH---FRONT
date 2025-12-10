@@ -226,6 +226,15 @@ function renderConferenceOSList(osList, isFiltered = false) {
   const container = document.getElementById('reviewOSList')
   if (!container) return
 
+  // Ordena por nome da empresa (ordem alfabética)
+  if (osList && osList.length > 0) {
+    osList = [...osList].sort((a, b) => {
+      const nameA = (a.company_name || '').toLowerCase()
+      const nameB = (b.company_name || '').toLowerCase()
+      return nameA.localeCompare(nameB, 'pt-BR')
+    })
+  }
+
   // Salva no cache se não for filtrado (lista completa)
   if (!isFiltered) {
     conferenceOSListCache = osList || []

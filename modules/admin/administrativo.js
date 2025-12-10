@@ -8031,6 +8031,13 @@ function renderBillingOSList(osList, tab) {
     return
   }
 
+  // Ordena por nome da empresa (ordem alfabética)
+  osList = [...osList].sort((a, b) => {
+    const nameA = (a.company_name || a.client_name || '').toLowerCase()
+    const nameB = (b.company_name || b.client_name || '').toLowerCase()
+    return nameA.localeCompare(nameB, 'pt-BR')
+  })
+
   const formatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
   const isMobile = window.innerWidth <= 768
 

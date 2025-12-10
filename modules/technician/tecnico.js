@@ -1945,7 +1945,61 @@ function setupAutoSaveListeners() {
 }
 
 /**
- * Restaura dados salvos do formulário
+ * Restaura dados salvos do formulário (EXCETO radios de materiais/serviço)
+ * Os radios devem ser respondidos SEMPRE pelo técnico em cada finalização
+ */
+function restoreFormDataExceptRadios() {
+  if (!window.technicianStateManager) return
+
+  try {
+    const savedData = window.technicianStateManager.restoreFormData()
+    if (!savedData || !savedData.osId || savedData.osId !== currentOsId) {
+      console.log('⚠️ Nenhum dado salvo para esta OS')
+      return
+    }
+
+    console.log('🔄 Restaurando dados salvos do formulário (exceto radios)...')
+
+    // Restaura campos simples
+    if (savedData.description) document.getElementById("finishDescription").value = savedData.description
+    if (savedData.occurrence) document.getElementById("finishCallReason").value = savedData.occurrence
+    if (savedData.maintenanceType) document.getElementById("maintenanceTypeSelect").value = savedData.maintenanceType
+    if (savedData.selectedMachine) document.getElementById("finishMachineSelect").value = savedData.selectedMachine
+    if (savedData.machineSmartInput) document.getElementById("machineSmartInput").value = savedData.machineSmartInput
+
+    // NÃO restaura radio buttons de materiais - técnico deve responder sempre
+    // NÃO restaura radio buttons de serviço adicional - técnico deve responder sempre
+
+    // Restaura valores de serviço adicional (caso técnico marque "Sim")
+    if (savedData.additionalServiceValue) document.getElementById("finishAdditionalServiceValue").value = savedData.additionalServiceValue
+    if (savedData.additionalServiceNote) document.getElementById("finishAdditionalServiceNote").value = savedData.additionalServiceNote
+
+    // Restaura períodos de trabalho
+    if (savedData.timeEntries && savedData.timeEntries.length > 0) {
+      // Limpa períodos existentes
+      resetTimeEntries()
+      // Adiciona períodos salvos
+      savedData.timeEntries.forEach(entry => {
+        if (entry.date && (entry.start || entry.end)) {
+          // Combina data + hora para criar datetime strings
+          const startDatetime = entry.start ? `${entry.date}T${entry.start}` : ''
+          const endDatetime = entry.end ? `${entry.date}T${entry.end}` : ''
+          addTimeEntryRow({ start_datetime: startDatetime, end_datetime: endDatetime })
+        }
+      })
+    }
+
+    // NÃO restaura materiais - depende da resposta do radio
+    // NÃO restaura deslocamentos - já são carregados da API
+
+    console.log('✅ Dados restaurados com sucesso (radios limpos)')
+  } catch (err) {
+    console.warn('Erro ao restaurar dados:', err)
+  }
+}
+
+/**
+ * Restaura dados salvos do formulário (versão completa - usada internamente)
  */
 function restoreFormData() {
   if (!window.technicianStateManager) return
@@ -2190,6 +2244,22 @@ async function openFinishModal(os) {
       audioBtn.style.display = "flex"
     }
 
+    // IMPORTANTE: Limpa os radios de materiais e serviço adicional para forçar resposta
+    // O técnico DEVE responder essas perguntas em cada finalização
+    document.querySelectorAll('input[name="hasMaterials"]').forEach(r => {
+      r.checked = false
+      updateRadioStyles('hasMaterials')
+    })
+    document.querySelectorAll('input[name="hasAdditionalService"]').forEach(r => {
+      r.checked = false
+      updateRadioStyles('hasAdditionalService')
+    })
+    // Esconde seções relacionadas
+    const materialsSection = document.getElementById('materialsSection')
+    if (materialsSection) materialsSection.style.display = 'none'
+    const additionalServiceSection = document.getElementById('additionalServiceSection')
+    if (additionalServiceSection) additionalServiceSection.style.display = 'none'
+
     // Inicializa toggles de materiais e serviço adicional
     initMaterialsToggle()
     initAdditionalServiceToggle()
@@ -2200,8 +2270,8 @@ async function openFinishModal(os) {
     // Configura auto-save dos campos do formulário
     setupAutoSaveListeners()
 
-    // Restaura dados salvos anteriormente (se houver)
-    restoreFormData()
+    // Restaura dados salvos anteriormente (se houver) - EXCETO radios de materiais/serviço
+    restoreFormDataExceptRadios()
 
   } catch (error) {
     console.error("❌ Erro ao abrir modal de finalização:", error)
