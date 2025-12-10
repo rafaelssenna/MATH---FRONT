@@ -1457,12 +1457,12 @@ async function approveConferenceOS() {
     }
 
     showToast(`OS ${currentConferenceOS.order_number || currentConferenceOS.id} aprovada com sucesso!`, 'success')
+    resetButtonLoading(btn, originalText)
     closeConferenceModal()
     loadReviewData()
   } catch (error) {
     console.error('Erro ao aprovar OS:', error)
     showToast(error.message || 'Erro ao aprovar OS', 'error')
-    // Restaura botão em caso de erro
     resetButtonLoading(btn, originalText)
   }
 }
