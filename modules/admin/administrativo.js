@@ -1829,7 +1829,7 @@ function loadOSList() {
       })
       localStorage.setItem("osList", JSON.stringify(osList))
       if (osList.length === 0) {
-        container.innerHTML = '<p class="empty-state">Nenhuma OS cadastrada</p>'
+        container.innerHTML = '<p class="empty-state">Nenhuma O.S cadastrada</p>'
         renderOsPaginationBar()
         return
       }
@@ -1903,7 +1903,7 @@ function loadOSList() {
     .catch(() => {
       const osList = JSON.parse(localStorage.getItem("osList") || "[]")
       if (osList.length === 0) {
-        container.innerHTML = '<p class="empty-state">Nenhuma OS cadastrada</p>'
+        container.innerHTML = '<p class="empty-state">Nenhuma O.S cadastrada</p>'
         renderOsPaginationBar()
         return
       }
@@ -2335,7 +2335,7 @@ function populateCompanyDetails(company, osList = []) {
 
   if (osContainer) {
     if (!Array.isArray(osList) || osList.length === 0) {
-      osContainer.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-secondary);">Nenhuma OS encontrada para esta empresa</p>'
+      osContainer.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-secondary);">Nenhuma O.S encontrada para esta empresa</p>'
     } else {
       
       // Gera HTML das OS
@@ -2432,7 +2432,7 @@ function filterCompanyOS() {
  */
 function renderCompanyOSList(osList, container) {
   if (!osList || osList.length === 0) {
-    container.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-secondary);">Nenhuma OS encontrada</p>'
+    container.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-secondary);">Nenhuma O.S encontrada</p>'
     return
   }
   
@@ -3761,7 +3761,7 @@ function searchOS() {
       const filtered = rows.filter(row => row.order_number !== null && row.order_number !== undefined)
 
       if (filtered.length === 0) {
-        container.innerHTML = '<p class="empty-state">Nenhuma OS encontrada para "' + escapeHtml(query) + '"</p>'
+        container.innerHTML = '<p class="empty-state">Nenhuma O.S encontrada para "' + escapeHtml(query) + '"</p>'
         return
       }
 
@@ -7369,7 +7369,7 @@ function handleEditOsForm(e) {
  */
 async function saveOSEdit() {
   if (!currentOS || !currentOS.id) {
-    throw new Error('Nenhuma OS selecionada para editar')
+    throw new Error('Nenhuma O.S selecionada para editar')
   }
 
   const id = currentOS.id
@@ -7534,7 +7534,7 @@ async function viewCompanyOSHistory(companyId, companyName) {
     const data = await response.json()
     
     if (data.length === 0) {
-      showToast('Nenhuma OS encontrada para esta empresa', 'info')
+      showToast('Nenhuma O.S encontrada para esta empresa', 'info')
       return
     }
     
@@ -7585,7 +7585,7 @@ async function viewMachineOSHistory(machineId, machineName) {
     const data = await response.json()
     
     if (data.length === 0) {
-      showToast('Nenhuma OS encontrada para esta máquina', 'info')
+      showToast('Nenhuma O.S encontrada para esta máquina', 'info')
       return
     }
     
@@ -7892,7 +7892,7 @@ function switchBillingTab(tab) {
   // Atualiza título
   const title = document.getElementById('billingListTitle')
   if (title) {
-    title.textContent = tab === 'pending' ? 'OS Pendentes de Faturamento' : 'OS Faturadas'
+    title.textContent = tab === 'pending' ? 'O.S Pendentes de Faturamento' : 'O.S Faturadas'
   }
 
   // Mostra/esconde campo de busca (só na aba faturadas)
@@ -9459,7 +9459,7 @@ async function generateDailyReport() {
 
     if (!osData.osList || osData.osList.length === 0) {
       if (loadingDiv) loadingDiv.style.display = 'none'
-      showToast('Nenhuma OS encontrada para esta data', 'warning')
+      showToast('Nenhuma O.S encontrada para esta data', 'warning')
       resetGenerateButton()
       return
     }

@@ -1078,7 +1078,7 @@ async function filterClientHistory() {
     }
 
     if (filtered.length === 0) {
-      container.innerHTML = '<p class="empty-state">Nenhuma OS encontrada com os filtros aplicados</p>'
+      container.innerHTML = '<p class="empty-state">Nenhuma O.S encontrada com os filtros aplicados</p>'
       return
     }
 
@@ -1171,7 +1171,7 @@ function filterHistory() {
   const container = document.getElementById("historyList")
   if (!container) return
   if (filtered.length === 0) {
-    container.innerHTML = '<p class="empty-state">Nenhuma OS encontrada</p>'
+    container.innerHTML = '<p class="empty-state">Nenhuma O.S encontrada</p>'
     return
   }
   container.innerHTML = filtered

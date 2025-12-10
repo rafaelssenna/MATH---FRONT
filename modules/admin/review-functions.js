@@ -243,7 +243,7 @@ function renderConferenceOSList(osList, isFiltered = false) {
   // Atualiza título
   const title = document.getElementById('reviewListTitle')
   if (title) {
-    title.textContent = 'OS Aguardando Conferência'
+    title.textContent = 'O.S Aguardando Conferência'
   }
 
   // Campo de busca (sempre mostra)
@@ -252,7 +252,7 @@ function renderConferenceOSList(osList, isFiltered = false) {
       <input
         type="text"
         id="conferenceListSearch"
-        placeholder="Buscar por número da OS, cliente ou técnico..."
+        placeholder="Buscar por número da O.S, cliente ou técnico..."
         oninput="filterConferenceOSList()"
         style="
           width: 100%;
@@ -268,7 +268,7 @@ function renderConferenceOSList(osList, isFiltered = false) {
   `
 
   if (!osList || osList.length === 0) {
-    container.innerHTML = searchHtml + `<p class="empty-state">${isFiltered ? 'Nenhuma OS encontrada com esse filtro' : 'Nenhuma OS aguardando conferência'}</p>`
+    container.innerHTML = searchHtml + `<p class="empty-state">${isFiltered ? 'Nenhuma O.S encontrada com esse filtro' : 'Nenhuma O.S aguardando conferência'}</p>`
     return
   }
 
@@ -1381,7 +1381,7 @@ function validateConferenceData() {
  */
 async function approveConferenceOS() {
   if (!currentConferenceOS) {
-    showToast('Nenhuma OS selecionada', 'error')
+    showToast('Nenhuma O.S selecionada', 'error')
     return
   }
 
@@ -1481,7 +1481,7 @@ async function approveConferenceOS() {
  */
 async function saveConferenceChanges() {
   if (!currentConferenceOS) {
-    showToast('Nenhuma OS selecionada', 'error')
+    showToast('Nenhuma O.S selecionada', 'error')
     return
   }
 
@@ -1581,7 +1581,7 @@ async function saveConferenceChanges() {
  */
 async function cancelConferenceOS() {
   if (!currentConferenceOS) {
-    showToast('Nenhuma OS selecionada', 'error')
+    showToast('Nenhuma O.S selecionada', 'error')
     return
   }
 
@@ -1618,7 +1618,7 @@ async function cancelConferenceOS() {
  */
 async function standbyConferenceOS() {
   if (!currentConferenceOS) {
-    showToast('Nenhuma OS selecionada', 'error')
+    showToast('Nenhuma O.S selecionada', 'error')
     return
   }
 
@@ -1927,7 +1927,7 @@ function renderStandbyOSList(osList) {
   if (!container) return
 
   if (!osList || osList.length === 0) {
-    container.innerHTML = '<p class="empty-state">Nenhuma OS em standby</p>'
+    container.innerHTML = '<p class="empty-state">Nenhuma O.S em standby</p>'
     return
   }
 
@@ -2051,7 +2051,7 @@ async function openArchivedOSModal() {
 
   } catch (error) {
     console.error('Erro ao abrir modal de OS arquivadas:', error)
-    showToast('Erro ao carregar OS canceladas', 'error')
+    showToast('Erro ao carregar O.S canceladas', 'error')
   }
 }
 
@@ -2069,14 +2069,14 @@ function createArchivedOSModal() {
               <line x1="15" y1="9" x2="9" y2="15"/>
               <line x1="9" y1="9" x2="15" y2="15"/>
             </svg>
-            OS Canceladas
+            O.S Canceladas
           </h2>
           <button class="modal-close" onclick="closeArchivedOSModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 0.5rem; border-radius: 50%;">&times;</button>
         </div>
         <div id="archivedOSModalContent" class="modal-body" style="padding: 1.5rem;">
           <div style="text-align: center; padding: 2rem;">
             <div class="spinner"></div>
-            <p>Carregando OS canceladas...</p>
+            <p>Carregando O.S canceladas...</p>
           </div>
         </div>
         <div class="modal-footer" style="display: flex; justify-content: flex-end; padding: 1rem 1.5rem; border-top: 1px solid var(--border-color);">
@@ -2125,7 +2125,7 @@ async function loadArchivedOS() {
           <line x1="12" y1="8" x2="12" y2="12"/>
           <line x1="12" y1="16" x2="12.01" y2="16"/>
         </svg>
-        <p>Erro ao carregar OS canceladas</p>
+        <p>Erro ao carregar O.S canceladas</p>
         <button onclick="loadArchivedOS()" class="btn-secondary" style="margin-top: 1rem;">Tentar novamente</button>
       </div>
     `
@@ -2147,8 +2147,8 @@ function renderArchivedOSList(osList) {
           <path d="M1 3h22v5H1z"/>
           <path d="M10 12h4"/>
         </svg>
-        <p style="font-size: 1.1rem; margin: 0;">Nenhuma OS cancelada</p>
-        <p style="font-size: 0.875rem; margin-top: 0.5rem; opacity: 0.7;">Todas as OS canceladas aparecerão aqui</p>
+        <p style="font-size: 1.1rem; margin: 0;">Nenhuma O.S cancelada</p>
+        <p style="font-size: 0.875rem; margin-top: 0.5rem; opacity: 0.7;">Todas as O.S canceladas aparecerão aqui</p>
       </div>
     `
     return
@@ -2160,7 +2160,7 @@ function renderArchivedOSList(osList) {
       <input
         type="text"
         id="archivedOSSearch"
-        placeholder="Buscar por número da OS, cliente ou técnico..."
+        placeholder="Buscar por número da O.S, cliente ou técnico..."
         oninput="filterArchivedOSList()"
         style="
           width: 100%;
@@ -2219,7 +2219,7 @@ function renderArchivedOSList(osList) {
       ${html}
     </div>
     <div style="margin-top: 1rem; padding: 0.75rem; background: rgba(239, 68, 68, 0.1); border-radius: 8px; font-size: 0.875rem; color: var(--text-secondary);">
-      <strong>Total:</strong> ${osList.length} OS cancelada(s)
+      <strong>Total:</strong> ${osList.length} O.S cancelada(s)
     </div>
   `
 }
@@ -2287,7 +2287,7 @@ function filterArchivedOSList() {
   } else if (listContainer) {
     listContainer.innerHTML = `
       <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
-        <p>Nenhuma OS encontrada com esse filtro</p>
+        <p>Nenhuma O.S encontrada com esse filtro</p>
       </div>
     `
   }
@@ -2363,7 +2363,7 @@ function renderWarrantyOSList(osList) {
   if (!container) return
 
   if (!osList || osList.length === 0) {
-    container.innerHTML = '<p class="empty-state">Nenhuma OS em garantia</p>'
+    container.innerHTML = '<p class="empty-state">Nenhuma O.S em garantia</p>'
     return
   }
 
