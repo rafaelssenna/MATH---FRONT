@@ -4618,8 +4618,10 @@ function setupSidebar() {
 
 /**
  * Ativa uma seção específica (função exposta globalmente para uso do state manager)
+ * @param {string} section - ID da seção a ativar
+ * @param {boolean} expandMenu - Se deve expandir o menu pai (default: true, false na restauração inicial)
  */
-window.activateSection = function(section) {
+window.activateSection = function(section, expandMenu = true) {
   const menuItems = document.querySelectorAll(".sidebar-menu .menu-group-items li")
   const pages = document.querySelectorAll(".admin-page")
 
@@ -4627,10 +4629,12 @@ window.activateSection = function(section) {
   const activeItem = Array.from(menuItems).find(i => i.getAttribute("data-section") === section)
   if (activeItem) {
     activeItem.classList.add("active")
-    // Expande o grupo pai quando um item é ativado
-    const parentGroup = activeItem.closest(".menu-group")
-    if (parentGroup && !parentGroup.classList.contains("expanded")) {
-      parentGroup.classList.add("expanded")
+    // Expande o grupo pai quando um item é ativado (exceto na restauração inicial)
+    if (expandMenu) {
+      const parentGroup = activeItem.closest(".menu-group")
+      if (parentGroup && !parentGroup.classList.contains("expanded")) {
+        parentGroup.classList.add("expanded")
+      }
     }
   }
   
@@ -4738,11 +4742,12 @@ window.activateSection = function(section) {
  */
 function restoreAdminState() {
   if (!window.adminStateManager) return
-  
+
   const state = window.adminStateManager.restoreFromURL()
-  
+
   if (state.currentSection) {
-    activateSection(state.currentSection)
+    // Passa false para não expandir o menu - todos os menus devem começar fechados
+    activateSection(state.currentSection, false)
     
     // Restaura sub-tab se houver
     if (state.currentSubTab && state.currentSection === 'companiesSection') {
