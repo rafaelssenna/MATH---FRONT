@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OS PDF - Helsen Service</title>
+    <title>O.S PDF - Helsen Service</title>
     <link rel="icon" type="image/jpeg" href="assets/mate-icon.jpg">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
@@ -66,7 +66,7 @@
         <img src="assets/helsenservicelogo.png" alt="Helsen Service" class="logo">
         <h1>Ordem de Serviço</h1>
         <div class="os-number" id="osNumber">Carregando...</div>
-        <div class="status" id="status">Buscando dados da OS...</div>
+        <div class="status" id="status">Buscando dados da O.S...</div>
         <div class="spinner" id="spinner"></div>
         <div id="actions" style="display: none;">
             <button class="btn" onclick="downloadPDF()">Baixar PDF</button>
@@ -89,7 +89,7 @@
         const osNumber = urlParams.get('os') || urlParams.get('id');
 
         if (!osNumber) {
-            showError('Numero da OS nao informado. Use: ?os=6519');
+            showError('Numero da O.S nao informado. Use: ?os=6519');
         } else {
             loadOS(osNumber);
         }
@@ -100,7 +100,7 @@
                 const data = await response.json();
 
                 if (!response.ok) {
-                    throw new Error(data.message || 'OS nao encontrada');
+                    throw new Error(data.message || 'O.S nao encontrada');
                 }
 
                 currentOS = data;
@@ -109,7 +109,7 @@
                 mapOSFields();
 
                 document.getElementById('osNumber').textContent = `O.S. #${currentOS.osNumber || currentOS.order_number}`;
-                document.getElementById('status').innerHTML = '<span class="success">OS carregada com sucesso!</span>';
+                document.getElementById('status').innerHTML = '<span class="success">O.S carregada com sucesso!</span>';
                 document.getElementById('spinner').style.display = 'none';
                 document.getElementById('actions').style.display = 'block';
 
