@@ -148,7 +148,7 @@
             currentOS.totalGeral = currentOS.grand_total || 0;
             currentOS.isNewClient = currentOS.is_new_client || false;
             currentOS.valorHoraTecnico = currentOS.hourly_rate || (currentOS.isNewClient ? 175 : 150);
-            currentOS.signatureTecnico = currentOS.signature_technician || null;
+            currentOS.signatureTecnico = currentOS.signature_technician || currentOS.technician_signature || null;
             currentOS.signatureCliente = currentOS.signature_client || currentOS.client_signature || null;
             currentOS.materiais = currentOS.materials || [];
             currentOS.worklogs = currentOS.worklogs || [];
