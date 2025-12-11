@@ -8003,9 +8003,6 @@ function toggleBillingOSSelection(osId, companyId, companyName, grandTotal, orde
   // Se tentar selecionar de outra empresa, bloqueia
   if (companyId !== selectedCompanyId) {
     showToast('Só é possível agrupar OS da mesma empresa!', 'error')
-    // Desmarca o checkbox
-    const checkbox = document.querySelector(`input.billing-os-checkbox[data-os-id="${osId}"]`)
-    if (checkbox) checkbox.checked = false
     return
   }
 
@@ -8031,6 +8028,11 @@ function toggleBillingOSSelection(osId, companyId, companyName, grandTotal, orde
   }
 
   updateBillingSelectionBar()
+
+  // Re-renderiza a lista para atualizar os checkboxes visuais
+  if (window.cachedBillingOSList) {
+    renderBillingOSList(window.cachedBillingOSList, currentBillingTab)
+  }
 }
 
 /**
@@ -8257,10 +8259,11 @@ async function loadBillingData() {
     // Renderiza estatísticas
     renderBillingStats(statsRes)
 
-    // Salva no cache se for aba de faturadas (para filtro)
+    // Salva no cache (para filtro e re-render dos checkboxes)
     if (currentBillingTab === 'billed') {
       billedOSListCache = osRes || []
     }
+    window.cachedBillingOSList = osRes || []
 
     // Renderiza lista de OS
     renderBillingOSList(osRes, currentBillingTab)
@@ -8379,13 +8382,12 @@ function renderBillingOSList(osList, tab) {
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
               <div style="display: flex; align-items: center; gap: 0.75rem;">
                 ${billingGroupMode && tab === 'pending' ? `
-                  <input type="checkbox"
-                    class="billing-os-checkbox"
+                  <div style="width: 24px; height: 24px; border: 2px solid #6366f1; border-radius: 6px; background: ${isSelected ? '#6366f1' : 'rgba(255,255,255,0.1)'}; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;"
+                    onclick="toggleBillingOSSelection(${os.id}, ${companyId}, '${companyName.replace(/'/g, "\\'")}', ${os.grand_total || 0}, ${os.order_number})"
                     data-os-id="${os.id}"
-                    data-company-id="${companyId}"
-                    ${isSelected ? 'checked' : ''}
-                    onchange="toggleBillingOSSelection(${os.id}, ${companyId}, '${companyName.replace(/'/g, "\\'")}', ${os.grand_total || 0}, ${os.order_number})"
-                    style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--primary-blue);">
+                    data-company-id="${companyId}">
+                    ${isSelected ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+                  </div>
                 ` : ''}
                 <span style="font-weight: 700; font-size: 1.1rem; color: var(--primary-blue);">#${os.order_number || 'N/A'}</span>
               </div>
@@ -8509,13 +8511,12 @@ function renderBillingOSList(osList, tab) {
           <tr style="border-bottom: 1px solid var(--border-color); ${isSelected ? 'background: rgba(99, 102, 241, 0.1);' : ''}">
             ${billingGroupMode && tab === 'pending' ? `
               <td style="padding: 0.75rem; text-align: center;">
-                <input type="checkbox"
-                  class="billing-os-checkbox"
+                <div style="width: 22px; height: 22px; border: 2px solid #6366f1; border-radius: 5px; background: ${isSelected ? '#6366f1' : 'rgba(255,255,255,0.1)'}; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;"
+                  onclick="toggleBillingOSSelection(${os.id}, ${companyId}, '${companyName.replace(/'/g, "\\'")}', ${os.grand_total || 0}, ${os.order_number})"
                   data-os-id="${os.id}"
-                  data-company-id="${companyId}"
-                  ${isSelected ? 'checked' : ''}
-                  onchange="toggleBillingOSSelection(${os.id}, ${companyId}, '${companyName.replace(/'/g, "\\'")}', ${os.grand_total || 0}, ${os.order_number})"
-                  style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--primary-blue);">
+                  data-company-id="${companyId}">
+                  ${isSelected ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+                </div>
               </td>
             ` : ''}
             <td style="padding: 0.75rem;">#${os.order_number || 'N/A'}</td>
