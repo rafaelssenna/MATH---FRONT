@@ -7879,6 +7879,12 @@ async function revertOSToPending(osId) {
 let currentBillingTab = 'pending'
 let billedOSListCache = [] // Cache para filtro de OS faturadas
 
+// Estados para agrupamento de OS
+let billingGroupMode = false // Modo de seleção ativo?
+let selectedBillingOS = [] // OS selecionadas [{id, order_number, company_id, company_name, grand_total}]
+let selectedCompanyId = null // Empresa das OS selecionadas (para validação)
+let selectedCompanyName = null // Nome da empresa selecionada
+
 /**
  * Troca entre abas de faturamento (pendente / faturadas)
  */
@@ -7908,6 +7914,319 @@ function switchBillingTab(tab) {
   // Recarrega dados
   loadBillingData()
 }
+
+// ========================
+// FUNÇÕES DE AGRUPAMENTO DE OS
+// ========================
+
+/**
+ * Ativa/desativa modo de seleção para agrupar OS
+ */
+function toggleBillingGroupMode() {
+  billingGroupMode = !billingGroupMode
+
+  // Atualiza botão
+  const btn = document.getElementById('btnToggleGroupMode')
+  if (btn) {
+    if (billingGroupMode) {
+      btn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+        Cancelar Seleção
+      `
+      btn.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+    } else {
+      btn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"/>
+          <rect x="14" y="3" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/>
+        </svg>
+        Agrupar OS
+      `
+      btn.style.background = 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)'
+    }
+  }
+
+  // Limpa seleção ao desativar
+  if (!billingGroupMode) {
+    cancelBillingGroupMode()
+  }
+
+  // Re-renderiza a lista para mostrar/esconder checkboxes
+  loadBillingData()
+}
+
+/**
+ * Cancela modo de agrupamento e limpa seleção
+ */
+function cancelBillingGroupMode() {
+  selectedBillingOS = []
+  selectedCompanyId = null
+  selectedCompanyName = null
+  updateBillingSelectionBar()
+
+  // Se o modo de grupo estava ativo, desativa e reseta botão
+  if (billingGroupMode) {
+    billingGroupMode = false
+    const btn = document.getElementById('btnToggleGroupMode')
+    if (btn) {
+      btn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"/>
+          <rect x="14" y="3" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/>
+        </svg>
+        Agrupar OS
+      `
+      btn.style.background = 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)'
+    }
+    // Re-renderiza lista para esconder checkboxes
+    loadBillingData()
+  }
+}
+
+/**
+ * Seleciona/deseleciona uma OS para agrupamento
+ */
+function toggleBillingOSSelection(osId, companyId, companyName, grandTotal, orderNumber) {
+  // Se é a primeira seleção, define a empresa
+  if (selectedBillingOS.length === 0) {
+    selectedCompanyId = companyId
+    selectedCompanyName = companyName
+  }
+
+  // Se tentar selecionar de outra empresa, bloqueia
+  if (companyId !== selectedCompanyId) {
+    showToast('Só é possível agrupar OS da mesma empresa!', 'error')
+    // Desmarca o checkbox
+    const checkbox = document.querySelector(`input.billing-os-checkbox[data-os-id="${osId}"]`)
+    if (checkbox) checkbox.checked = false
+    return
+  }
+
+  // Toggle na lista
+  const index = selectedBillingOS.findIndex(os => os.id === osId)
+  if (index > -1) {
+    // Remove da seleção
+    selectedBillingOS.splice(index, 1)
+    // Se não tem mais nenhuma, reseta a empresa
+    if (selectedBillingOS.length === 0) {
+      selectedCompanyId = null
+      selectedCompanyName = null
+    }
+  } else {
+    // Adiciona à seleção
+    selectedBillingOS.push({
+      id: osId,
+      order_number: orderNumber,
+      company_id: companyId,
+      company_name: companyName,
+      grand_total: grandTotal
+    })
+  }
+
+  updateBillingSelectionBar()
+}
+
+/**
+ * Atualiza a barra de seleção flutuante
+ */
+function updateBillingSelectionBar() {
+  const bar = document.getElementById('billingSelectionBar')
+  if (!bar) return
+
+  // Se não tem seleção, esconde a barra
+  if (selectedBillingOS.length === 0) {
+    bar.style.display = 'none'
+    return
+  }
+
+  // Mostra a barra
+  bar.style.display = 'block'
+
+  // Calcula total
+  const total = selectedBillingOS.reduce((sum, os) => sum + (parseFloat(os.grand_total) || 0), 0)
+  const totalFormatado = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+
+  // Atualiza elementos
+  const countEl = document.getElementById('selectionCount')
+  const companyEl = document.getElementById('selectionCompany')
+  const totalEl = document.getElementById('selectionTotal')
+
+  if (countEl) countEl.textContent = `${selectedBillingOS.length} OS selecionada${selectedBillingOS.length > 1 ? 's' : ''}`
+  if (companyEl) companyEl.textContent = `Empresa: ${selectedCompanyName || '-'}`
+  if (totalEl) totalEl.textContent = `Total: ${totalFormatado}`
+}
+
+/**
+ * Mostra modal para faturar grupo de OS
+ */
+function showGroupInvoiceModal() {
+  const modal = document.getElementById('groupInvoiceModal')
+  if (!modal) return
+
+  // Calcula total
+  const total = selectedBillingOS.reduce((sum, os) => sum + (parseFloat(os.grand_total) || 0), 0)
+  const totalFormatado = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+
+  // Lista de OS
+  const osListHtml = selectedBillingOS.map(os => {
+    const valor = (parseFloat(os.grand_total) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+    return `<div style="display: flex; justify-content: space-between; padding: 8px 12px; background: var(--bg-input); border-radius: 6px; margin-bottom: 6px;">
+      <span style="font-weight: 600; color: var(--primary-blue);">#${os.order_number}</span>
+      <span style="color: var(--text-secondary);">${valor}</span>
+    </div>`
+  }).join('')
+
+  // Atualiza elementos do modal
+  const companyEl = document.getElementById('groupModalCompany')
+  const osListEl = document.getElementById('groupModalOSList')
+  const totalEl = document.getElementById('groupModalTotal')
+  const inputEl = document.getElementById('groupInvoiceNumber')
+
+  if (companyEl) companyEl.textContent = selectedCompanyName || 'N/A'
+  if (osListEl) osListEl.innerHTML = osListHtml
+  if (totalEl) totalEl.textContent = totalFormatado
+  if (inputEl) inputEl.value = ''
+
+  // Mostra modal
+  modal.style.display = 'flex'
+
+  // Foca no input
+  setTimeout(() => inputEl?.focus(), 100)
+
+  // Permite confirmar com Enter
+  inputEl?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') confirmGroupBilling()
+  })
+}
+
+/**
+ * Fecha modal de faturamento em grupo
+ */
+function closeGroupInvoiceModal() {
+  const modal = document.getElementById('groupInvoiceModal')
+  if (modal) modal.style.display = 'none'
+}
+
+/**
+ * Confirma faturamento em grupo
+ */
+async function confirmGroupBilling() {
+  const invoiceInput = document.getElementById('groupInvoiceNumber')
+  const invoiceNumber = invoiceInput?.value?.trim()
+
+  if (!invoiceNumber) {
+    showToast('Digite o número da NFS-e', 'error')
+    invoiceInput?.focus()
+    return
+  }
+
+  // Confirmação dupla
+  const osNumbers = selectedBillingOS.map(os => os.order_number).join(', ')
+  const confirmMessage = `⚠️ ATENÇÃO: Esta ação é IRREVERSÍVEL!\n\n` +
+    `Você está prestes a faturar ${selectedBillingOS.length} OS:\n` +
+    `• OS: ${osNumbers}\n` +
+    `• NFS-e: ${invoiceNumber}\n\n` +
+    `Todas serão associadas à mesma cobrança.\n\n` +
+    `Deseja continuar?`
+
+  if (!confirm(confirmMessage)) return
+
+  // Loading
+  const confirmBtn = document.getElementById('btnConfirmGroupBilling')
+  const originalBtnHtml = confirmBtn?.innerHTML
+  if (confirmBtn) {
+    confirmBtn.disabled = true
+    confirmBtn.innerHTML = 'Processando...'
+    confirmBtn.style.opacity = '0.7'
+  }
+
+  try {
+    const osIds = selectedBillingOS.map(os => os.id)
+
+    const response = await fetch(`${API_URL}/api/billing/os/group-mark-billed`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        os_ids: osIds,
+        invoice_number: invoiceNumber
+      })
+    })
+
+    const result = await response.json()
+
+    if (!response.ok) {
+      if (confirmBtn) {
+        confirmBtn.disabled = false
+        confirmBtn.innerHTML = originalBtnHtml || 'Confirmar Faturamento'
+        confirmBtn.style.opacity = '1'
+      }
+
+      let mensagemErro = result.message || 'Erro ao faturar grupo'
+      if (result.links_faltando?.length > 0) {
+        mensagemErro += '\n\nLinks faltando:\n• ' + result.links_faltando.join('\n• ')
+      }
+      if (result.dica) mensagemErro += '\n\n' + result.dica
+
+      alert(mensagemErro)
+      return
+    }
+
+    closeGroupInvoiceModal()
+
+    // Mensagem de sucesso
+    let mensagemSucesso = result.message || `${selectedBillingOS.length} OS faturadas!`
+    if (result.email_enviado) {
+      const qtdEmails = result.email_resultados?.filter(r => r.success).length || 0
+      mensagemSucesso += ` - Email enviado para ${qtdEmails} destinatário(s)`
+    }
+
+    showToast(mensagemSucesso, 'success')
+
+    // Limpa seleção e desativa modo
+    billingGroupMode = false
+    const btn = document.getElementById('btnToggleGroupMode')
+    if (btn) {
+      btn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"/>
+          <rect x="14" y="3" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/>
+        </svg>
+        Agrupar OS
+      `
+      btn.style.background = 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)'
+    }
+    cancelBillingGroupMode()
+
+    // Recarrega lista
+    loadBillingData()
+
+  } catch (error) {
+    if (confirmBtn) {
+      confirmBtn.disabled = false
+      confirmBtn.innerHTML = originalBtnHtml || 'Confirmar Faturamento'
+      confirmBtn.style.opacity = '1'
+    }
+    console.error('Erro ao faturar grupo:', error)
+    showToast(error.message || 'Erro ao faturar grupo de OS', 'error')
+  }
+}
+
+// Expõe funções globalmente
+window.toggleBillingGroupMode = toggleBillingGroupMode
+window.toggleBillingOSSelection = toggleBillingOSSelection
+window.cancelBillingGroupMode = cancelBillingGroupMode
+window.showGroupInvoiceModal = showGroupInvoiceModal
+window.closeGroupInvoiceModal = closeGroupInvoiceModal
+window.confirmGroupBilling = confirmGroupBilling
 
 /**
  * Carrega dados de faturamento
@@ -8045,19 +8364,35 @@ function renderBillingOSList(osList, tab) {
   if (isMobile) {
     container.innerHTML = `
       <div style="display: flex; flex-direction: column; gap: 1rem;">
-        ${osList.map(os => `
+        ${osList.map(os => {
+          const isSelected = selectedBillingOS.some(s => s.id === os.id)
+          const companyId = os.company_id || null
+          const companyName = os.company_name || os.client_name || ''
+          return `
           <div style="
             background: var(--bg-secondary);
             border-radius: 12px;
             padding: 1rem;
-            border: 1px solid var(--border-color);
+            border: 1px solid ${isSelected ? 'var(--primary-blue)' : 'var(--border-color)'};
+            ${isSelected ? 'box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);' : ''}
           ">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-              <span style="font-weight: 700; font-size: 1.1rem; color: var(--primary-blue);">#${os.order_number || 'N/A'}</span>
+              <div style="display: flex; align-items: center; gap: 0.75rem;">
+                ${billingGroupMode && tab === 'pending' ? `
+                  <input type="checkbox"
+                    class="billing-os-checkbox"
+                    data-os-id="${os.id}"
+                    data-company-id="${companyId}"
+                    ${isSelected ? 'checked' : ''}
+                    onchange="toggleBillingOSSelection(${os.id}, ${companyId}, '${companyName.replace(/'/g, "\\'")}', ${os.grand_total || 0}, ${os.order_number})"
+                    style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--primary-blue);">
+                ` : ''}
+                <span style="font-weight: 700; font-size: 1.1rem; color: var(--primary-blue);">#${os.order_number || 'N/A'}</span>
+              </div>
               <span style="font-weight: 700; font-size: 1.1rem; color: var(--success-color);">${formatter.format(os.grand_total || 0)}</span>
             </div>
             <div style="display: grid; gap: 0.5rem; font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 1rem;">
-              <div><strong>Cliente:</strong> ${os.client_name || os.company_name || 'N/A'}</div>
+              <div><strong>Cliente:</strong> ${companyName || 'N/A'}</div>
               <div><strong>Técnico:</strong> ${os.technician_username || 'N/A'}</div>
               <div><strong>Concluída:</strong> ${os.finished_at ? new Date(os.finished_at).toLocaleDateString('pt-BR') : 'N/A'}</div>
               ${tab === 'billed' ? `<div><strong>NF:</strong> <span style="color: var(--primary-blue); font-weight: 600;">${os.invoice_number || 'N/A'}</span></div>` : ''}
@@ -8144,7 +8479,7 @@ function renderBillingOSList(osList, tab) {
               `}
             </div>
           </div>
-        `).join('')}
+        `}).join('')}
       </div>
     `
     return
@@ -8155,6 +8490,7 @@ function renderBillingOSList(osList, tab) {
     <table style="width: 100%; border-collapse: collapse;">
       <thead>
         <tr style="border-bottom: 2px solid var(--border-color);">
+          ${billingGroupMode && tab === 'pending' ? '<th style="padding: 0.75rem; text-align: center; width: 50px;"></th>' : ''}
           <th style="padding: 0.75rem; text-align: left;">OS</th>
           <th style="padding: 0.75rem; text-align: left;">Cliente</th>
           <th style="padding: 0.75rem; text-align: left;">Técnico</th>
@@ -8165,10 +8501,25 @@ function renderBillingOSList(osList, tab) {
         </tr>
       </thead>
       <tbody>
-        ${osList.map(os => `
-          <tr style="border-bottom: 1px solid var(--border-color);">
+        ${osList.map(os => {
+          const isSelected = selectedBillingOS.some(s => s.id === os.id)
+          const companyId = os.company_id || null
+          const companyName = os.company_name || os.client_name || ''
+          return `
+          <tr style="border-bottom: 1px solid var(--border-color); ${isSelected ? 'background: rgba(99, 102, 241, 0.1);' : ''}">
+            ${billingGroupMode && tab === 'pending' ? `
+              <td style="padding: 0.75rem; text-align: center;">
+                <input type="checkbox"
+                  class="billing-os-checkbox"
+                  data-os-id="${os.id}"
+                  data-company-id="${companyId}"
+                  ${isSelected ? 'checked' : ''}
+                  onchange="toggleBillingOSSelection(${os.id}, ${companyId}, '${companyName.replace(/'/g, "\\'")}', ${os.grand_total || 0}, ${os.order_number})"
+                  style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--primary-blue);">
+              </td>
+            ` : ''}
             <td style="padding: 0.75rem;">#${os.order_number || 'N/A'}</td>
-            <td style="padding: 0.75rem;">${os.client_name || os.company_name || 'N/A'}</td>
+            <td style="padding: 0.75rem;">${companyName || 'N/A'}</td>
             <td style="padding: 0.75rem;">${os.technician_username || 'N/A'}</td>
             <td style="padding: 0.75rem;">${os.finished_at ? new Date(os.finished_at).toLocaleDateString('pt-BR') : 'N/A'}</td>
             ${tab === 'billed' ? `<td style="padding: 0.75rem; font-weight: 600; color: var(--primary);">NF: ${os.invoice_number || 'N/A'}</td>` : ''}
@@ -8298,7 +8649,7 @@ function renderBillingOSList(osList, tab) {
               `}
             </td>
           </tr>
-        `).join('')}
+        `}).join('')}
       </tbody>
     </table>
   `
