@@ -104,6 +104,145 @@ let osPagination = { page: 1, limit: 10, total: 0 }
 let companiesViewMode = localStorage.getItem('companiesViewMode') || 'cards'
 
 // ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║              SISTEMA DE CLEANUP E GERENCIAMENTO DE RECURSOS                   ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
+
+/**
+ * Gerenciador centralizado de event listeners para evitar vazamentos de memória
+ * Registra todos os listeners adicionados para posterior remoção
+ */
+const ListenerManager = {
+  _listeners: [],
+  
+  /**
+   * Adiciona um event listener e registra para cleanup posterior
+   * @param {Element} element - Elemento DOM
+   * @param {string} event - Tipo do evento (click, input, etc)
+   * @param {Function} handler - Função handler
+   * @param {string} section - Seção à qual pertence (para cleanup por seção)
+   */
+  add(element, event, handler, section = 'global') {
+    if (!element) return;
+    element.addEventListener(event, handler);
+    this._listeners.push({ element, event, handler, section });
+  },
+  
+  /**
+   * Remove todos os listeners de uma seção específica
+   * @param {string} section - Nome da seção
+   */
+  clearSection(section) {
+    this._listeners = this._listeners.filter(item => {
+      if (item.section === section) {
+        try {
+          item.element.removeEventListener(item.event, item.handler);
+        } catch (e) {
+          // Elemento pode não existir mais
+        }
+        return false;
+      }
+      return true;
+    });
+  },
+  
+  /**
+   * Remove TODOS os listeners registrados (usado no logout)
+   */
+  clearAll() {
+    this._listeners.forEach(item => {
+      try {
+        item.element.removeEventListener(item.event, item.handler);
+      } catch (e) {
+        // Elemento pode não existir mais
+      }
+    });
+    this._listeners = [];
+  }
+};
+
+/**
+ * Gerenciador de fetch com timeout para evitar requisições travadas
+ * CRÍTICO: Todas as chamadas fetch devem usar esta função!
+ */
+const FETCH_TIMEOUT = 30000; // 30 segundos
+
+async function fetchWithTimeout(url, options = {}, timeout = FETCH_TIMEOUT) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error('Requisição excedeu o tempo limite. Tente novamente.');
+    }
+    throw error;
+  }
+}
+
+/**
+ * Wrapper para fetch que mostra erro ao usuário em caso de falha
+ * @param {string} url - URL da requisição
+ * @param {object} options - Opções do fetch
+ * @param {string} errorMessage - Mensagem de erro personalizada
+ */
+async function safeFetch(url, options = {}, errorMessage = 'Erro na requisição') {
+  try {
+    const response = await fetchWithTimeout(url, options);
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => 'Erro desconhecido');
+      throw new Error(errorText || `Erro ${response.status}`);
+    }
+    return response;
+  } catch (error) {
+    console.error(`[safeFetch] ${errorMessage}:`, error);
+    showToast(errorMessage + ': ' + error.message, 'error');
+    throw error;
+  }
+}
+
+/**
+ * Cleanup global - chamado no logout
+ * Remove todos os intervals, listeners e conexões
+ */
+function globalCleanup() {
+  console.log('[Cleanup] Executando limpeza global...');
+  
+  // 1. Para todos os auto-refresh intervals
+  stopAllAutoRefresh();
+  
+  // 2. Remove todos os event listeners registrados
+  ListenerManager.clearAll();
+  
+  // 3. Fecha conexão WebSocket
+  if (socket) {
+    try {
+      socket.disconnect();
+      socket = null;
+    } catch (e) {
+      console.warn('[Cleanup] Erro ao fechar WebSocket:', e);
+    }
+  }
+  
+  // 4. Limpa caches
+  cachedTechnicians = [];
+  cachedCompanies = [];
+  
+  // 5. Reseta paginação
+  osPagination = { page: 1, limit: 10, total: 0 };
+  
+  console.log('[Cleanup] Limpeza global concluída');
+}
+
+
+
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
 // ║                         SEÇÃO 2: UTILITÁRIOS                                  ║
 // ╚═══════════════════════════════════════════════════════════════════════════════╝
 
@@ -1182,8 +1321,7 @@ document.addEventListener("DOMContentLoaded", () => {
           window.adminStateManager.clearState()
         }
         // Desconecta WebSocket e para auto-refresh
-        disconnectWebSocket()
-        stopAllAutoRefresh()
+        globalCleanup()  // Cleanup global que inclui disconnect, stopAutoRefresh e limpa listeners
         showToast("Logout realizado com sucesso!", "success")
         setTimeout(() => {
           location.reload()
@@ -1723,10 +1861,12 @@ async function loadOSFilterTechnicians() {
     const technicians = await response.json()
     const currentValue = select.value
 
-    select.innerHTML = '<option value="">Todos os Técnicos</option>'
+    // OTIMIZAÇÃO: Construir HTML primeiro, depois setar uma vez (evita múltiplos reflows)
+    let techOptionsHtml = '<option value="">Todos os Técnicos</option>'
     technicians.forEach(tech => {
-      select.innerHTML += `<option value="${tech.id}">${tech.username}</option>`
+      techOptionsHtml += `<option value="${tech.id}">${tech.username}</option>`
     })
+    select.innerHTML = techOptionsHtml
 
     // Restaura valor anterior se existir
     if (currentValue) select.value = currentValue
@@ -1749,15 +1889,17 @@ async function loadOSFilterMachines() {
     const machines = await response.json()
     const currentValue = select.value
 
-    select.innerHTML = '<option value="">Todas as Máquinas</option>'
+    // OTIMIZAÇÃO: Construir HTML primeiro, depois setar uma vez (evita múltiplos reflows)
+    let machineOptionsHtml = '<option value="">Todas as Máquinas</option>'
     // Ordena por modelo/serial e adiciona
     machines
       .filter(m => m.serial_number)
       .sort((a, b) => (a.model || '').localeCompare(b.model || ''))
       .forEach(m => {
         const label = m.model ? `${m.model} - ${m.serial_number}` : m.serial_number
-        select.innerHTML += `<option value="${m.serial_number}">${label}</option>`
+        machineOptionsHtml += `<option value="${m.serial_number}">${label}</option>`
       })
+    select.innerHTML = machineOptionsHtml
 
     // Restaura valor anterior se existir
     if (currentValue) select.value = currentValue
