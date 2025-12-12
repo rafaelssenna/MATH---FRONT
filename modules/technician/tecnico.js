@@ -58,6 +58,90 @@
  */
 
 // ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                       SEÇÃO 0: UTILITÁRIOS DE PERFORMANCE                     ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
+
+/**
+ * Gerenciador de event listeners para evitar memory leaks
+ */
+const ListenerManager = {
+  _listeners: [],
+
+  add(element, event, handler, section = 'global') {
+    if (!element) return
+    element.addEventListener(event, handler)
+    this._listeners.push({ element, event, handler, section })
+  },
+
+  clearSection(section) {
+    this._listeners = this._listeners.filter(l => {
+      if (l.section === section) {
+        l.element.removeEventListener(l.event, l.handler)
+        return false
+      }
+      return true
+    })
+  },
+
+  clearAll() {
+    this._listeners.forEach(l => {
+      l.element.removeEventListener(l.event, l.handler)
+    })
+    this._listeners = []
+  }
+}
+
+/**
+ * Fetch com timeout para evitar requisições travadas
+ */
+async function fetchWithTimeout(url, options = {}, timeout = 30000) {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeout)
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    })
+    clearTimeout(timeoutId)
+    return response
+  } catch (error) {
+    clearTimeout(timeoutId)
+    if (error.name === 'AbortError') {
+      throw new Error('Tempo limite excedido. Verifique sua conexão.')
+    }
+    throw error
+  }
+}
+
+/**
+ * Fetch seguro com tratamento de erro e feedback ao usuário
+ */
+async function safeFetch(url, options = {}, errorMessage = 'Erro na requisição') {
+  try {
+    const response = await fetchWithTimeout(url, options)
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `Erro ${response.status}`)
+    }
+    return response
+  } catch (error) {
+    console.error(`[safeFetch] ${errorMessage}:`, error)
+    showToast(error.message || errorMessage, 'error')
+    throw error
+  }
+}
+
+/**
+ * Limpeza global ao fazer logout
+ */
+function globalCleanup() {
+  ListenerManager.clearAll()
+  stopAutoRefresh()
+  disconnectWebSocket()
+}
+
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
 // ║                    SEÇÃO 1: CONFIGURAÇÕES E STORAGE                           ║
 // ╚═══════════════════════════════════════════════════════════════════════════════╝
 
@@ -1572,13 +1656,14 @@ function fillPreviewModal(os) {
     showSection('previewDisplacementsSection', false)
   }
 
-  // Anexos/Fotos
+  // Anexos/Fotos - com lazy loading para melhor performance
   const attachmentsContainer = document.getElementById('previewAttachments')
   if (attachmentsContainer && os.attachments && os.attachments.length > 0) {
     showSection('previewAttachmentsSection', true)
     attachmentsContainer.innerHTML = os.attachments.map(a =>
       `<a href="${API_URL}/api/attachments/${a.id}" target="_blank" style="display: block;">
         <img src="${API_URL}/api/attachments/${a.id}" alt="${a.filename}"
+             loading="lazy"
              style="width: 100%; height: 80px; object-fit: cover; border-radius: 4px; cursor: pointer;"
              onerror="this.style.display='none'">
       </a>`
@@ -1651,11 +1736,11 @@ async function loadCallInfoForPreview(os) {
         }
       }
 
-      // Renderiza fotos se houver
+      // Renderiza fotos se houver - com lazy loading para performance
       if (images.length > 0 && photosGrid) {
         photosGrid.innerHTML = images.map((img, idx) => `
           <div style="position: relative; border-radius: 6px; overflow: hidden; border: 1px solid var(--border-color); background: var(--bg-card); cursor: pointer;" onclick='openImageModal(${JSON.stringify(images).replace(/'/g, "\\'")}, ${idx})'>
-            <img src="${img.url}" alt="${img.filename}" style="width: 100%; height: 120px; object-fit: cover; display: block;" onerror="this.parentElement.innerHTML='<div style=\\'height:120px;display:flex;align-items:center;justify-content:center;color:var(--text-secondary);font-size:0.75rem\\'>Erro ao carregar</div>'">
+            <img src="${img.url}" alt="${img.filename}" loading="lazy" style="width: 100%; height: 120px; object-fit: cover; display: block;" onerror="this.parentElement.innerHTML='<div style=\\'height:120px;display:flex;align-items:center;justify-content:center;color:var(--text-secondary);font-size:0.75rem\\'>Erro ao carregar</div>'">
             <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.6); color: white; padding: 4px 8px; font-size: 11px; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
               ${img.filename}
             </div>

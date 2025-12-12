@@ -40,6 +40,91 @@
  */
 
 // ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                       SEÇÃO 0: UTILITÁRIOS DE PERFORMANCE                     ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
+
+/**
+ * Gerenciador de event listeners para evitar memory leaks
+ * Permite registrar e limpar listeners por seção
+ */
+const ListenerManager = {
+  _listeners: [],
+
+  add(element, event, handler, section = 'global') {
+    if (!element) return
+    element.addEventListener(event, handler)
+    this._listeners.push({ element, event, handler, section })
+  },
+
+  clearSection(section) {
+    this._listeners = this._listeners.filter(l => {
+      if (l.section === section) {
+        l.element.removeEventListener(l.event, l.handler)
+        return false
+      }
+      return true
+    })
+  },
+
+  clearAll() {
+    this._listeners.forEach(l => {
+      l.element.removeEventListener(l.event, l.handler)
+    })
+    this._listeners = []
+  }
+}
+
+/**
+ * Fetch com timeout para evitar requisições travadas
+ */
+async function fetchWithTimeout(url, options = {}, timeout = 30000) {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeout)
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    })
+    clearTimeout(timeoutId)
+    return response
+  } catch (error) {
+    clearTimeout(timeoutId)
+    if (error.name === 'AbortError') {
+      throw new Error('Tempo limite excedido. Verifique sua conexão.')
+    }
+    throw error
+  }
+}
+
+/**
+ * Fetch seguro com tratamento de erro e feedback ao usuário
+ */
+async function safeFetch(url, options = {}, errorMessage = 'Erro na requisição') {
+  try {
+    const response = await fetchWithTimeout(url, options)
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `Erro ${response.status}`)
+    }
+    return response
+  } catch (error) {
+    console.error(`[safeFetch] ${errorMessage}:`, error)
+    showToast(error.message || errorMessage, 'error')
+    throw error
+  }
+}
+
+/**
+ * Limpeza global ao fazer logout
+ */
+function globalCleanup() {
+  ListenerManager.clearAll()
+  stopAutoRefresh()
+  disconnectWebSocket()
+}
+
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
 // ║                       SEÇÃO 1: UI HELPERS E TOAST                             ║
 // ╚═══════════════════════════════════════════════════════════════════════════════╝
 
@@ -133,6 +218,8 @@ function openProfileSelector() {
   document.body.appendChild(overlay)
   const grid = box.querySelector('#profilesGrid')
   const render = async () => {
+    // Limpa listeners anteriores antes de recriar
+    ListenerManager.clearSection('profileSelector')
     const list = await getCompanyProfiles()
     const names = Array.isArray(list) ? list.map(p => p.full_name || p) : []
     if (!names.length) {
@@ -141,13 +228,14 @@ function openProfileSelector() {
     }
     grid.innerHTML = names.map(n => `<button class="btn-secondary" data-name="${n}" style="height:72px">${n}</button>`).join('')
     grid.querySelectorAll('button[data-name]').forEach(btn => {
-      btn.addEventListener('click', () => {
+      const handler = () => {
         localStorage.setItem('clientProfileName', btn.dataset.name)
         closeProfileSelector()
         const companyName = localStorage.getItem('clientName') || 'Empresa'
         const nameSpan = document.getElementById('loggedClientName')
         if (nameSpan) nameSpan.textContent = `Cliente: ${companyName} — Perfil: ${btn.dataset.name}`
-      })
+      }
+      ListenerManager.add(btn, 'click', handler, 'profileSelector')
     })
   }
   render()
@@ -167,6 +255,7 @@ function openProfileSelector() {
   })
 }
 function closeProfileSelector() {
+  ListenerManager.clearSection('profileSelector')
   const el = document.getElementById('profileSelector')
   if (el) el.remove()
 }
