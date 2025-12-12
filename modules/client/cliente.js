@@ -125,6 +125,177 @@ function globalCleanup() {
 }
 
 // ╔═══════════════════════════════════════════════════════════════════════════════╗
+// ║                    SEÇÃO 0.1: MODAL DE TERMOS DE SERVIÇO                      ║
+// ╚═══════════════════════════════════════════════════════════════════════════════╝
+
+const TERMS_VERSION = '2025'
+
+const TERMS_CONTENT = `
+<h2 style="text-align:center;margin-bottom:1rem;color:var(--primary)">Escopo de Serviços Técnicos 2025</h2>
+
+<h3>1. Introdução</h3>
+<p>Na Helsen Service, oferecemos serviços especializados em elétrica, eletrônica e mecânica, garantindo excelência e pontualidade. Nosso objetivo é aumentar a eficiência dos seus equipamentos e reduzir paradas, mantendo sua empresa competitiva no mercado.</p>
+
+<h3>2. Nossa Proposta de Valor</h3>
+<p>Nossa equipe de técnicos especializados oferece:</p>
+<ul>
+  <li>Análise e otimização do desempenho dos seus equipamentos para prolongar sua vida útil.</li>
+  <li>Registro e monitoramento de falhas para ações preventivas rápidas.</li>
+  <li>Seleção de insumos técnicos essenciais para a operação eficiente.</li>
+</ul>
+
+<h3>3. Benefícios da Terceirização</h3>
+<p>Ao terceirizar conosco, sua empresa se beneficia de:</p>
+<ul>
+  <li>Maior foco em suas atividades principais.</li>
+  <li>Redução de desperdícios e incremento na qualidade.</li>
+  <li>Flexibilidade operacional e especialização técnica.</li>
+  <li>Decisões mais rápidas e aumento da lucratividade.</li>
+  <li>Crescimento sem a necessidade de grandes investimentos.</li>
+</ul>
+
+<h3>4. Serviços Oferecidos</h3>
+<ul>
+  <li>Técnicos com experiência em máquinas CNC e conhecimentos em mecânica, elétrica, eletrônica, automação e usinagem.</li>
+  <li>Serviço técnico especializado em manutenção preventiva e corretiva.</li>
+  <li>Implementação de planos de manutenção preventiva com suporte de software.</li>
+</ul>
+
+<h3>5. Objetivo do Contrato</h3>
+<p>Este contrato visa padronizar nossos serviços e relatórios, adaptando-nos aos desafios econômicos e garantindo prazos de pagamento justos e definidos.</p>
+
+<h3>6. Tarifas Atualizadas para 2025</h3>
+<p>Os valores da hora técnica e deslocamento foram ajustados em 16,7% para refletir as condições econômicas atuais. Esses valores entram em vigor a partir de 1° de setembro de 2025 para novos clientes. Clientes já atendidos permanecem com os valores atuais até dezembro de 2025.</p>
+
+<h4>Hora Técnica:</h4>
+<ul>
+  <li><strong>Até 150 km:</strong> R$ 175,00 (mínimo de 2 horas)</li>
+  <li><strong>Até 300 km:</strong> R$ 204,00 (mínimo de 4 horas)</li>
+  <li><strong>Até 800 km:</strong> R$ 262,00 (mínimo de 8 horas, hospedagem e alimentação não incluídas)</li>
+  <li><strong>Acima de 800 km:</strong> R$ 409,00 (mínimo de 18 horas, hospedagem e alimentação não incluídas)</li>
+</ul>
+
+<h4>Deslocamento:</h4>
+<ul>
+  <li><strong>Até 50 km:</strong> R$ 95,00</li>
+  <li><strong>Até 100 km:</strong> R$ 170,00</li>
+  <li><strong>Acima de 100 km:</strong> R$ 2,57 por km</li>
+</ul>
+
+<h4>Auxiliar Técnico:</h4>
+<p>Quando necessário, será cobrado metade do valor de um técnico.</p>
+
+<h3>7. Política de Faturamento Automático</h3>
+<ul>
+  <li><strong>De R$ 380,00 a R$ 700,00:</strong> pagamento em 15 dias</li>
+  <li><strong>De R$ 701,00 a R$ 2000,00:</strong> pagamento em 28 dias</li>
+  <li><strong>De R$ 2001,00 a R$ 4000,00:</strong> pagamento em 28/56 dias</li>
+  <li><strong>Acima de R$ 4001,00:</strong> pagamento em 28/56/84 dias</li>
+</ul>
+
+<h3>8. Cláusula de Ajuste Anual</h3>
+<p>Valores mencionados neste contrato referente a horas Técnicas foram ajustados em 7,2% para o ano de 2025, em conformidade com as condições econômicas atuais. Esses ajustes garantem a continuidade e qualidade dos serviços oferecidos.</p>
+
+<h3>9. Cláusula de Atualização</h3>
+<p>Os novos valores são aplicáveis a novos clientes a partir de 1° de setembro de 2025. Clientes atuais permanecem com os valores vigentes até dezembro de 2025.</p>
+
+<h3>10. Observações Finais</h3>
+<p>As faturas e notas fiscais serão geradas automaticamente após a conclusão do serviço. Caso seja necessário mais de um técnico, os valores serão ajustados de acordo. O tempo mínimo de atendimento é de duas horas, sempre visando a eficiência com o menor número de técnicos possível, a menos que seja necessário suporte adicional especializado.</p>
+
+<div style="margin-top:2rem;padding:1rem;background:var(--bg-secondary);border-radius:8px;font-size:0.85rem">
+  <p style="margin:0"><strong>Helsen Service Prestação de Serviços Técnicos Ltda. – ME</strong></p>
+  <p style="margin:0.25rem 0">CNPJ: 23.820.015/0001-00</p>
+  <p style="margin:0.25rem 0">Inscrição Estadual: 002673332.00-10</p>
+  <p style="margin:0">Inscrição Municipal: 1210338294</p>
+</div>
+`
+
+/**
+ * Mostra modal de termos de serviço
+ * @param {number} companyId - ID da empresa
+ * @param {function} onAccept - Callback quando aceitar
+ */
+function showTermsModal(companyId, onAccept) {
+  // Remove modal anterior se existir
+  const existing = document.getElementById('termsModal')
+  if (existing) existing.remove()
+
+  const overlay = document.createElement('div')
+  overlay.id = 'termsModal'
+  overlay.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);z-index:999999;padding:1rem;'
+
+  const modal = document.createElement('div')
+  modal.style.cssText = 'background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;max-width:800px;width:100%;max-height:90vh;display:flex;flex-direction:column;'
+
+  modal.innerHTML = `
+    <div style="padding:1rem 1.5rem;border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;">
+      <h2 style="margin:0;color:var(--text-primary);font-size:1.25rem;">Termos de Serviço</h2>
+      <span style="color:var(--text-secondary);font-size:0.85rem;">Versão ${TERMS_VERSION}</span>
+    </div>
+    <div id="termsContent" style="padding:1.5rem;overflow-y:auto;flex:1;color:var(--text-primary);line-height:1.6;">
+      ${TERMS_CONTENT}
+    </div>
+    <div style="padding:1rem 1.5rem;border-top:1px solid var(--border-color);display:flex;gap:1rem;justify-content:flex-end;align-items:center;">
+      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;color:var(--text-primary);">
+        <input type="checkbox" id="termsCheckbox" style="width:18px;height:18px;cursor:pointer;">
+        <span>Li e concordo com os termos de serviço</span>
+      </label>
+      <button id="acceptTermsBtn" class="btn-primary" disabled style="padding:0.75rem 2rem;font-weight:600;">
+        Aceitar e Continuar
+      </button>
+    </div>
+  `
+
+  overlay.appendChild(modal)
+  document.body.appendChild(overlay)
+
+  const checkbox = modal.querySelector('#termsCheckbox')
+  const acceptBtn = modal.querySelector('#acceptTermsBtn')
+
+  checkbox.addEventListener('change', () => {
+    acceptBtn.disabled = !checkbox.checked
+  })
+
+  acceptBtn.addEventListener('click', async () => {
+    if (!checkbox.checked) return
+
+    acceptBtn.disabled = true
+    acceptBtn.textContent = 'Processando...'
+
+    try {
+      const res = await fetch(`${API_URL}/api/companies/${companyId}/accept-terms`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+
+      if (!res.ok) throw new Error('Erro ao aceitar termos')
+
+      localStorage.setItem('acceptedTermsVersion', TERMS_VERSION)
+      overlay.remove()
+      showToast('Termos aceitos com sucesso!', 'success')
+      if (onAccept) onAccept()
+    } catch (err) {
+      console.error('Erro ao aceitar termos:', err)
+      showToast('Erro ao aceitar termos. Tente novamente.', 'error')
+      acceptBtn.disabled = false
+      acceptBtn.textContent = 'Aceitar e Continuar'
+    }
+  })
+}
+
+/**
+ * Verifica se precisa mostrar modal de termos
+ */
+function checkTermsAcceptance(companyData, onAccept) {
+  // Se não aceitou termos ou versão diferente, mostra modal
+  if (!companyData.accepted_terms || companyData.accepted_terms_version !== TERMS_VERSION) {
+    showTermsModal(companyData.id, onAccept)
+    return false
+  }
+  return true
+}
+
+// ╔═══════════════════════════════════════════════════════════════════════════════╗
 // ║                       SEÇÃO 1: UI HELPERS E TOAST                             ║
 // ╚═══════════════════════════════════════════════════════════════════════════════╝
 
@@ -781,8 +952,18 @@ function handleClientLogin(e) {
     localStorage.setItem("clientName", data.name || username)
     localStorage.setItem("clientUsername", data.username || username)
     if (data.id) localStorage.setItem("clientCompanyId", String(data.id))
-    showToast("Login realizado com sucesso!", "success")
-    showClientSection()
+
+    // Verifica se precisa aceitar termos de serviço
+    const termsAccepted = checkTermsAcceptance(data, () => {
+      showToast("Login realizado com sucesso!", "success")
+      showClientSection()
+    })
+
+    // Se já aceitou, segue normalmente
+    if (termsAccepted) {
+      showToast("Login realizado com sucesso!", "success")
+      showClientSection()
+    }
   })
 
   const clientLogin = () => fetch(`${API_URL}/api/clients/login`, {
