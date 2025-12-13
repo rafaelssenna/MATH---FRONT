@@ -76,24 +76,19 @@
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * MAPEAMENTO DE VARIÁVEIS LEGADAS → DESIGN TOKENS
- * Mantém compatibilidade com código existente enquanto usa o novo sistema
+ * Apenas variáveis com NOMES DIFERENTES são mapeadas aqui.
+ * Variáveis com mesmo nome (--bg-card, --text-primary, etc) já vêm do design-tokens.css
  * ═══════════════════════════════════════════════════════════════════════════ */
 :root {
-  /* Cores primárias - mapeadas para design tokens */
+  /* Cores primárias - nomes legados mapeados para novos tokens */
   --primary-blue: var(--color-primary);
   --primary-red: var(--color-error);
 
-  /* Backgrounds - mapeados para design tokens */
+  /* Backgrounds - apenas nomes diferentes */
   --bg-dark: var(--bg-primary);
-  --bg-card: var(--bg-card);
-  --bg-input: var(--bg-input);
   --bg-readonly: var(--bg-secondary);
 
-  /* Texto - mapeado para design tokens */
-  --text-primary: var(--text-primary);
-  --text-secondary: var(--text-secondary);
-
-  /* Bordas e estados */
+  /* Bordas e estados - apenas nomes diferentes */
   --border-color: var(--border-primary);
   --success: var(--color-success);
   --warning: var(--color-warning);
@@ -101,14 +96,8 @@
   --shadow: var(--shadow-md);
   --hover-bg: var(--bg-card-hover);
 
-  /* Transições - padronizadas */
+  /* Transições */
   --transition-speed: 200ms;
-}
-
-/* Tema claro - variáveis são herdadas automaticamente do design-tokens.css */
-[data-theme="light"] {
-  /* As variáveis do tema claro já estão definidas no design-tokens.css
-     O mapeamento acima funciona automaticamente para ambos os temas */
 }
 
 body {

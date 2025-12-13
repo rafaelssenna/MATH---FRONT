@@ -55,28 +55,28 @@
   --color-info-light: rgba(116, 185, 255, 0.1);
   --color-info-border: rgba(116, 185, 255, 0.3);
 
-  /* Cores Neutras - Background */
-  --bg-primary: #1a1a2e;
-  --bg-secondary: #16213e;
-  --bg-tertiary: #0f3460;
-  --bg-card: #1e1e3f;
-  --bg-card-hover: #252550;
-  --bg-input: #16213e;
-  --bg-input-focus: #1a2545;
+  /* Cores Neutras - Background (cores originais que funcionavam bem) */
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #334155;
+  --bg-card: #1e293b;
+  --bg-card-hover: #2d3748;
+  --bg-input: #334155;
+  --bg-input-focus: #3d4a5c;
   --bg-overlay: rgba(0, 0, 0, 0.5);
-  --bg-modal: #1e1e3f;
+  --bg-modal: #1e293b;
 
   /* Cores Neutras - Texto */
-  --text-primary: #ffffff;
-  --text-secondary: #a0a0c0;
-  --text-tertiary: #6c6c8a;
-  --text-muted: #505070;
-  --text-inverse: #1a1a2e;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-tertiary: #64748b;
+  --text-muted: #475569;
+  --text-inverse: #0f172a;
   --text-link: var(--color-primary);
   --text-link-hover: var(--color-primary-hover);
 
   /* Cores Neutras - Bordas */
-  --border-primary: rgba(255, 255, 255, 0.1);
+  --border-primary: #334155;
   --border-secondary: rgba(255, 255, 255, 0.05);
   --border-focus: var(--color-primary);
   --border-error: var(--color-error);

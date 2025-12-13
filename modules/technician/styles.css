@@ -13,23 +13,17 @@ html {
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * MAPEAMENTO DE VARIÁVEIS LEGADAS → DESIGN TOKENS
- * Mantém compatibilidade com código existente enquanto usa o novo sistema
+ * Apenas variáveis com NOMES DIFERENTES são mapeadas aqui.
  * ═══════════════════════════════════════════════════════════════════════════ */
 :root {
-  /* Cores primárias - mapeadas para design tokens */
+  /* Cores primárias - nomes legados */
   --primary-blue: var(--color-primary);
   --primary-red: var(--color-error);
   --accent-blue: var(--color-info);
 
-  /* Backgrounds - mapeados para design tokens */
+  /* Backgrounds - apenas nomes diferentes */
   --bg-dark: var(--bg-primary);
-  --bg-card: var(--bg-card);
-  --bg-input: var(--bg-input);
   --bg-readonly: var(--bg-secondary);
-
-  /* Texto - mapeado para design tokens */
-  --text-primary: var(--text-primary);
-  --text-secondary: var(--text-secondary);
 
   /* Bordas e estados */
   --border-color: var(--border-primary);
@@ -38,14 +32,7 @@ html {
   --error: var(--color-error);
   --shadow: var(--shadow-md);
   --hover-bg: var(--bg-card-hover);
-
-  /* Sombras - herda do design tokens */
   --shadow-2xl: var(--shadow-modal);
-}
-
-/* Tema claro - variáveis herdadas automaticamente do design-tokens.css */
-[data-theme="light"] {
-  /* O mapeamento acima funciona automaticamente para ambos os temas */
 }
 
 body {
