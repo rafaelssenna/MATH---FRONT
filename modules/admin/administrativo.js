@@ -315,16 +315,14 @@ async function preloadSystemData() {
  * Esconde tela de loading
  */
 function hideLoadingScreen() {
+  console.log('🔄 [hideLoadingScreen] Tentando esconder loading...')
   const loadingScreen = document.getElementById('loadingScreen')
   if (loadingScreen) {
-    // Adiciona animação de fade out
-    loadingScreen.style.opacity = '0'
-    loadingScreen.style.transition = 'opacity 0.3s ease'
-
-    // Remove após animação
-    setTimeout(() => {
-      loadingScreen.style.display = 'none'
-    }, 300)
+    // Usa a classe CSS 'hidden' que tem transição suave
+    loadingScreen.classList.add('hidden')
+    console.log('✅ [hideLoadingScreen] Loading escondido com sucesso')
+  } else {
+    console.warn('⚠️ [hideLoadingScreen] Elemento loadingScreen não encontrado')
   }
 }
 
@@ -805,54 +803,65 @@ function showToast(message, type = "success") {
 
 // Inicialização da página
 document.addEventListener("DOMContentLoaded", () => {
-  // Load theme preference
-  const savedTheme = localStorage.getItem("theme") || "dark"
+  console.log('🚀 [DOMContentLoaded] Iniciando inicialização do painel admin...')
 
-  /**
-   * Inicializa o toggle de tema.
-   * O tema é salvo no localStorage para persistir entre sessões.
-   */
-  function initializeTheme() {
-    const themeToggle = document.getElementById("themeToggle")
-    if (!themeToggle) return
+  try {
+    // Load theme preference
     const savedTheme = localStorage.getItem("theme") || "dark"
-    document.documentElement.setAttribute("data-theme", savedTheme)
-    updateLogos()
-    themeToggle.addEventListener("click", () => {
-      const currentTheme = document.documentElement.getAttribute("data-theme")
-      const newTheme = currentTheme === "light" ? "dark" : "light"
-      document.documentElement.setAttribute("data-theme", newTheme)
-      localStorage.setItem("theme", newTheme)
+
+    /**
+     * Inicializa o toggle de tema.
+     * O tema é salvo no localStorage para persistir entre sessões.
+     */
+    function initializeTheme() {
+      console.log('🎨 [initializeTheme] Configurando tema...')
+      const themeToggle = document.getElementById("themeToggle")
+      if (!themeToggle) {
+        console.warn('⚠️ [initializeTheme] Botão themeToggle não encontrado')
+        return
+      }
+      const savedTheme = localStorage.getItem("theme") || "dark"
+      document.documentElement.setAttribute("data-theme", savedTheme)
       updateLogos()
-    })
-  }
-
-  initializeTheme()
-
-  // Remove loading imediatamente para liberar interação
-  // Dados são carregados em background de forma não-bloqueante
-  function initializeSystem() {
-    // Esconde loading rapidamente (300ms para animação suave)
-    setTimeout(() => {
-      hideLoadingScreen()
-    }, 300)
-
-    // Pré-carrega dados em background DEPOIS que a UI estiver interativa
-    // Usa requestIdleCallback se disponível, senão setTimeout com delay
-    const loadDataInBackground = () => {
-      preloadSystemData().catch(err => {
-        console.warn('Aviso: Alguns dados não foram pré-carregados:', err)
+      themeToggle.addEventListener("click", () => {
+        const currentTheme = document.documentElement.getAttribute("data-theme")
+        const newTheme = currentTheme === "light" ? "dark" : "light"
+        document.documentElement.setAttribute("data-theme", newTheme)
+        localStorage.setItem("theme", newTheme)
+        updateLogos()
       })
+      console.log('✅ [initializeTheme] Tema configurado:', savedTheme)
     }
 
-    if ('requestIdleCallback' in window) {
-      requestIdleCallback(loadDataInBackground, { timeout: 2000 })
-    } else {
-      setTimeout(loadDataInBackground, 100)
-    }
-  }
+    initializeTheme()
 
-  initializeSystem()
+    // Remove loading imediatamente para liberar interação
+    // Dados são carregados em background de forma não-bloqueante
+    function initializeSystem() {
+      console.log('⚙️ [initializeSystem] Iniciando sistema...')
+      // Esconde loading rapidamente (300ms para animação suave)
+      setTimeout(() => {
+        console.log('⏰ [initializeSystem] Timeout disparado, chamando hideLoadingScreen...')
+        hideLoadingScreen()
+      }, 300)
+
+      // Pré-carrega dados em background DEPOIS que a UI estiver interativa
+      // Usa requestIdleCallback se disponível, senão setTimeout com delay
+      const loadDataInBackground = () => {
+        preloadSystemData().catch(err => {
+          console.warn('Aviso: Alguns dados não foram pré-carregados:', err)
+        })
+      }
+
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(loadDataInBackground, { timeout: 2000 })
+      } else {
+        setTimeout(loadDataInBackground, 100)
+      }
+      console.log('✅ [initializeSystem] Sistema inicializado')
+    }
+
+    initializeSystem()
 
   const logoutBtn = document.getElementById("logoutBtn")
   if (logoutBtn) {
@@ -989,6 +998,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   setupCompanySearch()
+
+  console.log('✅ [DOMContentLoaded] Inicialização completa!')
+  } catch (error) {
+    console.error('❌ [DOMContentLoaded] ERRO na inicialização:', error)
+    // Tenta esconder o loading mesmo em caso de erro
+    hideLoadingScreen()
+  }
 })
 
 function setupCompanySearch() {
