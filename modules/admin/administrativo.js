@@ -783,8 +783,7 @@ function transferOSTo(osId) {
     })
 }
 
-// Armazena a OS atualmente visualizada para geração de PDF
-let currentOS = null
+// NOTA: currentOS é definido em js/config.js e exportado via window.currentOS
 
 /**
  * Exibe uma notificação na área de toast.
@@ -2868,7 +2867,7 @@ async function viewOSDetails(id) {
       (await resolveClientCNPJByName(row.company_name || row.client_name || row.client_username || row.client))
 
     // Mapeamento único usado em UI + PDF
-    currentOS = {
+    window.currentOS = {
       id: row.id,
       osNumber: row.order_number,
       technician_id: row.technician_id || null,
@@ -2922,8 +2921,8 @@ async function viewOSDetails(id) {
     // Períodos de trabalho: grid duplicando campos (Início/Fim/Horas por período)
     let periodsHtml = ""
     try {
-      if (currentOS.worklogs && currentOS.worklogs.length > 0) {
-        const blocks = currentOS.worklogs
+      if (window.currentOS.worklogs && window.currentOS.worklogs.length > 0) {
+        const blocks = window.currentOS.worklogs
           .map((wl, idx) => {
             const s = wl && wl.start_datetime ? parseAsLocalTime(wl.start_datetime) : null
             const e = wl && wl.end_datetime ? parseAsLocalTime(wl.end_datetime) : null
@@ -2965,36 +2964,36 @@ async function viewOSDetails(id) {
           <div class="detail-grid">
               <div class="detail-field">
                   <label>Número da OS</label>
-                  <span>${currentOS.osNumber}</span>
+                  <span>${window.currentOS.osNumber}</span>
               </div>
               <div class="detail-field">
                   <label>Data Programada</label>
-                  <span>${new Date(currentOS.dataProgramada).toLocaleDateString("pt-BR")}</span>
+                  <span>${new Date(window.currentOS.dataProgramada).toLocaleDateString("pt-BR")}</span>
               </div>
               <div class="detail-field">
                   <label>Cliente</label>
-                  <span>${currentOS.cliente}${currentOS.clienteCnpj ? " — CNPJ: " + formatCNPJ(currentOS.clienteCnpj) : ""}</span>
+                  <span>${window.currentOS.cliente}${window.currentOS.clienteCnpj ? " — CNPJ: " + formatCNPJ(window.currentOS.clienteCnpj) : ""}</span>
               </div>
               <div class="detail-field">
                   <label>Número de Série</label>
-                  <span>${currentOS.numeroSerie}</span>
+                  <span>${window.currentOS.numeroSerie}</span>
               </div>
               ${
-                currentOS.modelo
+                window.currentOS.modelo
                   ? `
               <div class="detail-field">
                   <label>Modelo</label>
-                  <span>${currentOS.modelo}</span>
+                  <span>${window.currentOS.modelo}</span>
               </div>`
                   : ""
               }
               <div class="detail-field">
                   <label>Responsável</label>
-                  <span>${currentOS.responsavel}</span>
+                  <span>${window.currentOS.responsavel}</span>
               </div>
               <div class="detail-field">
                   <label>Motivo do Chamado</label>
-                  <span>${currentOS.motivoChamado || ""}</span>
+                  <span>${window.currentOS.motivoChamado || ""}</span>
               </div>
           </div>
       </div>
@@ -3004,13 +3003,13 @@ async function viewOSDetails(id) {
           <div class="detail-grid">
               <div class="detail-field">
                   <label>Assistente Técnico</label>
-                  <span>${currentOS.assistenteTecnico}</span>
+                  <span>${window.currentOS.assistenteTecnico}</span>
               </div>
               <div class="detail-field">
                   <label>Data/Hora Início (Agregado)</label>
                   <span>${
-                    currentOS.dataHoraInicio
-                      ? parseAsLocalTime(currentOS.dataHoraInicio).toLocaleString("pt-BR", {
+                    window.currentOS.dataHoraInicio
+                      ? parseAsLocalTime(window.currentOS.dataHoraInicio).toLocaleString("pt-BR", {
                           hour: "2-digit",
                           minute: "2-digit",
                           day: "2-digit",
@@ -3023,8 +3022,8 @@ async function viewOSDetails(id) {
               <div class="detail-field">
                   <label>Data/Hora Fim (Agregado)</label>
                   <span>${
-                    currentOS.dataHoraFim
-                      ? parseAsLocalTime(currentOS.dataHoraFim).toLocaleString("pt-BR", {
+                    window.currentOS.dataHoraFim
+                      ? parseAsLocalTime(window.currentOS.dataHoraFim).toLocaleString("pt-BR", {
                           hour: "2-digit",
                           minute: "2-digit",
                           day: "2-digit",
@@ -3036,14 +3035,14 @@ async function viewOSDetails(id) {
               </div>
               <div class="detail-field">
                   <label>Total de Horas (Geral)</label>
-                  <span>${currentOS.totalHoras || "0h"}</span>
+                  <span>${window.currentOS.totalHoras || "0h"}</span>
               </div>
               ${
-                currentOS.maintenanceType
+                window.currentOS.maintenanceType
                   ? `
               <div class="detail-field">
                   <label>Tipo de Manutenção</label>
-                  <span>${currentOS.maintenanceType}</span>
+                  <span>${window.currentOS.maintenanceType}</span>
               </div>`
                   : ""
               }
@@ -3051,16 +3050,16 @@ async function viewOSDetails(id) {
           ${periodsHtml}
           <div class="detail-field" style="margin-top: 1rem;">
               <label>Descrição do Serviço</label>
-              <span>${currentOS.descricao}</span>
+              <span>${window.currentOS.descricao}</span>
           </div>
       </div>
     `
 
     // Deslocamentos (informativo)
-    if (currentOS.displacements && currentOS.displacements.length > 0) {
+    if (window.currentOS.displacements && window.currentOS.displacements.length > 0) {
       html += `<div class="detail-section"><h3>Deslocamentos</h3>`
       let totalKm = 0
-      currentOS.displacements.forEach((d, idx) => {
+      window.currentOS.displacements.forEach((d, idx) => {
         const kmLabel = d.km_option ? d.km_option : ""
         let kmTotal = ""
         let kmVal = 0
@@ -3103,7 +3102,7 @@ async function viewOSDetails(id) {
             resolvePlate(d && d.vehicle_plate) ||
             resolvePlate(d && d.plate) ||
             resolvePlate(d && d.vehiclePlate) ||
-            currentOS.carroUtilizado ||
+            window.currentOS.carroUtilizado ||
             ""
           plateInfo = plate ? " | Veículo: " + plate : ""
         }
@@ -3112,20 +3111,20 @@ async function viewOSDetails(id) {
       })
       html += `<p><strong>Quilometragem Total:</strong> ${totalKm} km</p>`
       html += `</div>`
-    } else if (currentOS.deslocamentoKm || currentOS.carroUtilizado) {
-      const plate = resolvePlate(currentOS.carroUtilizado)
+    } else if (window.currentOS.deslocamentoKm || window.currentOS.carroUtilizado) {
+      const plate = resolvePlate(window.currentOS.carroUtilizado)
       html += `
       <div class="detail-section">
           <h3>Deslocamento</h3>
-          <p>Km: ${currentOS.deslocamentoKm || ""}${plate ? " | Veículo: " + plate : ""}</p>
+          <p>Km: ${window.currentOS.deslocamentoKm || ""}${plate ? " | Veículo: " + plate : ""}</p>
       </div>`
     }
 
     // Materiais (informativo)
-    if (currentOS.materiais && currentOS.materiais.length > 0) {
+    if (window.currentOS.materiais && window.currentOS.materiais.length > 0) {
       html += `<div class="detail-section"><h3>Materiais Utilizados</h3>`
       html += '<div class="detail-grid">'
-      currentOS.materiais.forEach((m) => {
+      window.currentOS.materiais.forEach((m) => {
         html += `
           <div class="detail-field">
             <label>Material</label>
@@ -3147,8 +3146,8 @@ async function viewOSDetails(id) {
       })
       html += "</div>"
       html += `<p style="margin-top:0.5rem"><strong>Custo Total de Materiais:</strong> R$ ${
-        currentOS.custoMateriais !== undefined && currentOS.custoMateriais !== null
-          ? Number(currentOS.custoMateriais).toFixed(2)
+        window.currentOS.custoMateriais !== undefined && window.currentOS.custoMateriais !== null
+          ? Number(window.currentOS.custoMateriais).toFixed(2)
           : "0.00"
       }</p>`
       html += "</div>"
@@ -3156,17 +3155,17 @@ async function viewOSDetails(id) {
 
     // Fechamento Financeiro (informativo) - espelha os campos do PDF
     if (
-      currentOS.valorServico !== undefined ||
-      currentOS.custoServico !== undefined ||
-      currentOS.custoMateriais !== undefined ||
-      currentOS.totalGeral !== undefined
+      window.currentOS.valorServico !== undefined ||
+      window.currentOS.custoServico !== undefined ||
+      window.currentOS.custoMateriais !== undefined ||
+      window.currentOS.totalGeral !== undefined
     ) {
       // Calcula valores financeiros (igual ao PDF)
-      const totalHorasNum = Number(currentOS.totalHorasNum || 0)
-      const isNew = !!currentOS.isNewClient
+      const totalHorasNum = Number(window.currentOS.totalHorasNum || 0)
+      const isNew = !!window.currentOS.isNewClient
       let valorHoraNum = 0
-      if (currentOS.valorHoraTecnico !== undefined && currentOS.valorHoraTecnico !== null && Number(currentOS.valorHoraTecnico) > 0) {
-        valorHoraNum = Number(currentOS.valorHoraTecnico)
+      if (window.currentOS.valorHoraTecnico !== undefined && window.currentOS.valorHoraTecnico !== null && Number(window.currentOS.valorHoraTecnico) > 0) {
+        valorHoraNum = Number(window.currentOS.valorHoraTecnico)
       } else {
         valorHoraNum = isNew ? 175 : 150
       }
@@ -3176,8 +3175,8 @@ async function viewOSDetails(id) {
       const perKm = isNew ? 2.57 : 2.2
       let totalKm = 0
       let deslocCost = 0
-      if (Array.isArray(currentOS.displacements) && currentOS.displacements.length > 0) {
-        currentOS.displacements.forEach((d) => {
+      if (Array.isArray(window.currentOS.displacements) && window.currentOS.displacements.length > 0) {
+        window.currentOS.displacements.forEach((d) => {
           let km = 0
           if (d && d.km_total !== undefined && d.km_total !== null && String(d.km_total).trim() !== "") {
             const parsed = Number(d.km_total)
@@ -3195,7 +3194,7 @@ async function viewOSDetails(id) {
           }
         })
       } else {
-        const kmVal = Number(currentOS.deslocamentoKm || 0)
+        const kmVal = Number(window.currentOS.deslocamentoKm || 0)
         if (kmVal > 0) {
           totalKm = kmVal
           if (kmVal <= 50) deslocCost = isNew ? 95 : 80
@@ -3211,7 +3210,7 @@ async function viewOSDetails(id) {
         <div class="detail-grid" style="margin-bottom: 1rem; padding: 0.75rem; background: var(--bg-input); border-radius: 8px;">
           <div class="detail-field">
             <label>Horas Trabalhadas</label>
-            <span>${currentOS.totalHoras || "0h"}</span>
+            <span>${window.currentOS.totalHoras || "0h"}</span>
           </div>
           <div class="detail-field">
             <label>Valor/Hora</label>
@@ -3225,9 +3224,9 @@ async function viewOSDetails(id) {
       `
 
       // Calcula vencimento para preview - usa regra customizada se empresa tiver
-      const totalValueForDuePreview = Number(currentOS.totalGeral) || 0
-      const baseDateForDuePreview = currentOS.dataProgramada ? new Date(currentOS.dataProgramada) : new Date()
-      const dueDatesPreviewCalc = await calculateDueDatesWithCustomRule(totalValueForDuePreview, baseDateForDuePreview, currentOS.cliente)
+      const totalValueForDuePreview = Number(window.currentOS.totalGeral) || 0
+      const baseDateForDuePreview = window.currentOS.dataProgramada ? new Date(window.currentOS.dataProgramada) : new Date()
+      const dueDatesPreviewCalc = await calculateDueDatesWithCustomRule(totalValueForDuePreview, baseDateForDuePreview, window.currentOS.cliente)
       let vencimentoPreviewText = ""
       if (dueDatesPreviewCalc.length === 1) {
         vencimentoPreviewText = dueDatesPreviewCalc[0].dateStr
@@ -3263,10 +3262,10 @@ async function viewOSDetails(id) {
       }
 
       // Serviços Adicionais
-      if (Array.isArray(currentOS.additionalServices) && currentOS.additionalServices.length > 0) {
+      if (Array.isArray(window.currentOS.additionalServices) && window.currentOS.additionalServices.length > 0) {
         html += `<p style="font-weight: 600; margin-bottom: 0.5rem; color: var(--text-secondary); font-size: 0.85rem;">SERVIÇOS ADICIONAIS</p>`
         html += `<div style="margin-bottom: 1rem; padding: 0.75rem; background: var(--bg-input); border-radius: 8px;">`
-        currentOS.additionalServices.forEach((s) => {
+        window.currentOS.additionalServices.forEach((s) => {
           const serviceValue = Number(s.value || 0)
           html += `
             <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; border-bottom: 1px solid var(--border-color);">
@@ -3278,21 +3277,21 @@ async function viewOSDetails(id) {
         html += `
           <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; font-weight: 600;">
             <span>Total Serviços Adicionais</span>
-            <span>R$ ${Number(currentOS.valorServico || 0).toFixed(2)}</span>
+            <span>R$ ${Number(window.currentOS.valorServico || 0).toFixed(2)}</span>
           </div>
         `
         html += `</div>`
-      } else if (currentOS.valorServico !== null && currentOS.valorServico !== undefined && Number(currentOS.valorServico) > 0) {
+      } else if (window.currentOS.valorServico !== null && window.currentOS.valorServico !== undefined && Number(window.currentOS.valorServico) > 0) {
         html += `
           <div class="detail-grid" style="margin-bottom: 1rem; padding: 0.75rem; background: var(--bg-input); border-radius: 8px;">
             <div class="detail-field">
               <label>Serviço Adicional</label>
-              <span>R$ ${Number(currentOS.valorServico).toFixed(2)}</span>
+              <span>R$ ${Number(window.currentOS.valorServico).toFixed(2)}</span>
             </div>
-            ${currentOS.observacoes ? `
+            ${window.currentOS.observacoes ? `
             <div class="detail-field">
               <label>Observação</label>
-              <span>${currentOS.observacoes}</span>
+              <span>${window.currentOS.observacoes}</span>
             </div>
             ` : ""}
           </div>
@@ -3300,12 +3299,12 @@ async function viewOSDetails(id) {
       }
 
       // Custo de Materiais (se houver)
-      if (currentOS.custoMateriais !== null && currentOS.custoMateriais !== undefined && Number(currentOS.custoMateriais) > 0) {
+      if (window.currentOS.custoMateriais !== null && window.currentOS.custoMateriais !== undefined && Number(window.currentOS.custoMateriais) > 0) {
         html += `
           <div class="detail-grid" style="margin-bottom: 1rem; padding: 0.75rem; background: var(--bg-input); border-radius: 8px;">
             <div class="detail-field">
               <label>Custo Total de Materiais</label>
-              <span style="font-weight: 600;">R$ ${Number(currentOS.custoMateriais).toFixed(2)}</span>
+              <span style="font-weight: 600;">R$ ${Number(window.currentOS.custoMateriais).toFixed(2)}</span>
             </div>
           </div>
         `
@@ -3316,8 +3315,8 @@ async function viewOSDetails(id) {
         <div style="margin-top: 1rem; padding: 1rem; background: linear-gradient(135deg, var(--primary-blue), #3b82f6); border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
           <span style="color: white; font-weight: 600; font-size: 1.1rem;">TOTAL GERAL DA O.S.</span>
           <span style="color: white; font-weight: 700; font-size: 1.25rem;">R$ ${
-            currentOS.totalGeral !== null && currentOS.totalGeral !== undefined
-              ? Number(currentOS.totalGeral).toFixed(2)
+            window.currentOS.totalGeral !== null && window.currentOS.totalGeral !== undefined
+              ? Number(window.currentOS.totalGeral).toFixed(2)
               : "0.00"
           }</span>
         </div>
@@ -3333,11 +3332,11 @@ async function viewOSDetails(id) {
           <div class="signature-display">
               <div>
                   <label>Técnico</label>
-                  <img src="${currentOS.signatureTecnico}" alt="Assinatura Técnico">
+                  <img src="${window.currentOS.signatureTecnico}" alt="Assinatura Técnico">
               </div>
               <div>
                   <label>Cliente</label>
-                  <img src="${currentOS.signatureCliente}" alt="Assinatura Cliente">
+                  <img src="${window.currentOS.signatureCliente}" alt="Assinatura Cliente">
               </div>
           </div>
       </div>
@@ -3377,7 +3376,7 @@ async function viewOSDetails(id) {
   } catch (_e) {
     // Fallback localStorage com novo layout
     const osList = JSON.parse(localStorage.getItem("osList") || "[]")
-    currentOS = osList.find((os) => os.id === id)
+    window.currentOS = osList.find((os) => os.id === id)
     if (!currentOS) return
     details.innerHTML = `
       <div class="detail-section">
@@ -3385,23 +3384,23 @@ async function viewOSDetails(id) {
           <div class="detail-grid">
               <div class="detail-field">
                   <label>Número da OS</label>
-                  <span>${currentOS.osNumber}</span>
+                  <span>${window.currentOS.osNumber}</span>
               </div>
               <div class="detail-field">
                   <label>Data Programada</label>
-                  <span>${new Date(currentOS.dataProgramada).toLocaleDateString("pt-BR")}</span>
+                  <span>${new Date(window.currentOS.dataProgramada).toLocaleDateString("pt-BR")}</span>
               </div>
               <div class="detail-field">
                   <label>Cliente</label>
-                  <span>${currentOS.cliente}</span>
+                  <span>${window.currentOS.cliente}</span>
               </div>
               <div class="detail-field">
                   <label>Número de Série</label>
-                  <span>${currentOS.numeroSerie || ""}</span>
+                  <span>${window.currentOS.numeroSerie || ""}</span>
               </div>
               <div class="detail-field">
                   <label>Responsável</label>
-                  <span>${currentOS.responsavel}</span>
+                  <span>${window.currentOS.responsavel}</span>
               </div>
           </div>
       </div>
@@ -3410,16 +3409,16 @@ async function viewOSDetails(id) {
           <div class="detail-grid">
               <div class="detail-field">
                   <label>Assistente Técnico</label>
-                  <span>${currentOS.assistenteTecnico}</span>
+                  <span>${window.currentOS.assistenteTecnico}</span>
               </div>
               <div class="detail-field">
                   <label>Total de Horas</label>
-                  <span>${currentOS.totalHoras || "0h"}</span>
+                  <span>${window.currentOS.totalHoras || "0h"}</span>
               </div>
           </div>
           <div class="detail-field" style="margin-top: 1rem;">
               <label>Descrição do Serviço</label>
-              <span>${currentOS.descricao}</span>
+              <span>${window.currentOS.descricao}</span>
           </div>
       </div>
     `
@@ -3530,13 +3529,13 @@ async function generateAndOpenOSPDF() {
 
   // Busca a assinatura ATUAL do técnico (não a que está salva na OS)
   console.log(`[PDF] ========== INÍCIO BUSCA ASSINATURA ==========`)
-  console.log(`[PDF] Técnico ID: ${currentOS.technician_id}`)
+  console.log(`[PDF] Técnico ID: ${window.currentOS.technician_id}`)
   console.log(`[PDF] API_URL: ${API_URL}`)
-  console.log(`[PDF] Assinatura ANTES da busca: ${currentOS.signatureTecnico ? 'EXISTE (' + currentOS.signatureTecnico.length + ' chars)' : 'NÃO EXISTE'}`)
+  console.log(`[PDF] Assinatura ANTES da busca: ${window.currentOS.signatureTecnico ? 'EXISTE (' + window.currentOS.signatureTecnico.length + ' chars)' : 'NÃO EXISTE'}`)
 
-  if (currentOS.technician_id) {
+  if (window.currentOS.technician_id) {
     try {
-      const url = `${API_URL}/api/technicians/${currentOS.technician_id}`
+      const url = `${API_URL}/api/technicians/${window.currentOS.technician_id}`
       console.log(`[PDF] Fazendo fetch em: ${url}`)
 
       const techResponse = await fetch(url)
@@ -3550,8 +3549,8 @@ async function generateAndOpenOSPDF() {
         // Sobrescreve com a assinatura atual do técnico
         if (techData.signature) {
           console.log(`[PDF] ✅ Substituindo assinatura antiga pela ATUAL do técnico`)
-          currentOS.signatureTecnico = techData.signature
-          console.log(`[PDF] ✅ Assinatura substituída! Tamanho: ${currentOS.signatureTecnico.length} chars`)
+          window.currentOS.signatureTecnico = techData.signature
+          console.log(`[PDF] ✅ Assinatura substituída! Tamanho: ${window.currentOS.signatureTecnico.length} chars`)
         } else {
           console.log(`[PDF] ⚠️ Técnico não tem assinatura cadastrada`)
         }
@@ -3569,7 +3568,7 @@ async function generateAndOpenOSPDF() {
     console.warn('[PDF] ⚠️ OS não tem technician_id, usando assinatura da OS')
   }
 
-  console.log(`[PDF] Assinatura DEPOIS da busca: ${currentOS.signatureTecnico ? 'EXISTE (' + currentOS.signatureTecnico.length + ' chars)' : 'NÃO EXISTE'}`)
+  console.log(`[PDF] Assinatura DEPOIS da busca: ${window.currentOS.signatureTecnico ? 'EXISTE (' + window.currentOS.signatureTecnico.length + ' chars)' : 'NÃO EXISTE'}`)
   console.log(`[PDF] ========== FIM BUSCA ASSINATURA ==========`)
 
   const { jsPDF } = window.jspdf
@@ -3812,8 +3811,8 @@ async function generateAndOpenOSPDF() {
 
   // ========= Barra do Cliente (nome + CNPJ) =========
   const drawClientBar = () => {
-    const cnpjTxt = currentOS.clienteCnpj ? ` | CNPJ: ${formatCNPJ(currentOS.clienteCnpj)}` : ""
-    const text = `Cliente: ${currentOS.cliente || ""}${cnpjTxt}`
+    const cnpjTxt = window.currentOS.clienteCnpj ? ` | CNPJ: ${formatCNPJ(window.currentOS.clienteCnpj)}` : ""
+    const text = `Cliente: ${window.currentOS.cliente || ""}${cnpjTxt}`
     const lines = doc.splitTextToSize(text, contentW - LEFT_INNER - RIGHT_INNER)
     const n = Math.max(1, lines.length)
     const barH = (2 * PADY) + (n - 1) * LINE_H
@@ -3833,8 +3832,8 @@ async function generateAndOpenOSPDF() {
   // ========= Assinaturas =========
   const drawSignatures = () => {
     console.log(`[PDF] ========== DESENHANDO ASSINATURAS ==========`)
-    console.log(`[PDF] currentOS.signatureTecnico: ${currentOS.signatureTecnico ? 'EXISTE (' + currentOS.signatureTecnico.length + ' chars)' : 'NÃO EXISTE'}`)
-    console.log(`[PDF] currentOS.signatureCliente: ${currentOS.signatureCliente ? 'EXISTE (' + currentOS.signatureCliente.length + ' chars)' : 'NÃO EXISTE'}`)
+    console.log(`[PDF] window.currentOS.signatureTecnico: ${window.currentOS.signatureTecnico ? 'EXISTE (' + window.currentOS.signatureTecnico.length + ' chars)' : 'NÃO EXISTE'}`)
+    console.log(`[PDF] window.currentOS.signatureCliente: ${window.currentOS.signatureCliente ? 'EXISTE (' + window.currentOS.signatureCliente.length + ' chars)' : 'NÃO EXISTE'}`)
 
     const sigH = 35  // Altura do campo de assinatura
     const rowH = sigH + 7
@@ -3888,8 +3887,8 @@ async function generateAndOpenOSPDF() {
       }
     }
 
-    addSignatureImage(currentOS.signatureTecnico, marginX, 'TÉCNICO')
-    addSignatureImage(currentOS.signatureCliente, marginX + cellW + 2, 'CLIENTE')
+    addSignatureImage(window.currentOS.signatureTecnico, marginX, 'TÉCNICO')
+    addSignatureImage(window.currentOS.signatureCliente, marginX + cellW + 2, 'CLIENTE')
 
     doc.setFont("helvetica", "normal")
     doc.setFontSize(8)
@@ -3906,12 +3905,12 @@ async function generateAndOpenOSPDF() {
 
   // ========= Custo de deslocamento =========
   const computeDisplacementCost = () => {
-    const isNew = !!currentOS.isNewClient
+    const isNew = !!window.currentOS.isNewClient
     const perKm = isNew ? 2.57 : 2.2
     let totalKm = 0
     let cost = 0
-    if (Array.isArray(currentOS.displacements) && currentOS.displacements.length > 0) {
-      currentOS.displacements.forEach((d) => {
+    if (Array.isArray(window.currentOS.displacements) && window.currentOS.displacements.length > 0) {
+      window.currentOS.displacements.forEach((d) => {
         let km = 0
         const opt = String(d?.km_option || "").toLowerCase()
 
@@ -3941,7 +3940,7 @@ async function generateAndOpenOSPDF() {
         }
       })
     } else {
-      const kmVal = Number(currentOS.deslocamentoKm || 0)
+      const kmVal = Number(window.currentOS.deslocamentoKm || 0)
       if (kmVal > 0) {
         totalKm = kmVal
         if (kmVal <= 50) cost = isNew ? 95 : 80
@@ -4002,7 +4001,7 @@ async function generateAndOpenOSPDF() {
     } catch (_e) {}
   }
 
-  const osLabel = `O.S.: ${currentOS.osNumber || ""}`
+  const osLabel = `O.S.: ${window.currentOS.osNumber || ""}`
   const rightX = marginX + contentW
   const osW = doc.getTextWidth(osLabel)
   const textY = y + 9.0
@@ -4022,26 +4021,26 @@ async function generateAndOpenOSPDF() {
   drawClientBar()
   {
     const appVal =
-      currentOS.modelo && currentOS.numeroSerie
-        ? `${currentOS.modelo} — ${currentOS.numeroSerie}`
-        : currentOS.modelo || currentOS.numeroSerie || ""
-    const responsavel = currentOS.responsavel || currentOS.assistenteTecnico || ""
+      window.currentOS.modelo && window.currentOS.numeroSerie
+        ? `${window.currentOS.modelo} — ${window.currentOS.numeroSerie}`
+        : window.currentOS.modelo || window.currentOS.numeroSerie || ""
+    const responsavel = window.currentOS.responsavel || window.currentOS.assistenteTecnico || ""
     drawCells([
       { label: "Equipamento", value: appVal, width: 0.5 },
       { label: "Responsável", value: responsavel, width: 0.5 },
     ])
   }
-  drawFullRowMultipage("Motivo do Chamado", currentOS.motivoChamado || "")
+  drawFullRowMultipage("Motivo do Chamado", window.currentOS.motivoChamado || "")
 
   // ====== SESSÃO TÉCNICO ======
   drawSectionHeaderColored("Dados Técnicos", TITLE_COLORS.tecnico)
-  drawCells([{ label: "Assistente Técnico", value: currentOS.assistenteTecnico || "", width: 1 }])
+  drawCells([{ label: "Assistente Técnico", value: window.currentOS.assistenteTecnico || "", width: 1 }])
 
-  if (currentOS.maintenanceType) {
-    drawCells([{ label: "Tipo de Manutenção", value: currentOS.maintenanceType, width: 1 }])
+  if (window.currentOS.maintenanceType) {
+    drawCells([{ label: "Tipo de Manutenção", value: window.currentOS.maintenanceType, width: 1 }])
   }
 
-  const periods = Array.isArray(currentOS.worklogs) ? currentOS.worklogs : []
+  const periods = Array.isArray(window.currentOS.worklogs) ? window.currentOS.worklogs : []
   if (periods.length > 0) {
     periods.forEach((wl) => {
       const s = wl && wl.start_datetime ? parseAsLocalTime(wl.start_datetime) : null
@@ -4063,19 +4062,19 @@ async function generateAndOpenOSPDF() {
     }, 0)
     drawCells([{ label: "Total de Horas", value: formatHours(totalGeral), width: 1 }])
   } else {
-    const inicioVal = currentOS.dataHoraInicio ? `${fmtDateOnly(currentOS.dataHoraInicio)} ${fmtTimeOnly(currentOS.dataHoraInicio)}` : ""
-    const fimVal = currentOS.dataHoraFim ? `${fmtDateOnly(currentOS.dataHoraFim)} ${fmtTimeOnly(currentOS.dataHoraFim)}` : ""
+    const inicioVal = window.currentOS.dataHoraInicio ? `${fmtDateOnly(window.currentOS.dataHoraInicio)} ${fmtTimeOnly(window.currentOS.dataHoraInicio)}` : ""
+    const fimVal = window.currentOS.dataHoraFim ? `${fmtDateOnly(window.currentOS.dataHoraFim)} ${fmtTimeOnly(window.currentOS.dataHoraFim)}` : ""
     drawCells([
       { label: "Início", value: inicioVal, width: 0.33 },
       { label: "Fim", value: fimVal, width: 0.33 },
-      { label: "Total de Horas", value: currentOS.totalHoras || "", width: 0.34 },
+      { label: "Total de Horas", value: window.currentOS.totalHoras || "", width: 0.34 },
     ])
   }
 
-  drawFullRowMultipage("Descrição", currentOS.descricao || "")
+  drawFullRowMultipage("Descrição", window.currentOS.descricao || "")
 
-  if (Array.isArray(currentOS.displacements) && currentOS.displacements.length > 0) {
-    currentOS.displacements.forEach((d, idx) => {
+  if (Array.isArray(window.currentOS.displacements) && window.currentOS.displacements.length > 0) {
+    window.currentOS.displacements.forEach((d, idx) => {
       let distText = ""
 
       // Verifica se é "sem deslocamento"
@@ -4113,22 +4112,22 @@ async function generateAndOpenOSPDF() {
         drawFullRow(`Deslocamento ${idx + 1}`, distText)
       } else {
         // Linha com duas células (deslocamento + placa)
-        const plate = resolvePlate(d && d.vehicle) || resolvePlate(d && d.vehicle_plate) || resolvePlate(d && d.plate) || resolvePlate(currentOS.carroUtilizado) || currentOS.carroUtilizado || ""
+        const plate = resolvePlate(d && d.vehicle) || resolvePlate(d && d.vehicle_plate) || resolvePlate(d && d.plate) || resolvePlate(window.currentOS.carroUtilizado) || window.currentOS.carroUtilizado || ""
         drawCells([
           { label: `Deslocamento ${idx + 1}`, value: distText, width: 0.5 },
           { label: "Placa", value: plate, width: 0.5 },
         ])
       }
     })
-  } else if (currentOS.deslocamentoKm || currentOS.carroUtilizado) {
+  } else if (window.currentOS.deslocamentoKm || window.currentOS.carroUtilizado) {
     let distText = ""
-    const kmVal = Number(currentOS.deslocamentoKm || 0)
+    const kmVal = Number(window.currentOS.deslocamentoKm || 0)
     if (!isNaN(kmVal) && kmVal > 0) {
       if (kmVal <= 50) distText = "Até 50 km"
       else if (kmVal <= 100) distText = "Até 100 km"
       else distText = `Acima: ${kmVal} km`
     }
-    const plate = resolvePlate(currentOS.carroUtilizado)
+    const plate = resolvePlate(window.currentOS.carroUtilizado)
     drawCells([
       { label: "Deslocamento", value: distText, width: 0.5 },
       { label: "Placa", value: plate, width: 0.5 },
@@ -4138,29 +4137,29 @@ async function generateAndOpenOSPDF() {
   // ====== SESSÃO FINANCEIRO ======
   drawSectionHeaderColored("Dados Financeiros", TITLE_COLORS.financeiro)
   const { totalKm, cost: deslocCost } = computeDisplacementCost()
-  const valServicoNum = Number(currentOS.valorServico || 0)
-  const custoServicoNum = Number(currentOS.custoServico || 0)
-  const custoMatNum = Number(currentOS.custoMateriais || 0)
-  const totalHorasNum = Number(currentOS.totalHorasNum || 0)
+  const valServicoNum = Number(window.currentOS.valorServico || 0)
+  const custoServicoNum = Number(window.currentOS.custoServico || 0)
+  const custoMatNum = Number(window.currentOS.custoMateriais || 0)
+  const totalHorasNum = Number(window.currentOS.totalHorasNum || 0)
 
   let valorHoraNum
   // Primeiro tenta pegar do campo salvo no banco
-  if (currentOS.valorHoraTecnico !== undefined && currentOS.valorHoraTecnico !== null && Number(currentOS.valorHoraTecnico) > 0) {
-    valorHoraNum = Number(currentOS.valorHoraTecnico)
+  if (window.currentOS.valorHoraTecnico !== undefined && window.currentOS.valorHoraTecnico !== null && Number(window.currentOS.valorHoraTecnico) > 0) {
+    valorHoraNum = Number(window.currentOS.valorHoraTecnico)
   } else {
     // Se não tiver valor salvo, calcula baseado se é cliente novo ou antigo
-    valorHoraNum = currentOS.isNewClient ? 175 : 150
+    valorHoraNum = window.currentOS.isNewClient ? 175 : 150
   }
   const custoHorasTrabalhadasNum = valorHoraNum * totalHorasNum
 
   drawCells([
-    { label: "Horas Trabalhadas", value: currentOS.totalHoras || "", width: 1 / 3 },
+    { label: "Horas Trabalhadas", value: window.currentOS.totalHoras || "", width: 1 / 3 },
     { label: "Valor da Hora", value: fmtBRL(valorHoraNum), width: 1 / 3 },
     { label: "Total", value: fmtBRL(custoHorasTrabalhadasNum), width: 1 / 3 },
   ])
 
-  if (Array.isArray(currentOS.materiais) && currentOS.materiais.length > 0) {
-    currentOS.materiais.forEach((m) => {
+  if (Array.isArray(window.currentOS.materiais) && window.currentOS.materiais.length > 0) {
+    window.currentOS.materiais.forEach((m) => {
       drawCells([
         { label: "Material", value: m.name || "", width: 0.35 },
         { label: "Qtde", value: formatQuantity(m.quantity), width: 0.1 },
@@ -4172,9 +4171,9 @@ async function generateAndOpenOSPDF() {
   }
 
   // Calcula vencimento (usado abaixo) - usa regra customizada se empresa tiver
-  const totalValueForVenc = Number(currentOS.totalGeral) || 0
-  const baseDateForVenc = currentOS.dataProgramada ? parseAsLocalTime(currentOS.dataProgramada) : new Date()
-  const dueDatesCalc = await calculateDueDatesWithCustomRule(totalValueForVenc, baseDateForVenc, currentOS.cliente)
+  const totalValueForVenc = Number(window.currentOS.totalGeral) || 0
+  const baseDateForVenc = window.currentOS.dataProgramada ? parseAsLocalTime(window.currentOS.dataProgramada) : new Date()
+  const dueDatesCalc = await calculateDueDatesWithCustomRule(totalValueForVenc, baseDateForVenc, window.currentOS.cliente)
   let vencimentoText = ""
   if (dueDatesCalc.length === 1) {
     vencimentoText = dueDatesCalc[0].dateStr
@@ -4195,8 +4194,8 @@ async function generateAndOpenOSPDF() {
     ])
   }
 
-  if (Array.isArray(currentOS.additionalServices) && currentOS.additionalServices.length > 0) {
-    currentOS.additionalServices.forEach((s) => {
+  if (Array.isArray(window.currentOS.additionalServices) && window.currentOS.additionalServices.length > 0) {
+    window.currentOS.additionalServices.forEach((s) => {
       const serviceValue = Number(s.value || 0)
       drawCells([
         { label: "Serviço Adicional", value: s.description || "", width: 0.7 },
@@ -4211,7 +4210,7 @@ async function generateAndOpenOSPDF() {
 
   // ====== TOTAL GERAL ======
   {
-    const totalGer = fmtBRL(currentOS.totalGeral)
+    const totalGer = fmtBRL(window.currentOS.totalGeral)
     const lineH = 8
     ensureSpace(lineH)
     doc.setFillColor(232, 240, 254)
@@ -4253,10 +4252,10 @@ async function generatePDF() {
   if (!currentOS) return
   
   // Verifica se é uma OS do NGMAN (possui PDF original)
-  const hasLegacyPDF = await checkLegacyOSExists(currentOS.osNumber)
+  const hasLegacyPDF = await checkLegacyOSExists(window.currentOS.osNumber)
   if (hasLegacyPDF) {
     // Baixa o PDF original do NGMAN
-    downloadLegacyOSPDF(currentOS.osNumber)
+    downloadLegacyOSPDF(window.currentOS.osNumber)
     return
   }
   
@@ -6765,26 +6764,26 @@ function openEditOsModal() {
   const valueServiceInput = document.getElementById('editValueService')
 
   // Popula campos de data/hora
-  if (startInput) startInput.value = currentOS.dataHoraInicio ? toDatetimeLocal(currentOS.dataHoraInicio) : ''
-  if (endInput) endInput.value = currentOS.dataHoraFim ? toDatetimeLocal(currentOS.dataHoraFim) : ''
-  if (totalHoursInput) totalHoursInput.value = currentOS.totalHorasNum || 0
+  if (startInput) startInput.value = window.currentOS.dataHoraInicio ? toDatetimeLocal(window.currentOS.dataHoraInicio) : ''
+  if (endInput) endInput.value = window.currentOS.dataHoraFim ? toDatetimeLocal(window.currentOS.dataHoraFim) : ''
+  if (totalHoursInput) totalHoursInput.value = window.currentOS.totalHorasNum || 0
 
   // Popula informações básicas
-  if (descInput) descInput.value = currentOS.descricao || ''
-  if (occInput) occInput.value = currentOS.ocorrencia || ''
-  if (obsInput) obsInput.value = currentOS.observacoes || ''
-  if (typeInput) typeInput.value = currentOS.maintenanceType || ''
-  if (callReasonInput) callReasonInput.value = currentOS.motivoChamado || ''
-  if (causeInput) causeInput.value = currentOS.causa || ''
+  if (descInput) descInput.value = window.currentOS.descricao || ''
+  if (occInput) occInput.value = window.currentOS.ocorrencia || ''
+  if (obsInput) obsInput.value = window.currentOS.observacoes || ''
+  if (typeInput) typeInput.value = window.currentOS.maintenanceType || ''
+  if (callReasonInput) callReasonInput.value = window.currentOS.motivoChamado || ''
+  if (causeInput) causeInput.value = window.currentOS.causa || ''
 
   // Popula deslocamento
-  if (displacementKmInput) displacementKmInput.value = currentOS.deslocamentoKm || ''
-  if (carUsedInput) carUsedInput.value = currentOS.carroUtilizado || ''
-  if (displacementCauseInput) displacementCauseInput.value = currentOS.causaDeslocamento || ''
+  if (displacementKmInput) displacementKmInput.value = window.currentOS.deslocamentoKm || ''
+  if (carUsedInput) carUsedInput.value = window.currentOS.carroUtilizado || ''
+  if (displacementCauseInput) displacementCauseInput.value = window.currentOS.causaDeslocamento || ''
 
   // Popula valores
-  if (techHourlyRateInput) techHourlyRateInput.value = currentOS.valorHoraTecnico || ''
-  if (valueServiceInput) valueServiceInput.value = currentOS.valorServico || ''
+  if (techHourlyRateInput) techHourlyRateInput.value = window.currentOS.valorHoraTecnico || ''
+  if (valueServiceInput) valueServiceInput.value = window.currentOS.valorServico || ''
 
   // Carrega materiais
   loadEditMaterials()
@@ -6794,9 +6793,9 @@ function openEditOsModal() {
   const totalServiceCostInput = document.getElementById('editTotalServiceCost')
   const grandTotalInput = document.getElementById('editGrandTotal')
 
-  if (totalMaterialCostInput) totalMaterialCostInput.value = (parseFloat(currentOS.custoMateriais) || 0).toFixed(2)
-  if (totalServiceCostInput) totalServiceCostInput.value = (parseFloat(currentOS.custoServico) || 0).toFixed(2)
-  if (grandTotalInput) grandTotalInput.value = (parseFloat(currentOS.totalGeral) || 0).toFixed(2)
+  if (totalMaterialCostInput) totalMaterialCostInput.value = (parseFloat(window.currentOS.custoMateriais) || 0).toFixed(2)
+  if (totalServiceCostInput) totalServiceCostInput.value = (parseFloat(window.currentOS.custoServico) || 0).toFixed(2)
+  if (grandTotalInput) grandTotalInput.value = (parseFloat(window.currentOS.totalGeral) || 0).toFixed(2)
 
   // Recalcula totais inicialmente
   recalculateOSTotals()
@@ -6819,19 +6818,19 @@ function loadEditMaterials() {
   const materialsList = document.getElementById('editMaterialsList')
   if (!materialsList) return
 
-  console.log('[loadEditMaterials] currentOS.materiais:', currentOS.materiais)
+  console.log('[loadEditMaterials] window.currentOS.materiais:', window.currentOS.materiais)
 
   // Limpa lista
   materialsList.innerHTML = ''
 
   // Se não tem materiais, mostra mensagem
-  if (!currentOS.materiais || currentOS.materiais.length === 0) {
+  if (!window.currentOS.materiais || window.currentOS.materiais.length === 0) {
     materialsList.innerHTML = '<p style="color: #64748b; text-align: center; padding: 1rem;">Nenhum material cadastrado</p>'
     return
   }
 
   // Renderiza cada material
-  currentOS.materiais.forEach((material, index) => {
+  window.currentOS.materiais.forEach((material, index) => {
     const materialDiv = document.createElement('div')
     materialDiv.className = 'edit-material-item'
     materialDiv.dataset.index = index
@@ -6891,12 +6890,12 @@ function loadEditMaterials() {
  * Adiciona um novo material vazio para edição
  */
 function addEditMaterial() {
-  if (!currentOS.materiais) {
-    currentOS.materiais = []
+  if (!window.currentOS.materiais) {
+    window.currentOS.materiais = []
   }
 
   // Adiciona material vazio
-  currentOS.materiais.push({
+  window.currentOS.materiais.push({
     id: null,
     name: '',
     quantity: 1,
@@ -6912,9 +6911,9 @@ function addEditMaterial() {
  * Remove um material da lista de edição
  */
 function removeEditMaterial(index) {
-  if (!currentOS.materiais || index < 0 || index >= currentOS.materiais.length) return
+  if (!window.currentOS.materiais || index < 0 || index >= window.currentOS.materiais.length) return
 
-  currentOS.materiais.splice(index, 1)
+  window.currentOS.materiais.splice(index, 1)
   loadEditMaterials()
 }
 
@@ -7049,7 +7048,7 @@ function closeEditOsModal() {
 function handleEditOsForm(e) {
   console.log('💾 [handleEditOsForm] Formulário submetido!')
   e.preventDefault()
-  if (!currentOS || !currentOS.id) {
+  if (!currentOS || !window.currentOS.id) {
     console.error('❌ currentOS não definido ou sem ID')
     return
   }
@@ -7072,11 +7071,11 @@ function handleEditOsForm(e) {
  * para salvar as edições da OS
  */
 async function saveOSEdit() {
-  if (!currentOS || !currentOS.id) {
+  if (!currentOS || !window.currentOS.id) {
     throw new Error('Nenhuma O.S selecionada para editar')
   }
 
-  const id = currentOS.id
+  const id = window.currentOS.id
 
   // Captura todos os campos do formulário
   const startInput = document.getElementById('editStart')
