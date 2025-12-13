@@ -4,42 +4,39 @@
   box-sizing: border-box;
 }
 
-/* Added light and dark theme variables with smooth transitions */
+/* ═══════════════════════════════════════════════════════════════════════════
+ * MAPEAMENTO DE VARIÁVEIS LEGADAS → DESIGN TOKENS
+ * Mantém compatibilidade com código existente enquanto usa o novo sistema
+ * ═══════════════════════════════════════════════════════════════════════════ */
 :root {
-  --primary-blue: #1e3a8a;
-  --primary-red: #dc2626;
-  --accent-blue: #3b82f6;
-  --bg-dark: #0f172a;
-  --bg-card: #1e293b;
-  --bg-input: #334155;
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --border-color: #334155;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --error: #ef4444;
-  --shadow: rgba(0, 0, 0, 0.3);
-  --shadow-lg: rgba(0, 0, 0, 0.5);
+  /* Cores primárias - mapeadas para design tokens */
+  --primary-blue: var(--color-primary);
+  --primary-red: var(--color-error);
+  --accent-blue: var(--color-info);
+
+  /* Backgrounds - mapeados para design tokens */
+  --bg-dark: var(--bg-primary);
+  --bg-card: var(--bg-card);
+  --bg-input: var(--bg-input);
+  --bg-readonly: var(--bg-secondary);
+
+  /* Texto - mapeado para design tokens */
+  --text-primary: var(--text-primary);
+  --text-secondary: var(--text-secondary);
+
+  /* Bordas e estados */
+  --border-color: var(--border-primary);
+  --success: var(--color-success);
+  --warning: var(--color-warning);
+  --error: var(--color-error);
+  --shadow: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --hover-bg: var(--bg-card-hover);
 }
 
+/* Tema claro - variáveis herdadas automaticamente do design-tokens.css */
 [data-theme="light"] {
-  --primary-blue: #1e3a8a;
-  --primary-red: #dc2626;
-  --accent-blue: #3b82f6;
-  /* Off-white suave - não cansa a vista */
-  --bg-dark: #faf8f5;
-  --bg-card: #fffdf9;
-  --bg-input: #f7f5f2;
-  --bg-readonly: #f2f0ed;
-  --text-primary: #2d2a26;
-  --text-secondary: #6b6560;
-  --border-color: #e5e0db;
-  --hover-bg: #f0eeeb;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --error: #ef4444;
-  --shadow: rgba(0, 0, 0, 0.08);
-  --shadow-lg: rgba(0, 0, 0, 0.12);
+  /* O mapeamento acima funciona automaticamente para ambos os temas */
 }
 
 body {

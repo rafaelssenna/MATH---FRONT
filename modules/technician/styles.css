@@ -11,55 +11,41 @@ html {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+ * MAPEAMENTO DE VARIÁVEIS LEGADAS → DESIGN TOKENS
+ * Mantém compatibilidade com código existente enquanto usa o novo sistema
+ * ═══════════════════════════════════════════════════════════════════════════ */
 :root {
-  --primary-blue: #1e3a8a;
-  --primary-red: #dc2626;
-  --accent-blue: #3b82f6;
-  --bg-dark: #0f172a;
-  --bg-card: #1e293b;
-  --bg-input: #334155;
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --border-color: #334155;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --error: #ef4444;
-  --shadow: rgba(0, 0, 0, 0.3);
-  /* Added new design tokens for modern effects */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-bounce: 500ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  /* Cores primárias - mapeadas para design tokens */
+  --primary-blue: var(--color-primary);
+  --primary-red: var(--color-error);
+  --accent-blue: var(--color-info);
+
+  /* Backgrounds - mapeados para design tokens */
+  --bg-dark: var(--bg-primary);
+  --bg-card: var(--bg-card);
+  --bg-input: var(--bg-input);
+  --bg-readonly: var(--bg-secondary);
+
+  /* Texto - mapeado para design tokens */
+  --text-primary: var(--text-primary);
+  --text-secondary: var(--text-secondary);
+
+  /* Bordas e estados */
+  --border-color: var(--border-primary);
+  --success: var(--color-success);
+  --warning: var(--color-warning);
+  --error: var(--color-error);
+  --shadow: var(--shadow-md);
+  --hover-bg: var(--bg-card-hover);
+
+  /* Sombras - herda do design tokens */
+  --shadow-2xl: var(--shadow-modal);
 }
 
+/* Tema claro - variáveis herdadas automaticamente do design-tokens.css */
 [data-theme="light"] {
-  --primary-blue: #1e3a8a;
-  --primary-red: #dc2626;
-  --accent-blue: #3b82f6;
-  /* Off-white suave - não cansa a vista */
-  --bg-dark: #faf8f5;
-  --bg-card: #fffdf9;
-  --bg-input: #f7f5f2;
-  --bg-readonly: #f2f0ed;
-  --text-primary: #2d2a26;
-  --text-secondary: #6b6560;
-  --border-color: #e5e0db;
-  --hover-bg: #f0eeeb;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --error: #ef4444;
-  --shadow: rgba(0, 0, 0, 0.08);
-  /* Light theme shadows */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.03);
-  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.2);
+  /* O mapeamento acima funciona automaticamente para ambos os temas */
 }
 
 body {

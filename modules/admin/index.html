@@ -29,13 +29,18 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="mate-icon.jpg">
 
-    <!-- Estilos compartilhados e fontes -->
+    <!-- Sistema de Design Compartilhado - Tokens (deve vir primeiro) -->
+    <link rel="stylesheet" href="../../shared/css/design-tokens.css">
+    <!-- Estilos do módulo admin -->
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- Skip link para acessibilidade por teclado -->
+    <a href="#main-content" class="skip-link">Pular para o conteúdo principal</a>
+
     <!-- Tela de Loading -->
     <div id="loadingScreen" class="loading-screen">
         <div class="loading-content">
@@ -104,7 +109,7 @@
         </div>
     </header>
 
-    <main class="main-content">
+    <main id="main-content" class="main-content" role="main">
         <!-- Seção de login do administrador -->
         <section id="admin-login-section" class="container">
             <div class="login-wrapper">
@@ -1518,7 +1523,17 @@
     <!-- Utilitários de segurança (XSS protection, fetch com timeout, etc) -->
     <script src="../../js/security-utils.js"></script>
 
-    <!-- Scripts do sistema (defer garante execução após DOM carregar) -->
+    <!-- Módulos do sistema (carregados em ordem) -->
+    <script src="js/config.js" defer></script>
+    <script src="js/toast.js" defer></script>
+    <script src="js/utils.js" defer></script>
+    <script src="js/icons.js" defer></script>
+    <script src="js/cleanup.js" defer></script>
+    <script src="js/sidebar.js" defer></script>
+    <script src="js/websocket.js" defer></script>
+    <script src="js/theme.js" defer></script>
+
+    <!-- Scripts principais do sistema -->
     <script src="state-manager.js" defer></script>
     <script src="administrativo.js" defer></script>
     <script src="review-functions.js" defer></script>
