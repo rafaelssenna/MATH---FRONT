@@ -22,38 +22,38 @@
    * CORES - TEMA ESCURO (Padrão)
    * ═══════════════════════════════════════════════════════════════════════════ */
 
-  /* Cores Primárias */
-  --color-primary: #4ECDC4;
-  --color-primary-hover: #45b8b0;
-  --color-primary-active: #3da59e;
-  --color-primary-light: rgba(78, 205, 196, 0.1);
-  --color-primary-border: rgba(78, 205, 196, 0.3);
+  /* Cores Primárias - AZUL ESCURO ORIGINAL DO SISTEMA */
+  --color-primary: #1e3a8a;
+  --color-primary-hover: #1e40af;
+  --color-primary-active: #1d4ed8;
+  --color-primary-light: rgba(30, 58, 138, 0.1);
+  --color-primary-border: rgba(30, 58, 138, 0.3);
 
-  /* Cores Secundárias */
-  --color-secondary: #6c5ce7;
-  --color-secondary-hover: #5f4dd6;
-  --color-secondary-light: rgba(108, 92, 231, 0.1);
+  /* Cores Secundárias - Vermelho do sistema */
+  --color-secondary: #dc2626;
+  --color-secondary-hover: #b91c1c;
+  --color-secondary-light: rgba(220, 38, 38, 0.1);
 
-  /* Cores de Status */
-  --color-success: #00b894;
-  --color-success-hover: #00a383;
-  --color-success-light: rgba(0, 184, 148, 0.1);
-  --color-success-border: rgba(0, 184, 148, 0.3);
+  /* Cores de Status - CORES ORIGINAIS DO SISTEMA */
+  --color-success: #10b981;
+  --color-success-hover: #059669;
+  --color-success-light: rgba(16, 185, 129, 0.1);
+  --color-success-border: rgba(16, 185, 129, 0.3);
 
-  --color-warning: #fdcb6e;
-  --color-warning-hover: #f0be5c;
-  --color-warning-light: rgba(253, 203, 110, 0.1);
-  --color-warning-border: rgba(253, 203, 110, 0.3);
+  --color-warning: #f59e0b;
+  --color-warning-hover: #d97706;
+  --color-warning-light: rgba(245, 158, 11, 0.1);
+  --color-warning-border: rgba(245, 158, 11, 0.3);
 
-  --color-error: #ff6b6b;
-  --color-error-hover: #ee5a5a;
-  --color-error-light: rgba(255, 107, 107, 0.1);
-  --color-error-border: rgba(255, 107, 107, 0.3);
+  --color-error: #ef4444;
+  --color-error-hover: #dc2626;
+  --color-error-light: rgba(239, 68, 68, 0.1);
+  --color-error-border: rgba(239, 68, 68, 0.3);
 
-  --color-info: #74b9ff;
-  --color-info-hover: #5fa8f5;
-  --color-info-light: rgba(116, 185, 255, 0.1);
-  --color-info-border: rgba(116, 185, 255, 0.3);
+  --color-info: #3b82f6;
+  --color-info-hover: #2563eb;
+  --color-info-light: rgba(59, 130, 246, 0.1);
+  --color-info-border: rgba(59, 130, 246, 0.3);
 
   /* Cores Neutras - Background (cores originais que funcionavam bem) */
   --bg-primary: #0f172a;
