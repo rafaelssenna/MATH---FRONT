@@ -202,13 +202,19 @@ body {
   transition: width 0.6s, height 0.6s;
 }
 
+.btn-icon:hover::before {
+  width: 100px;
+  height: 100px;
+}
+
 .btn-icon:hover {
   background: var(--hover-bg);
-  color: var(--text-primary);
+  transform: translateY(-2px) rotate(5deg);
+  box-shadow: 0 4px 12px var(--shadow);
 }
 
 .btn-icon:active {
-  transform: scale(0.95);
+  transform: translateY(0) rotate(0deg);
 }
 
 /* Theme toggle icons with smooth transition */
@@ -277,6 +283,8 @@ body {
 
 .btn-logout:hover {
   background: #b91c1c;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4);
 }
 
 .btn-logout:active {
@@ -451,6 +459,8 @@ body {
 
 .search-bar:focus-within {
   border-color: var(--primary-blue);
+  box-shadow: 0 8px 24px var(--shadow);
+  transform: translateY(-2px);
 }
 
 .search-icon {
@@ -481,6 +491,8 @@ body {
 .search-bar input:focus {
   outline: none;
   border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+  transform: scale(1.01);
 }
 
 /* Enhanced form groups with floating labels effect */
@@ -520,7 +532,8 @@ body {
 .form-group textarea:focus {
   outline: none;
   border-color: var(--primary-blue);
-  box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.1);
+  box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+  transform: translateY(-2px);
 }
 
 .form-group input::placeholder,
@@ -545,7 +558,7 @@ body {
 }
 
 .checkbox-label:hover {
-  color: var(--text-primary);
+  transform: translateX(4px);
 }
 
 .checkbox-label input[type="checkbox"] {
@@ -626,6 +639,7 @@ body {
 
 .search-result-item:hover {
   background: var(--hover-bg);
+  transform: translateX(4px);
 }
 
 .search-result-item.selected {
@@ -664,18 +678,24 @@ body {
   transition: width 0.6s, height 0.6s;
 }
 
+.btn-primary:hover::before,
+.btn-secondary:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
 .btn-primary {
   background: var(--primary-red);
   color: white;
 }
 
 .btn-primary:hover {
-  background: #b91c1c;
-  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(220, 38, 38, 0.4);
 }
 
 .btn-primary:active {
-  transform: scale(0.98);
+  transform: translateY(-1px);
 }
 
 .btn-secondary {
@@ -686,7 +706,8 @@ body {
 
 .btn-secondary:hover {
   background: var(--hover-bg);
-  border-color: var(--text-tertiary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--shadow);
 }
 
 .btn-danger {
@@ -702,10 +723,12 @@ body {
 
 .btn-danger:hover {
   background: #b91c1c;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(220, 38, 38, 0.4);
 }
 
 .btn-danger:active {
-  transform: scale(0.98);
+  transform: translateY(-1px);
 }
 
 .btn-success {
@@ -724,10 +747,12 @@ body {
 
 .btn-success:hover {
   background: #059669;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
 }
 
 .btn-success:active {
-  transform: scale(0.98);
+  transform: translateY(-1px);
 }
 
 .btn-warning {
@@ -746,10 +771,12 @@ body {
 
 .btn-warning:hover {
   background: #d97706;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.4);
 }
 
 .btn-warning:active {
-  transform: scale(0.98);
+  transform: translateY(-1px);
 }
 
 /* Enhanced cards with hover effects */
@@ -764,7 +791,7 @@ body {
 }
 
 .card:hover {
-  border-color: var(--text-tertiary);
+  box-shadow: 0 12px 32px var(--shadow);
 }
 
 .card-header {
@@ -845,8 +872,8 @@ body {
 
 .company-card:hover,
 .machine-card:hover {
+  box-shadow: 0 16px 40px var(--shadow);
   border-color: var(--primary-blue);
-  background: var(--bg-card-hover);
 }
 
 .company-card h3,
@@ -892,9 +919,13 @@ body {
   transition: left 0.5s;
 }
 
+.os-card:hover::before {
+  left: 100%;
+}
+
 .os-card:hover {
   border-color: var(--primary-blue);
-  background: var(--bg-card-hover);
+  box-shadow: 0 12px 32px var(--shadow);
 }
 
 .os-card-header {
@@ -1053,6 +1084,7 @@ body {
 .sidebar-menu li:hover {
   background: var(--hover-bg);
   color: var(--text-primary);
+  transform: translateX(4px);
 }
 
 .sidebar-menu li.active {
@@ -1068,6 +1100,11 @@ body {
 
 .sidebar-menu li svg {
   flex-shrink: 0;
+  transition: transform var(--transition-speed) ease;
+}
+
+.sidebar-menu li:hover svg {
+  transform: scale(1.1);
 }
 
 /* ===== Menu Groups (Áreas) ===== */
@@ -1585,7 +1622,8 @@ body {
 }
 
 .user-item:hover {
-  border-color: var(--primary-blue);
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px var(--shadow);
 }
 
 .user-item .username {
