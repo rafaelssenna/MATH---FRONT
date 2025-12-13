@@ -69,19 +69,12 @@
 // ║              (Utilitários movidos para js/config.js, js/cleanup.js)           ║
 // ╚═══════════════════════════════════════════════════════════════════════════════╝
 
-// Usa valores dos módulos ou define fallbacks
-// (Os módulos são carregados antes deste arquivo)
-
-// Variáveis de estado local (não movidas para módulos pois são mutáveis)
-if (typeof cachedTechnicians === 'undefined') var cachedTechnicians = []
-if (typeof cachedCompanies === 'undefined') var cachedCompanies = []
-if (typeof autoRefreshIntervals === 'undefined') var autoRefreshIntervals = []
-if (typeof socket === 'undefined') var socket = null
-if (typeof osPagination === 'undefined') var osPagination = { page: 1, limit: 10, total: 0 }
-if (typeof companiesViewMode === 'undefined') var companiesViewMode = localStorage.getItem('companiesViewMode') || 'cards'
-
-// NOTA: As seguintes funções/objetos foram movidos para módulos:
-// - API_URL, ROUTES, SECTION_TO_ROUTE, FETCH_TIMEOUT → js/config.js
+// NOTA: Todas as variáveis globais são definidas em js/config.js e acessadas via window:
+// - window.API_URL, window.ROUTES, window.SECTION_TO_ROUTE, window.FETCH_TIMEOUT
+// - window.window.cachedTechnicians, window.window.cachedCompanies, window.window.autoRefreshIntervals
+// - window.socket, window.window.osPagination, window.window.companiesViewMode, window.currentOS
+//
+// Outras funções movidas para módulos:
 // - ListenerManager, globalCleanup → js/cleanup.js
 // - fetchWithTimeout, safeFetch → js/utils.js
 
@@ -102,7 +95,7 @@ if (typeof companiesViewMode === 'undefined') var companiesViewMode = localStora
 
 /**
  * Calcula vencimentos usando regra customizada da empresa se existir
- * (Esta função usa cachedCompanies local, por isso permanece aqui)
+ * (Esta função usa window.cachedCompanies local, por isso permanece aqui)
  * @param {number} totalValue - Valor total da OS
  * @param {Date} baseDate - Data base
  * @param {string} companyName - Nome da empresa para buscar regra customizada
@@ -110,7 +103,7 @@ if (typeof companiesViewMode === 'undefined') var companiesViewMode = localStora
  */
 async function calculateDueDatesWithCustomRule(totalValue, baseDate, companyName) {
   // Busca empresa no cache para verificar se tem regra customizada
-  const company = (cachedCompanies || []).find(
+  const company = (window.cachedCompanies || []).find(
     c => c.name && c.name.toLowerCase() === (companyName || '').toLowerCase()
   )
 
@@ -167,89 +160,11 @@ async function calculateDueDatesWithCustomRule(totalValue, baseDate, companyName
 /**
  * Conecta ao WebSocket para notificações em tempo real
  */
-function connectWebSocket() {
-  if (socket && socket.connected) return
-  
-  socket = io(API_URL, {
-    transports: ['websocket', 'polling'],
-    reconnection: true,
-    reconnectionDelay: 1000,
-    reconnectionAttempts: 5
-  })
-  
-  socket.on('connect', () => {
-    console.log('✅ WebSocket conectado!')
-    socket.emit('identify', { userType: 'admin', userId: localStorage.getItem('adminName') })
-  })
-  
-  socket.on('disconnect', () => {
-    console.log('❌ WebSocket desconectado')
-  })
-  
-  // Nova solicitação criada por cliente
-  socket.on('new_request', (data) => {
-    console.log('📢 Nova solicitação recebida:', data)
-    showToast(`Nova solicitação #${data.id} de ${data.company_name}`, 'success')
-    // Recarrega lista se estiver na seção de solicitações
-    const currentSection = document.querySelector('.admin-page[style*="display: block"]')?.id
-    if (currentSection === 'requestsSection') {
-      loadRequestsSection()
-    }
-  })
-  
-  // OS criada (quando admin atribui técnico)
-  socket.on('os_created', (data) => {
-    console.log('📢 OS criada:', data)
-  })
-}
+// NOTA: connectWebSocket e disconnectWebSocket foram movidos para js/websocket.js
+// As funções são acessíveis via window.connectWebSocket e window.disconnectWebSocket
 
-/**
- * Desconecta do WebSocket
- */
-function disconnectWebSocket() {
-  if (socket) {
-    socket.disconnect()
-    socket = null
-  }
-}
-
-/**
- * Inicia auto-refresh para uma seção específica
- */
-function startAutoRefresh(sectionName, refreshFunction, intervalSeconds = 10) {
-  // Para qualquer refresh anterior dessa seção
-  stopAutoRefreshForSection(sectionName)
-  
-  // Inicia novo intervalo
-  const intervalId = setInterval(() => {
-    if (document.getElementById('admin-section')?.style.display !== 'none') {
-      refreshFunction()
-    }
-  }, intervalSeconds * 1000)
-  
-  autoRefreshIntervals.push({ section: sectionName, id: intervalId })
-}
-
-/**
- * Para auto-refresh de uma seção específica
- */
-function stopAutoRefreshForSection(sectionName) {
-  autoRefreshIntervals = autoRefreshIntervals.filter(item => {
-    if (item.section === sectionName) {
-      clearInterval(item.id)
-      return false
-    }
-    return true
-  })
-}
-
-/**
- * Para todos os auto-refresh
- */
-function stopAllAutoRefresh() {
-  autoRefreshIntervals.forEach(item => clearInterval(item.id))
-  autoRefreshIntervals = []
-}
+// NOTA: startAutoRefresh, stopAutoRefreshForSection e stopAllAutoRefresh
+// foram movidos para js/websocket.js e são acessíveis via window.
 
 /**
  * Pré-carrega todos os dados do sistema
@@ -272,7 +187,7 @@ async function preloadSystemData() {
     promises.push(
       fetchWithTimeout(`${API_URL}/api/companies`)
         .then(res => res.json())
-        .then(data => { if (Array.isArray(data)) cachedCompanies = data })
+        .then(data => { if (Array.isArray(data)) window.cachedCompanies = data })
         .catch(err => {
           console.warn('Erro ao carregar empresas:', err)
         })
@@ -284,7 +199,7 @@ async function preloadSystemData() {
         .then(res => res.json())
         .then(data => { 
           if (Array.isArray(data)) {
-            cachedTechnicians = data.filter(t => t.username !== 'Sistema NGMAN')
+            window.cachedTechnicians = data.filter(t => t.username !== 'Sistema NGMAN')
           }
         })
         .catch(err => {
@@ -577,7 +492,7 @@ function setupCompanySubTabs() {
  */
 function setCompaniesView(mode) {
   if (mode !== 'cards' && mode !== 'list') return
-  companiesViewMode = mode
+  window.companiesViewMode = mode
   loadCompaniesAdmin()
 }
 
@@ -633,10 +548,10 @@ async function loadTechniciansForTransfer() {
     const res = await fetch(`${API_URL}/api/technicians`)
     const data = await res.json()
     if (Array.isArray(data)) {
-      cachedTechnicians = data.filter(t => t.username !== 'Sistema NGMAN')
+      window.cachedTechnicians = data.filter(t => t.username !== 'Sistema NGMAN')
     }
   } catch (_err) {
-    cachedTechnicians = []
+    window.cachedTechnicians = []
   }
 }
 
@@ -645,26 +560,26 @@ async function loadCompaniesCache() {
     const res = await fetch(`${API_URL}/api/companies`)
     const data = await res.json()
     if (Array.isArray(data)) {
-      cachedCompanies = data
+      window.cachedCompanies = data
       // Preenche o select de empresas para criação de usuários quando os dados são carregados
       populateClientCompanySelect()
     }
   } catch (_err) {
-    cachedCompanies = []
+    window.cachedCompanies = []
   }
 }
 
 /**
  * Popula o select de empresas no formulário de criação de usuários (clientes).
- * Utiliza a lista cachedCompanies.  Adiciona opção padrão "Selecione...".
+ * Utiliza a lista window.cachedCompanies.  Adiciona opção padrão "Selecione...".
  */
 function populateClientCompanySelect() {
   const select = document.getElementById('clientCompanySelect')
   if (!select) return
   // Limpa opções atuais
   select.innerHTML = '<option value="">Selecione...</option>'
-  if (!Array.isArray(cachedCompanies) || cachedCompanies.length === 0) return
-  cachedCompanies.forEach((c) => {
+  if (!Array.isArray(window.cachedCompanies) || window.cachedCompanies.length === 0) return
+  window.cachedCompanies.forEach((c) => {
     const opt = document.createElement('option')
     opt.value = c.id
     opt.textContent = c.name || c.username || ''
@@ -1022,7 +937,7 @@ function setupCompanySearch() {
       return
     }
 
-    const filtered = cachedCompanies.filter((company) => company.name.toLowerCase().includes(query))
+    const filtered = window.cachedCompanies.filter((company) => company.name.toLowerCase().includes(query))
 
     if (filtered.length === 0) {
       resultsDiv.innerHTML =
@@ -1140,14 +1055,14 @@ function isValidCNPJ(cnpj) {
 async function resolveClientCNPJByName(name) {
   if (!name) return null
   // 1) tenta cache
-  const found = cachedCompanies.find((c) => String(c.name || "").toLowerCase() === String(name).toLowerCase())
+  const found = window.cachedCompanies.find((c) => String(c.name || "").toLowerCase() === String(name).toLowerCase())
   if (found && found.cnpj) return found.cnpj
   // 2) tenta baixar lista e procurar
   try {
     const res = await fetch(`${API_URL}/api/companies`)
     const data = await res.json()
     if (Array.isArray(data)) {
-      cachedCompanies = data
+      window.cachedCompanies = data
       const again = data.find((c) => String(c.name || "").toLowerCase() === String(name).toLowerCase())
       if (again && again.cnpj) return again.cnpj
     }
@@ -1480,7 +1395,7 @@ function applyOSFilters() {
   osFilterMachineSerial = machineSelect?.value || null
 
   // Reseta para página 1 ao filtrar
-  osPagination.page = 1
+  window.osPagination.page = 1
   loadOSList()
 }
 
@@ -1493,7 +1408,7 @@ function loadOSList() {
   if (!container) return
 
   // Monta URL com filtros
-  let url = `${API_URL}/api/os?limit=${osPagination.limit}&page=${osPagination.page}&only_with_order_number=true`
+  let url = `${API_URL}/api/os?limit=${window.osPagination.limit}&page=${window.osPagination.page}&only_with_order_number=true`
   if (osFilterTechnicianId) url += `&technician_id=${osFilterTechnicianId}`
   if (osFilterMachineSerial) url += `&machine_serial=${encodeURIComponent(osFilterMachineSerial)}`
   fetch(url)
@@ -1502,7 +1417,7 @@ function loadOSList() {
         throw new Error(`Erro ao carregar OS: ${res.status}`)
       }
       const total = parseInt(res.headers.get('X-Total-Count') || '0', 10)
-      osPagination.total = Number.isFinite(total) ? total : 0
+      window.osPagination.total = Number.isFinite(total) ? total : 0
       return res.json()
     })
     .then((rows) => {
@@ -1684,15 +1599,15 @@ function loadOSList() {
 function renderOsPaginationBar() {
   const listContainer = document.getElementById('osList')
   if (!listContainer) return
-  let bar = document.getElementById('osPaginationBar')
+  let bar = document.getElementById('window.osPaginationBar')
   if (!bar) {
     bar = document.createElement('div')
-    bar.id = 'osPaginationBar'
+    bar.id = 'window.osPaginationBar'
     bar.style.cssText = 'display:flex;gap:.5rem;justify-content:center;margin:1rem 0;'
     listContainer.parentNode.insertBefore(bar, listContainer.nextSibling)
   }
-  const totalPages = osPagination.limit ? Math.max(1, Math.ceil((osPagination.total || 0) / osPagination.limit)) : 1
-  const page = osPagination.page
+  const totalPages = window.osPagination.limit ? Math.max(1, Math.ceil((window.osPagination.total || 0) / window.osPagination.limit)) : 1
+  const page = window.osPagination.page
   const prevDisabled = page <= 1
   const nextDisabled = page >= totalPages
   bar.innerHTML = `
@@ -1702,8 +1617,8 @@ function renderOsPaginationBar() {
   `
   const prev = document.getElementById('osPrevPageBtn')
   const next = document.getElementById('osNextPageBtn')
-  if (prev) prev.onclick = () => { if (osPagination.page > 1) { osPagination.page -= 1; loadOSList() } }
-  if (next) next.onclick = () => { const tp = Math.max(1, Math.ceil((osPagination.total || 0)/osPagination.limit)); if (osPagination.page < tp) { osPagination.page += 1; loadOSList() } }
+  if (prev) prev.onclick = () => { if (window.osPagination.page > 1) { window.osPagination.page -= 1; loadOSList() } }
+  if (next) next.onclick = () => { const tp = Math.max(1, Math.ceil((window.osPagination.total || 0)/window.osPagination.limit)); if (window.osPagination.page < tp) { window.osPagination.page += 1; loadOSList() } }
 }
 
 // ╔═══════════════════════════════════════════════════════════════════════════════╗
@@ -1719,7 +1634,7 @@ function loadCompaniesAdmin() {
       return res.json()
     })
     .then((companies) => {
-      cachedCompanies = companies
+      window.cachedCompanies = companies
 
       // Atualiza select de empresa para cadastro de usuários
       populateClientCompanySelect()
@@ -1729,7 +1644,7 @@ function loadCompaniesAdmin() {
         if (companies.length === 0) {
           list.innerHTML = '<p class="empty-state">Nenhuma empresa cadastrada</p>'
         } else {
-          if (companiesViewMode === 'list') {
+          if (window.companiesViewMode === 'list') {
             list.innerHTML = `
               <div class="companies-list-view">
                 <table>
@@ -1783,8 +1698,8 @@ function loadCompaniesAdmin() {
           const cardsBtn = document.getElementById('cardsViewBtn')
           const listBtn = document.getElementById('listViewBtn')
           if (cardsBtn && listBtn) {
-            cardsBtn.classList.toggle('active', companiesViewMode === 'cards')
-            listBtn.classList.toggle('active', companiesViewMode === 'list')
+            cardsBtn.classList.toggle('active', window.companiesViewMode === 'cards')
+            listBtn.classList.toggle('active', window.companiesViewMode === 'list')
           }
         }
       }
@@ -2428,7 +2343,7 @@ function searchCompanies() {
   }
   // Normaliza query removendo caracteres não numéricos para comparar CNPJ
   const queryDigits = query.replace(/\D/g, '')
-  const filtered = Array.isArray(cachedCompanies) ? cachedCompanies.filter((c) => {
+  const filtered = Array.isArray(window.cachedCompanies) ? window.cachedCompanies.filter((c) => {
     const nameMatch = c.name && c.name.toLowerCase().includes(query)
     let cnpjDigits = ''
     if (c.cnpj) cnpjDigits = c.cnpj.replace(/\D/g, '')
@@ -3348,10 +3263,10 @@ async function viewOSDetails(id) {
     if (['assigned', 'accepted', 'in_progress'].includes(statusLower)) {
       try {
         // Garante que a lista de técnicos esteja carregada
-        if (!cachedTechnicians || cachedTechnicians.length === 0) {
+        if (!window.cachedTechnicians || window.cachedTechnicians.length === 0) {
           await loadTechniciansForTransfer()
         }
-        const options = (cachedTechnicians || [])
+        const options = (window.cachedTechnicians || [])
           .map((t) => `<option value="${t.id}">${t.username}</option>`)
           .join('')
         html += `
@@ -9202,8 +9117,8 @@ function initRouter() {
 
 // Função para alternar visualização de empresas
 function setCompaniesView(mode) {
-  companiesViewMode = mode
-  localStorage.setItem('companiesViewMode', companiesViewMode)
+  window.companiesViewMode = mode
+  localStorage.setItem('window.companiesViewMode', window.companiesViewMode)
   loadCompaniesAdmin()
 }
 
