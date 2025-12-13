@@ -45,8 +45,15 @@ let currentOS = null
 // Timeout padrão para requisições fetch (30 segundos)
 const FETCH_TIMEOUT = 30000
 
-// Exporta globalmente
+// Exporta globalmente (todas as variáveis que outros módulos precisam)
 window.API_URL = API_URL
 window.ROUTES = ROUTES
 window.SECTION_TO_ROUTE = SECTION_TO_ROUTE
 window.FETCH_TIMEOUT = FETCH_TIMEOUT
+window.cachedTechnicians = cachedTechnicians
+window.cachedCompanies = cachedCompanies
+window.autoRefreshIntervals = autoRefreshIntervals
+window.socket = socket
+window.osPagination = osPagination
+window.companiesViewMode = companiesViewMode
+window.currentOS = currentOS

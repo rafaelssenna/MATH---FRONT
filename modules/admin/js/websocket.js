@@ -8,26 +8,26 @@
  * Conecta ao WebSocket para notificações em tempo real
  */
 function connectWebSocket() {
-  if (socket && socket.connected) return
+  if (window.socket && window.socket.connected) return
 
-  socket = io(API_URL, {
+  window.socket = io(window.API_URL, {
     transports: ['websocket', 'polling'],
     reconnection: true,
     reconnectionDelay: 1000,
     reconnectionAttempts: 5
   })
 
-  socket.on('connect', () => {
+  window.socket.on('connect', () => {
     console.log('✅ WebSocket conectado!')
-    socket.emit('identify', { userType: 'admin', userId: localStorage.getItem('adminName') })
+    window.socket.emit('identify', { userType: 'admin', userId: localStorage.getItem('adminName') })
   })
 
-  socket.on('disconnect', () => {
+  window.socket.on('disconnect', () => {
     console.log('❌ WebSocket desconectado')
   })
 
   // Nova solicitação criada por cliente
-  socket.on('new_request', (data) => {
+  window.socket.on('new_request', (data) => {
     console.log('📢 Nova solicitação recebida:', data)
     showToast(`Nova solicitação #${data.id} de ${data.company_name}`, 'success')
     // Recarrega lista se estiver na seção de solicitações
@@ -38,7 +38,7 @@ function connectWebSocket() {
   })
 
   // OS criada (quando admin atribui técnico)
-  socket.on('os_created', (data) => {
+  window.socket.on('os_created', (data) => {
     console.log('📢 OS criada:', data)
   })
 }
@@ -47,9 +47,9 @@ function connectWebSocket() {
  * Desconecta do WebSocket
  */
 function disconnectWebSocket() {
-  if (socket) {
-    socket.disconnect()
-    socket = null
+  if (window.socket) {
+    window.socket.disconnect()
+    window.socket = null
   }
 }
 
@@ -65,14 +65,14 @@ function startAutoRefresh(sectionName, refreshFunction, intervalSeconds = 10) {
     }
   }, intervalSeconds * 1000)
 
-  autoRefreshIntervals.push({ section: sectionName, id: intervalId })
+  window.autoRefreshIntervals.push({ section: sectionName, id: intervalId })
 }
 
 /**
  * Para auto-refresh de uma seção específica
  */
 function stopAutoRefreshForSection(sectionName) {
-  autoRefreshIntervals = autoRefreshIntervals.filter(item => {
+  window.autoRefreshIntervals = window.autoRefreshIntervals.filter(item => {
     if (item.section === sectionName) {
       clearInterval(item.id)
       return false
@@ -85,10 +85,10 @@ function stopAutoRefreshForSection(sectionName) {
  * Para todos os auto-refresh intervals
  */
 function stopAllAutoRefresh() {
-  autoRefreshIntervals.forEach(item => {
+  window.autoRefreshIntervals.forEach(item => {
     clearInterval(item.id)
   })
-  autoRefreshIntervals = []
+  window.autoRefreshIntervals = []
 }
 
 // Exporta globalmente

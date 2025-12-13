@@ -66,21 +66,21 @@ function globalCleanup() {
   ListenerManager.clearAll()
 
   // Fecha conexão WebSocket
-  if (socket) {
+  if (window.socket) {
     try {
-      socket.disconnect()
-      socket = null
+      window.socket.disconnect()
+      window.socket = null
     } catch (e) {
       console.warn('[Cleanup] Erro ao fechar WebSocket:', e)
     }
   }
 
   // Limpa caches
-  cachedTechnicians = []
-  cachedCompanies = []
+  window.cachedTechnicians = []
+  window.cachedCompanies = []
 
   // Reseta paginação
-  osPagination = { page: 1, limit: 10, total: 0 }
+  window.osPagination = { page: 1, limit: 10, total: 0 }
 
   console.log('[Cleanup] Limpeza global concluída')
 }
